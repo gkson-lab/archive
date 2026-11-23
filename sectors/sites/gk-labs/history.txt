@@ -1,5 +1,8 @@
-0446ba6  2026-11-22  gkson  Update founder title in README (HEAD -> main, origin/main, origin/HEAD)
-1718b7b  2026-11-22  gkson  chrome look: liquid metal everywhere, color only as an oil-slick rim (origin/claude/happy-mendel-7xev5b)
+23c8b2b  2026-11-22  gkson  Merge pull request #5 from gkson-lab/claude/happy-mendel-7xev5b (HEAD -> main, origin/main, origin/HEAD)
+1c20d68  2026-11-22  gkson  Merge branch 'main' into claude/happy-mendel-7xev5b
+80db398  2026-11-23  gkson  add merged PRs badge to profile
+0446ba6  2026-11-22  gkson  Update founder title in README
+1718b7b  2026-11-22  gkson  chrome look: liquid metal everywhere, color only as an oil-slick rim
 73e7ae3  2026-11-22  gkson  Remove organizations section from README
 7ff5961  2026-11-22  gkson  Update README to introduce GK-Labs and remove tagline
 8b1b1a9  2026-11-22  gkson  Expand README with organizations and team details
