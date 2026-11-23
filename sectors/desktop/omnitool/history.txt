@@ -1,0 +1,8 @@
+23f887a  2026-10-22  gkson  OmniTool 1.2: Onyx does math and knows many more words (HEAD -> main, origin/main, origin/HEAD)
+ff3f342  2026-10-22  gkson  Merge remote-tracking branch 'origin/main'
+349f524  2026-10-22  gkson  OmniTool 1.1: Omni Agent - Onyx, and motion with a purpose
+cb970de  2026-10-22  gkson  Merge pull request #1 from gkson-lab/claude/labscode-omnitool-issue-jevfzc
+32a7c24  2026-10-23  Claude  Replace the Linux Claude Code build that labscode-beta-9 ships on Windows
+d1b8017  2026-10-22  gkson  Revise README to include project details
+7ac9f33  2026-10-22  gkson  README: lay the architecture diagram out top to bottom so it fits the column
+95174cb  2026-10-22  gkson  OmniTool 1.0: 150 tools in a Windows desktop app and a web page
