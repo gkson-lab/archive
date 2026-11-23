@@ -1,0 +1,392 @@
+{
+ "commits": [
+  {
+   "sha": "002c30acddfd951137a960b802d54fec40e1dea1",
+   "date": "2026-10-21T02:44:21+00:00",
+   "author": "Claude",
+   "message": "Phones: command lines take input at full width, with a Run button and no zoom; all tabs visible",
+   "tips": [
+    "main"
+   ]
+  },
+  {
+   "sha": "49b99624671fb8d252a683befe31b9731334f177",
+   "date": "2026-10-20T07:28:56-05:00",
+   "author": "gkson",
+   "message": "readme edit",
+   "tips": []
+  },
+  {
+   "sha": "a236f1b872ce718c56e9e2d4ab57b5a3c437c6b2",
+   "date": "2026-10-20T07:25:15-05:00",
+   "author": "gkson",
+   "message": "Rename the repository to longshot10",
+   "tips": []
+  },
+  {
+   "sha": "0e280a9d5180961ce30a9babbe98109f4885f791",
+   "date": "2026-10-20T12:15:52+00:00",
+   "author": "Claude",
+   "message": "Release notes: one page per release, with an index",
+   "tips": []
+  },
+  {
+   "sha": "3efc17a67333318bd06252c0eb5802af8af8e5e7",
+   "date": "2026-10-20T12:15:28+00:00",
+   "author": "Claude",
+   "message": "Add full release notes for every release, v3.0 to v5.0",
+   "tips": []
+  },
+  {
+   "sha": "08ebfb7d9b6945cedd7af2e169e0a4e8ee1613ff",
+   "date": "2026-10-20T07:13:15-05:00",
+   "author": "gkson",
+   "message": "Merge pull request #1 from gkson-lab/claude/kind-goodall-e1da0u",
+   "tips": []
+  },
+  {
+   "sha": "f2482c53082f0821259d2bc2fa61697b89b69db7",
+   "date": "2026-10-20T04:43:07+00:00",
+   "author": "Claude",
+   "message": "v5.0: seasons, skins that follow the system or change daily, Void and Diamond skins",
+   "tips": []
+  },
+  {
+   "sha": "2241dc085b62e0d88579ac2d0659dc3164bee54f",
+   "date": "2026-10-20T04:27:43+00:00",
+   "author": "Claude",
+   "message": "v4.8: challenges with exact chances, Smartwatch skin, compact layout, two skins",
+   "tips": []
+  },
+  {
+   "sha": "0f9f437561d47596d358d4fd7d6cc4a019b7ebcf",
+   "date": "2026-10-20T04:20:22+00:00",
+   "author": "Claude",
+   "message": "v4.6: Ticker skin, prestige perks, hall of fame by difficulty, Bronze, Silver and Platinum skins",
+   "tips": []
+  },
+  {
+   "sha": "f8c69ebaea1c20067a392108aa2eaa0aa0e3b9da",
+   "date": "2026-10-20T04:05:59+00:00",
+   "author": "Claude",
+   "message": "v4.4: rolling while away, Night shift, Hourglass, sound settings, haptics, two skins",
+   "tips": []
+  },
+  {
+   "sha": "4a4cef6fc7836bc9fa4126fcf3ac5a1df82e3860",
+   "date": "2026-10-20T03:59:55+00:00",
+   "author": "Claude",
+   "message": "v4.2: Receipt skin, profile with titles and an image card, automatic save backups, Newsprint skin",
+   "tips": []
+  },
+  {
+   "sha": "4fd5debd10933dbd7ece9d7e115fafdea6f8b061",
+   "date": "2026-10-20T03:55:27+00:00",
+   "author": "Claude",
+   "message": "v4.0: the Arcade, with higher or lower, digit pick, a daily wheel and scratch cards, two skins",
+   "tips": []
+  },
+  {
+   "sha": "bf1554df74b34d3e4127d9d5916aeb88e95350c7",
+   "date": "2026-10-20T03:47:20+00:00",
+   "author": "Claude",
+   "message": "v3.9: Spreadsheet skin, run summaries, collection sorting, badge mastery, Olive skin",
+   "tips": []
+  },
+  {
+   "sha": "a2ecd9391ca3e85c85a3cc1f55bea5833fd424dd",
+   "date": "2026-10-20T03:39:33+00:00",
+   "author": "Claude",
+   "message": "v3.8: bingo, bounty board, hunt three at once, stop on new badge, Endless limits, two skins",
+   "tips": []
+  },
+  {
+   "sha": "8a7b77b41a040bfc18c3b7fa4024695573eb0382",
+   "date": "2026-10-20T03:31:28+00:00",
+   "author": "Claude",
+   "message": "v3.7: daily streak, Streak Freeze, lucky hour, weekend coins, quest rerolls, weekly quests, two skins",
+   "tips": []
+  },
+  {
+   "sha": "dec433934136fb377876cf89a40b9fac832393a6",
+   "date": "2026-10-20T03:23:42+00:00",
+   "author": "Claude",
+   "message": "v3.6: token workshop, coin shop, Coin Magnet and Token Charm, auto-fuse, quick use, two skins",
+   "tips": []
+  },
+  {
+   "sha": "35b4887ba331c71a0bfd10eef4df07fa88c26c51",
+   "date": "2026-10-20T03:14:14+00:00",
+   "author": "Claude",
+   "message": "v3.5: how lucky you have been, odds calculator, records, milestones, log filters and CSV, two skins",
+   "tips": []
+  },
+  {
+   "sha": "0138a788d303f33a2c398761d3756c39ae76554d",
+   "date": "2026-10-20T03:08:54+00:00",
+   "author": "Claude",
+   "message": "v3.4: what's new with timestamps, keys, text size, notice switches, bigger batches, keep boosts going, two skins",
+   "tips": []
+  },
+  {
+   "sha": "6e30815bbca5cc4b0a7d0a3a53cd49216e1f8ecf",
+   "date": "2026-10-19T18:29:28-05:00",
+   "author": "gkson-lab",
+   "message": "Instant rolls and instant batches (v3.33)",
+   "tips": []
+  },
+  {
+   "sha": "f7117e12708654955a2a1993a4a7196513a7275f",
+   "date": "2026-10-18T19:20:02-05:00",
+   "author": "gkson-lab",
+   "message": "Label the release v3.32",
+   "tips": []
+  },
+  {
+   "sha": "199a0cbe6f5778f783a9573e7d957fee30c89ed6",
+   "date": "2026-10-18T19:19:46-05:00",
+   "author": "gkson-lab",
+   "message": "Endless in batches",
+   "tips": []
+  },
+  {
+   "sha": "51a559d8e09d66764e3e04eb829de30fd5c8b320",
+   "date": "2026-10-18T19:16:18-05:00",
+   "author": "gkson-lab",
+   "message": "Batch roll: x100, x1,000 or x5,000 in one go",
+   "tips": []
+  },
+  {
+   "sha": "92d3720a9d5430a63d2776899df6ce02e09efa00",
+   "date": "2026-10-18T19:14:46-05:00",
+   "author": "gkson-lab",
+   "message": "Label the release v3.31",
+   "tips": []
+  },
+  {
+   "sha": "71886f5924ed9d48bc10fd85878c2f086d2385c4",
+   "date": "2026-10-18T17:53:00-05:00",
+   "author": "gkson-lab",
+   "message": "Full-strength, fast luck on every difficulty",
+   "tips": []
+  },
+  {
+   "sha": "b5672ffb94e539c17628d1b5fb128ae91e714c10",
+   "date": "2026-10-18T17:25:53-05:00",
+   "author": "gkson-lab",
+   "message": "Label the release v3.3",
+   "tips": []
+  },
+  {
+   "sha": "c5e5b515c8fcbceb107067082432e53f82460519",
+   "date": "2026-10-18T17:22:44-05:00",
+   "author": "gkson-lab",
+   "message": "More rarity tiers and item tiers",
+   "tips": []
+  },
+  {
+   "sha": "1f39e94d27b7487cbb1ef02768811ae8910a7f3c",
+   "date": "2026-10-18T17:18:36-05:00",
+   "author": "gkson-lab",
+   "message": "Label the release v3.26",
+   "tips": []
+  },
+  {
+   "sha": "a9c3c0ddffe04bbf71ba5e0581662ae50beb1da6",
+   "date": "2026-10-18T16:38:38-05:00",
+   "author": "gkson-lab",
+   "message": "Luck items work on every difficulty",
+   "tips": []
+  },
+  {
+   "sha": "11ebd6ab994b28945a941f9f6d6ef5cbdd3b9759",
+   "date": "2026-10-18T16:35:27-05:00",
+   "author": "gkson-lab",
+   "message": "v3.25: spin a billion coins at once, Use all",
+   "tips": []
+  },
+  {
+   "sha": "fd6705c0b478fb54cbd291e68c15297a9ad04b1b",
+   "date": "2026-10-18T11:08:02-05:00",
+   "author": "gkson-lab",
+   "message": "Label the release v3.2",
+   "tips": []
+  },
+  {
+   "sha": "8f0f5ee6936c0d04435d0e8dfa1b6d18052bdb6c",
+   "date": "2026-10-18T10:43:52-05:00",
+   "author": "gkson-lab",
+   "message": "Difficulties and lucky tokens",
+   "tips": []
+  },
+  {
+   "sha": "a2aa5434304aeb02a47ec972961fb977a1259e50",
+   "date": "2026-10-18T10:29:52-05:00",
+   "author": "gkson-lab",
+   "message": "v3.05: instant huge luck, Turbo up to 5,000 a second",
+   "tips": []
+  },
+  {
+   "sha": "0f9eb0cf34ce146eb522b4c9caf9e6b991898c8c",
+   "date": "2026-10-17T21:53:22-05:00",
+   "author": "gkson-lab",
+   "message": "v3.1: Long Shot 10, doubled badges and achievements, three playable skins",
+   "tips": []
+  },
+  {
+   "sha": "37f6cc2f39e55840e27786cd0b48fba6e9dfcb80",
+   "date": "2026-10-17T21:24:39-05:00",
+   "author": "gkson-lab",
+   "message": "v3.0 (skins): skins, Console mode, new tiers, quests, prestige",
+   "tips": []
+  },
+  {
+   "sha": "3fbad2cce08addd688888ecb5341a29b33b8ce7b",
+   "date": "2026-10-17T19:20:51-05:00",
+   "author": "gkson-lab",
+   "message": "Label the release v2.8.3",
+   "tips": []
+  },
+  {
+   "sha": "fea7c1f5ec9def4a8c6d038adee6234d28ff16f6",
+   "date": "2026-10-17T19:20:19-05:00",
+   "author": "gkson-lab",
+   "message": "Slot rebalance: base prize 60% -> 40%, every other prize ×1.5, lower pities",
+   "tips": []
+  },
+  {
+   "sha": "e7921632cbef15b9bc91c442247fddcee0fe03ac",
+   "date": "2026-10-17T19:17:53-05:00",
+   "author": "gkson-lab",
+   "message": "v2.8.2: spin 20 at a time, or all your coins at once",
+   "tips": []
+  },
+  {
+   "sha": "664aee02b3b092ae7efa438f4c0d1cb9c1ef2fb5",
+   "date": "2026-10-17T19:15:37-05:00",
+   "author": "gkson-lab",
+   "message": "v2.8.1: steady screen in Turbo, every spin wins, coins 1 in 3",
+   "tips": []
+  },
+  {
+   "sha": "5809fd23cd28d016f5780d1c452419e1207c0bd5",
+   "date": "2026-10-17T19:08:54-05:00",
+   "author": "gkson-lab",
+   "message": "v2.8: slot overhaul",
+   "tips": []
+  },
+  {
+   "sha": "d2a2acead38821c8c582223f5bb946fd7b1e00c8",
+   "date": "2026-10-17T18:56:30-05:00",
+   "author": "gkson-lab",
+   "message": "Label the release v2.7 (major update)",
+   "tips": []
+  },
+  {
+   "sha": "1b595b5e38fffcb550a88622ce6f7056406af6f2",
+   "date": "2026-10-17T18:55:59-05:00",
+   "author": "gkson-lab",
+   "message": "Coin drops and a coin slot machine",
+   "tips": []
+  },
+  {
+   "sha": "eef5fa8dd4868c1aeaa567b9c8176bf9ffb44ba6",
+   "date": "2026-10-17T18:45:35-05:00",
+   "author": "gkson-lab",
+   "message": "v2.6.1: install each release's offline copy fresh from the CDN",
+   "tips": []
+  },
+  {
+   "sha": "cbf3890c2d6adf152c56bf20d9284917f0484841",
+   "date": "2026-10-17T18:43:23-05:00",
+   "author": "gkson-lab",
+   "message": "Label the release v2.6",
+   "tips": []
+  },
+  {
+   "sha": "2d26d7901a7071959c844d71c4c6efaaa297cf29",
+   "date": "2026-10-17T18:42:43-05:00",
+   "author": "gkson-lab",
+   "message": "Giant luck charms, drop boosters and fusing",
+   "tips": []
+  },
+  {
+   "sha": "db2256e3167d0f5d0007ae96903e22147ef046d3",
+   "date": "2026-10-17T18:19:49-05:00",
+   "author": "gkson-lab",
+   "message": "Label the inventory release v2.5 (Inventory update)",
+   "tips": []
+  },
+  {
+   "sha": "362e2d35f627e50c67339c99e7c96baac3152d16",
+   "date": "2026-10-17T18:19:06-05:00",
+   "author": "gkson-lab",
+   "message": "v2.3: inventory with luck boosts, saved per save file",
+   "tips": []
+  },
+  {
+   "sha": "4f4f734d9160e3a9f2374b7401e4e2f42a6a7364",
+   "date": "2026-10-17T18:12:10-05:00",
+   "author": "gkson-lab",
+   "message": "Point links at the renamed repository, gkson-lab/rngexp10",
+   "tips": []
+  },
+  {
+   "sha": "ab4f635960d613f17f1460d47cd27bbe6e192212",
+   "date": "2026-10-17T18:10:42-05:00",
+   "author": "gkson-lab",
+   "message": "v2.2: faster Endless, save files, sharing saves on GitHub",
+   "tips": []
+  },
+  {
+   "sha": "a3f28aba77778ff0f80702a4049f20f25b1106a9",
+   "date": "2026-10-17T17:32:24-05:00",
+   "author": "gkson-lab",
+   "message": "Faster Endless without lag, save files (work in progress for v2.2)",
+   "tips": []
+  },
+  {
+   "sha": "6a703fa6eff53d87f4b24492be0033b3e2132e9d",
+   "date": "2026-10-17T16:45:45-05:00",
+   "author": "gkson-lab",
+   "message": "v2.1: math modes, 100 multipliers, 1/N odds for every roll",
+   "tips": []
+  },
+  {
+   "sha": "fd4fa1c906f1032e8fcccc833f59b051430b4296",
+   "date": "2026-10-17T15:35:08-05:00",
+   "author": "gkson-lab",
+   "message": "v2.0.2: fetch fresh files when a new offline cache installs",
+   "tips": []
+  },
+  {
+   "sha": "062fb0060c6fa61d63b20d6137c7289e0657bf14",
+   "date": "2026-10-17T15:33:52-05:00",
+   "author": "gkson-lab",
+   "message": "v2.0.1: PNG app icons for install",
+   "tips": []
+  },
+  {
+   "sha": "e4d02108898764ca818e7dcd69b53c4cfb45fcd2",
+   "date": "2026-10-17T15:25:41-05:00",
+   "author": "gkson-lab",
+   "message": "v2.0: ten digits, Exponent mode, Endless with side leaderboards",
+   "tips": []
+  },
+  {
+   "sha": "531a4d7c81cf10db598b33f3985e3d905a6c338a",
+   "date": "2026-10-17T14:53:29-05:00",
+   "author": "gkson-lab",
+   "message": "v1.1: badge hunt, new-badge alerts, number checker, save export",
+   "tips": []
+  },
+  {
+   "sha": "8820f5f3c7578cbf5bec4a89b201cca70165c0cc",
+   "date": "2026-10-17T14:49:54-05:00",
+   "author": "gkson-lab",
+   "message": "RNGdle 9: nine-digit random number badge game",
+   "tips": []
+  }
+ ],
+ "pulls": []
+}

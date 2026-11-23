@@ -4,15 +4,22 @@
  "sector": "browser",
  "summary": "a ten-digit luck game with unlimited rolls, 300-odd badges and a multiplier reel. formerly rngdle 10.",
  "source": "https://github.com/gkson-lab/longshot10",
+ "repo": "gkson-lab/longshot10",
  "kind": "source",
  "first": "2026-10-17",
  "last": "2026-10-21",
  "commits": 55,
+ "pulls": {
+  "open": 0,
+  "total": 0
+ },
+ "signature": "1d233606ce490ed377d835da45c478d1f8ab9772",
  "versions": [
   {
    "id": "main",
    "branch": "main",
    "head": "002c30a",
+   "sha": "002c30acddfd951137a960b802d54fec40e1dea1",
    "date": "2026-10-21",
    "message": "Phones: command lines take input at full width, with a Run button and no zoom; all tabs visible",
    "commits": 55,
