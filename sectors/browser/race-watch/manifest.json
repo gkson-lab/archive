@@ -1,0 +1,51 @@
+{
+ "name": "race-watch",
+ "title": "race watch",
+ "sector": "browser",
+ "summary": "a live formula 1 companion for race day. timing tower, flags, safety cars and pit stops as they happen.",
+ "source": "https://github.com/gkson-lab/formula-one-live-data-tracker",
+ "kind": "source",
+ "first": "2026-10-16",
+ "last": "2026-10-16",
+ "commits": 1,
+ "versions": [
+  {
+   "id": "main",
+   "branch": "main",
+   "head": "3244992",
+   "date": "2026-10-16",
+   "message": "f1-data-tracker-v1.0",
+   "commits": 1,
+   "files": [
+    [
+     ".gitignore",
+     40
+    ],
+    [
+     "LICENSE",
+     1059
+    ],
+    [
+     "README.md",
+     2616
+    ],
+    [
+     "Start Race Watch.bat",
+     655
+    ],
+    [
+     "f1-race-watch.html",
+     170318
+    ],
+    [
+     "f1-relay.js",
+     15708
+    ],
+    [
+     "package.json",
+     427
+    ]
+   ]
+  }
+ ]
+}
