@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en" data-theme="prism">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>misfiled · gk-labs archive</title>
+  <meta name="color-scheme" content="dark light">
+  <link rel="icon" href="/archive/favicon.svg" type="image/svg+xml">
+  <script>
+    (function () {
+      var t = null;
+      try { t = localStorage.getItem('gk-theme'); } catch (e) {}
+      if (t !== 'prism' && t !== 'print' && t !== 'thermal') t = matchMedia('(prefers-color-scheme: light)').matches ? 'print' : 'prism';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+  <link rel="stylesheet" href="/archive/assets/css/archive.css">
+</head>
+<body>
+  <main>
+    <div class="wrap">
+      <section class="desk">
+        <p class="desk-eyebrow">404 · misfiled</p>
+        <h1><span class="ca" data-text="not on a shelf">not on a shelf</span></h1>
+        <p class="lede">nothing is filed at this address. it might be a version that got renamed, or a typo.</p>
+        <p style="margin-top:24px"><a class="btn" href="/archive/">back to the stacks</a></p>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

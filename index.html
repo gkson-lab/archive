@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en" data-theme="prism">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>gk-labs archive</title>
+  <meta name="description" content="the gk-labs archive: every version of everything gk has made, filed by sector.">
+  <meta name="author" content="gk">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#0b0b0d">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="gk-labs archive">
+  <meta property="og:description" content="every version of everything gk has made, filed by sector.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="assets/fonts/instrument-serif.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/recursive-var.woff2" as="font" type="font/woff2" crossorigin>
+  <script>
+    (function () {
+      var root = document.documentElement, theme = null, split = null;
+      try { theme = localStorage.getItem('gk-theme'); split = localStorage.getItem('gk-split'); } catch (e) {}
+      if (theme !== 'prism' && theme !== 'print' && theme !== 'thermal') {
+        theme = window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches ? 'print' : 'prism';
+      }
+      root.setAttribute('data-theme', theme);
+      if (split !== null && !isNaN(parseFloat(split))) root.style.setProperty('--disp', String(Math.min(2, Math.max(0, parseFloat(split)))));
+    })();
+  </script>
+  <link rel="stylesheet" href="assets/css/archive.css">
+  <script src="assets/js/archive.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#app">skip to the stacks</a>
+
+  <header class="top">
+    <a class="home ca" href="#/" data-text="gk-labs archive" aria-label="gk-labs archive, back to the stacks">gk-labs archive</a>
+    <div class="controls">
+      <div class="split">
+        <label for="split">split</label>
+        <input id="split" type="range" min="0" max="2" step="0.05" value="1" aria-describedby="split-help">
+        <span id="split-help" class="sr">how much the light splits across the page. zero turns it off.</span>
+      </div>
+      <fieldset class="themes">
+        <legend class="sr">chromatic theme</legend>
+        <label class="theme-opt" title="prism">
+          <input type="radio" name="theme" value="prism">
+          <span class="swatch sw-prism" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span class="sr">prism: rgb light on black</span>
+        </label>
+        <label class="theme-opt" title="print">
+          <input type="radio" name="theme" value="print">
+          <span class="swatch sw-print" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span class="sr">print: cmy ink on paper</span>
+        </label>
+        <label class="theme-opt" title="thermal">
+          <input type="radio" name="theme" value="thermal">
+          <span class="swatch sw-thermal" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span class="sr">thermal: the page through an infrared camera</span>
+        </label>
+      </fieldset>
+    </div>
+  </header>
+
+  <main id="app" aria-busy="true">
+    <div class="wrap">
+      <section class="desk">
+        <p class="desk-eyebrow">gk-labs · the stacks</p>
+        <h1><span class="ca" data-text="the archive">the archive</span></h1>
+        <p class="lede">opening the drawers...</p>
+        <noscript><p class="lede" style="margin-top:16px">the catalog needs javascript. every file is still in the <a href="https://github.com/gkson-lab/archive/tree/main/sectors">sectors folder on github</a>.</p></noscript>
+      </section>
+    </div>
+  </main>
+
+  <footer class="colophon-wrap" style="padding:0 var(--gutter) 64px">
+    <div class="colophon">
+      <h2>filing something new</h2>
+      <p>one command copies every branch of a repo onto a shelf, then the catalog rebuilds itself when main is published.</p>
+      <div class="cmd">
+        <code id="cmd-text">python3 tools/accession.py https://github.com/gkson-lab/&lt;repo&gt; &lt;sector&gt; --summary "what it is"</code>
+        <button class="btn small" type="button" id="cmd-copy">copy</button>
+        <span class="page-status" id="cmd-status" role="status"></span>
+      </div>
+      <p>made by gk · <a href="https://gkson-lab.github.io/gkson-lab/">gk-labs</a> · <a href="https://github.com/gkson-lab/archive">source</a></p>
+    </div>
+  </footer>
+  <script>
+    document.getElementById('cmd-copy').addEventListener('click', function () {
+      var code = document.getElementById('cmd-text'), status = document.getElementById('cmd-status');
+      var fail = function () {
+        var r = document.createRange(); r.selectNodeContents(code);
+        var s = getSelection(); s.removeAllRanges(); s.addRange(r);
+        status.textContent = "couldn't copy, it's selected for you";
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code.textContent).then(function () {
+          status.textContent = 'copied';
+          setTimeout(function () { status.textContent = ''; }, 2000);
+        }, fail);
+      } else fail();
+    });
+  </script>
+</body>
+</html>

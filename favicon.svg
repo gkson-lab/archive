@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <style>
+    .bg { fill: #0b0b0d; }
+    .k { stroke: #f3f1ec; }
+    @media (prefers-color-scheme: light) { .bg { fill: #f4f1ea; } .k { stroke: #141317; } }
+  </style>
+  <rect class="bg" width="64" height="64" rx="14"/>
+  <!-- a card-catalog drawer, split into its channels -->
+  <g fill="none" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round">
+    <rect x="11" y="17" width="42" height="30" rx="2" stroke="#ff3355" opacity="0.9" transform="translate(-1.2 -0.6)"/>
+    <rect x="11" y="17" width="42" height="30" rx="2" stroke="#3366ff" opacity="0.9" transform="translate(1.2 0.6)"/>
+    <rect class="k" x="11" y="17" width="42" height="30" rx="2"/>
+    <path class="k" d="M24 32h16"/>
+  </g>
+</svg>
