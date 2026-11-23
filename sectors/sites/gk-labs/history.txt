@@ -1,4 +1,13 @@
-23c8b2b  2026-11-22  gkson  Merge pull request #5 from gkson-lab/claude/happy-mendel-7xev5b (HEAD -> main, origin/main, origin/HEAD)
+f616967  2026-11-23  gkson  remove CLAUDE.md from the repo (origin/claude/happy-mendel-7xev5b)
+1457725  2026-11-23  gkson  add design laws to CLAUDE.md
+76fc4c7  2026-11-23  gkson  Merge pull request #8 from gkson-lab/claude/happy-mendel-7xev5b (HEAD -> main, origin/main, origin/HEAD)
+e885d5b  2026-11-23  gkson  Update README to simplify project description
+b3c987d  2026-11-23  gkson  remove cursor-driven light on the prism
+63e2896  2026-11-23  gkson  Merge pull request #7 from gkson-lab/claude/happy-mendel-7xev5b
+24fecbf  2026-11-23  gkson  stop hero flashing on mouse movement
+47ae6ab  2026-11-23  gkson  Merge pull request #6 from gkson-lab/claude/happy-mendel-7xev5b
+be10e3b  2026-11-23  gkson  fix profile stats: working badges + own roles/stats card
+23c8b2b  2026-11-22  gkson  Merge pull request #5 from gkson-lab/claude/happy-mendel-7xev5b
 1c20d68  2026-11-22  gkson  Merge branch 'main' into claude/happy-mendel-7xev5b
 80db398  2026-11-23  gkson  add merged PRs badge to profile
 0446ba6  2026-11-22  gkson  Update founder title in README
@@ -14,7 +23,6 @@ c2ec8e2  2026-11-22  gkson  Merge pull request #4 from gkson-lab/claude/happy-me
 fd9d2c1  2026-11-22  gkson  Merge pull request #3 from gkson-lab/claude/happy-mendel-7xev5b
 2c8c32e  2026-11-22  gkson  shaders, liquid glass and chromatic themes
 eb68392  2026-11-22  gkson  add about me site for github pages
-c084c52  2026-11-15  Claude  Add Zephyr: real-time 3D wind tunnel simulator (origin/claude/exciting-shannon-b4yeu2)
 4f31b9f  2026-11-11  gkson  Revise README introduction and project details
 d9fd6bf  2026-10-16  gkson  Update README.md (fix typo)
 fb32323  2026-10-16  gkson  Update README.md

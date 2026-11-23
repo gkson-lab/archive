@@ -8,21 +8,21 @@
  "kind": "source",
  "first": "2026-11-22",
  "last": "2026-11-23",
- "commits": 6,
+ "commits": 12,
  "pulls": {
   "open": 0,
   "total": 1
  },
- "signature": "7b5afdda5ab53c700f1a931ae73bdaf8b4d48498",
+ "signature": "bc6db4251fc41d218613505584ad78f2b3ca45b9",
  "versions": [
   {
    "id": "main",
    "branch": "main",
-   "head": "caffcfe",
-   "sha": "caffcfec3485f39e120f7d95f4c4a6a7e7804e54",
+   "head": "6333751",
+   "sha": "63337513e77314d24b3e7acc67c95f1aa6bfa7f6",
    "date": "2026-11-23",
-   "message": "Add a phone version: hosted link and a single-file offline build",
-   "commits": 6,
+   "message": "README: measured cloud output size (about 650 MB per hour)",
+   "commits": 12,
    "files": [
     [
      ".gitignore",
@@ -30,11 +30,11 @@
     ],
     [
      "README.md",
-     12226
+     20163
     ],
     [
      "cli.js",
-     5507
+     8391
     ],
     [
      "icon.svg",
@@ -42,7 +42,7 @@
     ],
     [
      "index.html",
-     16222
+     19631
     ],
     [
      "manifest.webmanifest",
@@ -54,15 +54,23 @@
     ],
     [
      "sw.js",
-     1144
+     1162
+    ],
+    [
+     ".github/workflows/simulate.yml",
+     3542
     ],
     [
      ".github/workflows/test.yml",
      284
     ],
     [
+     ".github/workflows/train.yml",
+     2699
+    ],
+    [
      "css/app.css",
-     17458
+     18153
     ],
     [
      "data/source/amex.json",
@@ -82,15 +90,23 @@
     ],
     [
      "dist/trade-box.html",
-     1582201
+     1642236
+    ],
+    [
+     "docs/DATASET.md",
+     7264
     ],
     [
      "js/app.js",
-     37958
+     46929
     ],
     [
      "js/bots.js",
-     21909
+     31689
+    ],
+    [
+     "js/breeding.js",
+     17920
     ],
     [
      "js/charts.js",
@@ -98,7 +114,7 @@
     ],
     [
      "js/market.js",
-     36195
+     39783
     ],
     [
      "js/news.js",
@@ -106,7 +122,7 @@
     ],
     [
      "js/report.js",
-     15057
+     16213
     ],
     [
      "js/rng.js",
@@ -114,7 +130,7 @@
     ],
     [
      "js/sim.js",
-     27434
+     41949
     ],
     [
      "js/symbols.js",
@@ -130,7 +146,7 @@
     ],
     [
      "tests/run.js",
-     6333
+     17121
     ],
     [
      "tools/build_single.js",
@@ -146,7 +162,11 @@
     ],
     [
      "tools/combine.js",
-     2914
+     3061
+    ],
+    [
+     "tools/train_model.py",
+     8201
     ],
     [
      "vendor/xlsx.LICENSE.txt",

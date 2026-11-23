@@ -8,21 +8,21 @@
  "kind": "source",
  "first": "2026-10-16",
  "last": "2026-11-23",
- "commits": 21,
+ "commits": 29,
  "pulls": {
   "open": 0,
-  "total": 4
+  "total": 7
  },
- "signature": "01d2173ca5e7d3eeab84023bf610de67df384778",
+ "signature": "bc8aa232aa18997f073376968da8ad25eb7a4977",
  "versions": [
   {
    "id": "main",
    "branch": "main",
-   "head": "23c8b2b",
-   "sha": "23c8b2b636b4b7cfcc2431b84a4fdbeaa8dd2373",
-   "date": "2026-11-22",
-   "message": "Merge pull request #5 from gkson-lab/claude/happy-mendel-7xev5b",
-   "commits": 20,
+   "head": "76fc4c7",
+   "sha": "76fc4c7e751573437a1e8d8384e670c101396cb3",
+   "date": "2026-11-23",
+   "message": "Merge pull request #8 from gkson-lab/claude/happy-mendel-7xev5b",
+   "commits": 27,
    "files": [
     [
      ".nojekyll",
@@ -38,7 +38,7 @@
     ],
     [
      "README.md",
-     1839
+     1926
     ],
     [
      "favicon.svg",
@@ -46,11 +46,15 @@
     ],
     [
      "index.html",
-     14141
+     13931
+    ],
+    [
+     ".github/scripts/card.py",
+     3134
     ],
     [
      "assets/css/site.css",
-     30238
+     30472
     ],
     [
      "assets/fonts/LICENSE-instrument-serif.txt",
@@ -78,7 +82,11 @@
     ],
     [
      "assets/js/site.js",
-     33432
+     33529
+    ],
+    [
+     "assets/readme/card.svg",
+     2104
     ],
     [
      "assets/readme/site-preview.jpg",
@@ -255,101 +263,249 @@
    ]
   },
   {
-   "id": "claude--exciting-shannon-b4yeu2",
-   "branch": "claude/exciting-shannon-b4yeu2",
-   "head": "c084c52",
-   "sha": "c084c5224a41cd1e9e814211a99f02eab9a3f835",
-   "date": "2026-11-15",
-   "message": "Add Zephyr: real-time 3D wind tunnel simulator",
-   "commits": 5,
+   "id": "claude--happy-mendel-7xev5b",
+   "branch": "claude/happy-mendel-7xev5b",
+   "head": "f616967",
+   "sha": "f616967a1be46f8c5a568d5f5dc8c14d2babda6a",
+   "date": "2026-11-23",
+   "message": "remove CLAUDE.md from the repo",
+   "commits": 27,
    "files": [
     [
+     ".nojekyll",
+     0
+    ],
+    [
+     "404.html",
+     2392
+    ],
+    [
+     "DESIGN.md",
+     11195
+    ],
+    [
      "README.md",
-     736
+     1955
     ],
     [
-     "wind-tunnel/.gitignore",
-     18
+     "favicon.svg",
+     534
     ],
     [
-     "wind-tunnel/README.md",
-     3624
+     "index.html",
+     13931
     ],
     [
-     "wind-tunnel/index.html",
-     7588
+     ".github/scripts/card.py",
+     3134
     ],
     [
-     "wind-tunnel/package-lock.json",
-     31561
+     "assets/css/site.css",
+     30472
     ],
     [
-     "wind-tunnel/package.json",
-     460
+     "assets/fonts/LICENSE-instrument-serif.txt",
+     4532
     ],
     [
-     "wind-tunnel/vite.config.js",
-     174
+     "assets/fonts/LICENSE-recursive.txt",
+     4380
     ],
     [
-     "wind-tunnel/docs/screenshot.png",
-     548519
+     "assets/fonts/instrument-serif-italic.woff2",
+     20124
     ],
     [
-     "wind-tunnel/src/loaders.js",
-     3164
+     "assets/fonts/instrument-serif.woff2",
+     19072
     ],
     [
-     "wind-tunnel/src/main.js",
-     30239
+     "assets/fonts/recursive-var.woff2",
+     99924
     ],
     [
-     "wind-tunnel/src/style.css",
-     11559
+     "assets/js/shaders.js",
+     17621
     ],
     [
-     "wind-tunnel/src/presets/index.js",
-     27508
+     "assets/js/site.js",
+     33529
     ],
     [
-     "wind-tunnel/src/presets/kit.js",
-     5281
+     "assets/readme/card.svg",
+     2104
     ],
     [
-     "wind-tunnel/src/sim/kernel.js",
-     10656
+     "assets/readme/site-preview.jpg",
+     151244
     ],
     [
-     "wind-tunnel/src/sim/voxelize.js",
-     6169
+     "assets/vendor/paper-shaders-0.0.80/LICENSE.txt",
+     11357
     ],
     [
-     "wind-tunnel/src/sim/worker.js",
-     2761
+     "assets/vendor/paper-shaders-0.0.80/NOTICE.txt",
+     91
     ],
     [
-     "wind-tunnel/src/viz/colormaps.js",
-     1936
+     "assets/vendor/paper-shaders-0.0.80/empty-pixel.js",
+     352
     ],
     [
-     "wind-tunnel/src/viz/field.js",
-     2426
+     "assets/vendor/paper-shaders-0.0.80/get-shader-color-from-string.js",
+     3242
     ],
     [
-     "wind-tunnel/src/viz/slice.js",
-     3962
+     "assets/vendor/paper-shaders-0.0.80/get-shader-noise-texture.js",
+     23695
     ],
     [
-     "wind-tunnel/src/viz/streaks.js",
+     "assets/vendor/paper-shaders-0.0.80/index.js",
+     5032
+    ],
+    [
+     "assets/vendor/paper-shaders-0.0.80/shader-color-spaces.js",
+     2642
+    ],
+    [
+     "assets/vendor/paper-shaders-0.0.80/shader-mount.js",
+     21508
+    ],
+    [
+     "assets/vendor/paper-shaders-0.0.80/shader-sizing.js",
+     716
+    ],
+    [
+     "assets/vendor/paper-shaders-0.0.80/shader-utils.js",
+     3628
+    ],
+    [
+     "assets/vendor/paper-shaders-0.0.80/types.js",
+     230
+    ],
+    [
+     "assets/vendor/paper-shaders-0.0.80/vertex-shader.js",
+     5328
+    ],
+    [
+     "assets/vendor/paper-shaders-0.0.80/shaders/color-panels.js",
+     6585
+    ],
+    [
+     "assets/vendor/paper-shaders-0.0.80/shaders/dithering.js",
      7364
     ],
     [
-     "wind-tunnel/src/viz/voxels.js",
-     2937
+     "assets/vendor/paper-shaders-0.0.80/shaders/dot-grid.js",
+     2969
     ],
     [
-     "wind-tunnel/test/kernel.test.js",
-     1774
+     "assets/vendor/paper-shaders-0.0.80/shaders/dot-orbit.js",
+     3344
+    ],
+    [
+     "assets/vendor/paper-shaders-0.0.80/shaders/fluted-glass.js",
+     10654
+    ],
+    [
+     "assets/vendor/paper-shaders-0.0.80/shaders/gem-smoke.js",
+     20782
+    ],
+    [
+     "assets/vendor/paper-shaders-0.0.80/shaders/god-rays.js",
+     3942
+    ],
+    [
+     "assets/vendor/paper-shaders-0.0.80/shaders/grain-gradient.js",
+     8631
+    ],
+    [
+     "assets/vendor/paper-shaders-0.0.80/shaders/halftone-cmyk.js",
+     9966
+    ],
+    [
+     "assets/vendor/paper-shaders-0.0.80/shaders/halftone-dots.js",
+     8435
+    ],
+    [
+     "assets/vendor/paper-shaders-0.0.80/shaders/heatmap.js",
+     12053
+    ],
+    [
+     "assets/vendor/paper-shaders-0.0.80/shaders/image-dithering.js",
+     5545
+    ],
+    [
+     "assets/vendor/paper-shaders-0.0.80/shaders/lens-distortion.js",
+     8931
+    ],
+    [
+     "assets/vendor/paper-shaders-0.0.80/shaders/liquid-metal.js",
+     22671
+    ],
+    [
+     "assets/vendor/paper-shaders-0.0.80/shaders/mesh-gradient.js",
+     3505
+    ],
+    [
+     "assets/vendor/paper-shaders-0.0.80/shaders/metaballs.js",
+     2876
+    ],
+    [
+     "assets/vendor/paper-shaders-0.0.80/shaders/neuro-noise.js",
+     1898
+    ],
+    [
+     "assets/vendor/paper-shaders-0.0.80/shaders/paper-texture.js",
+     6693
+    ],
+    [
+     "assets/vendor/paper-shaders-0.0.80/shaders/perlin-noise.js",
+     4995
+    ],
+    [
+     "assets/vendor/paper-shaders-0.0.80/shaders/pulsing-border.js",
+     7721
+    ],
+    [
+     "assets/vendor/paper-shaders-0.0.80/shaders/simplex-noise.js",
+     2548
+    ],
+    [
+     "assets/vendor/paper-shaders-0.0.80/shaders/smoke-ring.js",
+     3804
+    ],
+    [
+     "assets/vendor/paper-shaders-0.0.80/shaders/spiral.js",
+     2374
+    ],
+    [
+     "assets/vendor/paper-shaders-0.0.80/shaders/static-mesh-gradient.js",
+     3639
+    ],
+    [
+     "assets/vendor/paper-shaders-0.0.80/shaders/static-radial-gradient.js",
+     5599
+    ],
+    [
+     "assets/vendor/paper-shaders-0.0.80/shaders/swirl.js",
+     2642
+    ],
+    [
+     "assets/vendor/paper-shaders-0.0.80/shaders/voronoi.js",
+     3480
+    ],
+    [
+     "assets/vendor/paper-shaders-0.0.80/shaders/warp.js",
+     3681
+    ],
+    [
+     "assets/vendor/paper-shaders-0.0.80/shaders/water.js",
+     3370
+    ],
+    [
+     "assets/vendor/paper-shaders-0.0.80/shaders/waves.js",
+     2011
     ]
    ]
   }

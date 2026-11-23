@@ -156,6 +156,12 @@ button, input, select { font: inherit; color: inherit; }
 .check { display: flex; gap: 6px; align-items: center; font-size: 12px; color: var(--body); cursor: pointer; margin-top: 4px; }
 .check input { accent-color: var(--accent); width: 16px; height: 16px; }
 .exports { display: grid; gap: 8px; }
+.breed { border: 1px solid var(--border); border-radius: var(--r-lg); padding: 10px 12px 12px; display: grid; gap: 10px; margin: 0; min-width: 0; }
+.breed legend { padding: 0 6px; color: var(--text); font-weight: 600; font-size: 13px; }
+.breed fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.checks { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 4px; }
+.breed-summary { margin: 0; font-size: 12px; color: var(--text); background: var(--accent-weak); border-radius: var(--r-md); padding: 8px 10px; }
+.breed-summary.bad { background: var(--down-weak); color: var(--down); }
 .export-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 8px; }
 .export { border: 1px solid var(--border); border-radius: var(--r-lg); padding: 10px 12px; display: grid; gap: 6px; align-content: start; background: var(--card); }
 .export b { color: var(--text); font-weight: 600; }
@@ -238,6 +244,7 @@ dialog { overflow-x: hidden; }
 table { border-collapse: collapse; width: 100%; font-size: 12px; }
 th, td { padding: 6px 10px; text-align: right; border-bottom: 1px solid var(--border); white-space: nowrap; }
 th:first-child, td:first-child { text-align: left; }
+.tbl-wrap.wrap-last td:last-child { white-space: normal; min-width: 240px; text-align: left; }
 th { color: var(--muted); font-weight: 500; background: var(--card); position: sticky; top: 0; }
 .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
 .kpi { border: 1px solid var(--border); border-radius: var(--r-lg); padding: 10px 12px; background: var(--card); }
@@ -454,14 +461,49 @@ th { color: var(--muted); font-weight: 500; background: var(--card); position: s
       <div class="field"><label class="label" for="inSeed">Seed</label><input class="input" id="inSeed" type="number" min="1" max="2147483647" value="20270104" required></div>
       <div class="field"><label class="label" for="inFit">Breeding picks by</label>
         <select class="select full" id="inFit"><option value="return">Total return</option><option value="risk">Return minus half max drawdown</option></select></div>
+      <div class="field"><label class="label" for="inMut">Mutation</label>
+        <select class="select full" id="inMut"><option value="0.5">Low (0.5x)</option><option value="1" selected>Normal</option><option value="2">High (2x)</option><option value="4">Wild (4x)</option></select>
+        <span class="hint">How much children's genes and alleles drift from their parents'.</span></div>
     </div>
-    <div class="field"><label class="label" for="inBudget">Trade-level rows kept in memory</label>
-      <select class="select full" id="inBudget">
-        <option value="500000">500,000 (phones)</option>
-        <option value="1500000" selected>1.5 million</option>
-        <option value="4000000">4 million (desktop, lots of RAM)</option>
+    <fieldset class="breed" id="breedBox">
+      <legend>Breeding</legend>
+      <div class="field"><label class="label" for="inBreed">Preset</label>
+        <select class="select full" id="inBreed"></select></div>
+      <div class="grid2">
+        <div class="field"><label class="label" for="inPool">Who can breed</label>
+          <select class="select full" id="inPool" aria-describedby="poolHint"></select><span class="hint" id="poolHint"></span></div>
+        <div class="field"><label class="label" for="inPair">How they pair up</label>
+          <select class="select full" id="inPair" aria-describedby="pairHint"></select><span class="hint" id="pairHint"></span></div>
+        <div class="field" id="fThresh"><label class="label" for="inThresh" id="lblThresh">Return level (%)</label>
+          <input class="input" id="inThresh" type="number" step="0.1" inputmode="decimal"></div>
+        <div class="field" id="fThresh2"><label class="label" for="inThresh2">Upper return level (%)</label>
+          <input class="input" id="inThresh2" type="number" step="0.1" inputmode="decimal"></div>
+        <div class="field" id="fPct"><label class="label" for="inPct">Share of the generation (%)</label>
+          <input class="input" id="inPct" type="number" min="1" max="100" step="1"></div>
+        <div class="field" id="fBrackets"><label class="label" for="inBrackets">Brackets</label>
+          <select class="select full" id="inBrackets"></select></div>
+        <div class="field" id="fLevels"><label class="label" for="inLevels">Profit levels (%), comma-separated</label>
+          <input class="input" id="inLevels" type="text" inputmode="decimal" spellcheck="false">
+          <span class="hint">-2, 0, 2 makes four brackets: below -2%, -2 to 0%, 0 to 2%, 2% and up.</span></div>
+      </div>
+      <fieldset class="field" id="fAllowed"><legend class="label">Brackets that can breed</legend><div id="allowedBoxes" class="checks"></div></fieldset>
+      <p class="breed-summary" id="breedSummary"></p>
+    </fieldset>
+    <div class="field"><label class="label" for="inSamples">Training samples per day</label>
+      <select class="select full" id="inSamples">
+        <option value="0">Off (smallest data)</option>
+        <option value="50">50 stocks a day (lean)</option>
+        <option value="150" selected>150 stocks a day</option>
+        <option value="400">400 stocks a day (big model, big files)</option>
       </select>
-      <p class="hint">Long and endless runs drop the oldest generations' trade-level rows once this fills up. Generation, bot, genetics, market and genome tables are always kept in full. Download the generation CSVs as you go to keep everything, or use the CLI, which writes every generation to disk.</p>
+      <span class="hint">Stocks the bots hold and stocks with news that day are always sampled too. This is the biggest table in the training data.</span></div>
+    <div class="field"><label class="label" for="inBudget">Memory for trade-level data</label>
+      <select class="select full" id="inBudget">
+        <option value="3000000">About 150 MB (phones)</option>
+        <option value="8000000" selected>About 400 MB</option>
+        <option value="30000000">About 1.5 GB (desktop with plenty of memory)</option>
+      </select>
+      <p class="hint">Long and endless runs drop the oldest generations' trade-level rows once this fills up, and keep per-bot history for the last 300 generations. The generation and genetics tables are always kept in full. To keep everything, download the generation CSVs as you go, or use the CLI or the cloud workflow, which write every generation to disk.</p>
     </div>
     <p class="err" id="newErr" role="alert" hidden></p>
     <div class="dlg-actions">
@@ -501,10 +543,12 @@ th { color: var(--muted); font-weight: 500; background: var(--card); position: s
       <h3 id="hExports">Export</h3>
       <p class="hint" id="exportNote"></p>
       <div class="export-grid">
-        <div class="export"><b>Master workbook</b><span class="hint">All 15 tables with every generation stacked, plus one sheet per generation.</span>
+        <div class="export"><b>Master workbook</b><span class="hint">All 18 tables with every generation stacked, plus one sheet per generation.</span>
           <button type="button" class="btn primary" id="btnXlsx">Download .xlsx</button></div>
         <div class="export"><b>Generation CSVs</b><span class="hint">A .zip with a gen-0001, gen-0002 ... folder of CSVs for each generation, plus run-level CSVs.</span>
           <button type="button" class="btn" id="btnGenZip">Download .zip</button></div>
+        <div class="export"><b>Training data</b><span class="hint">Model-ready CSVs: labeled market samples, labeled round trips, bot generations and the family tree. Inputs start with x_, targets with y_.</span>
+          <button type="button" class="btn" id="btnTrainZip">Download .zip</button></div>
         <div class="export"><b>Every bot, individually</b><span class="hint">A .zip with a folder per bot: profile, generations, daily ledger, round trips, trades, positions, sector and symbol P/L.</span>
           <button type="button" class="btn" id="btnBotZip">Download .zip</button></div>
         <div class="export"><b>Bot ledger workbook</b><span class="hint">An index of every bot plus one daily-ledger sheet per bot.</span>
@@ -932,6 +976,7 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
     this.newsCount = new Int32Array(n); this.earnCount = new Int32Array(n); this.splitCount = new Int32Array(n);
     this.divPaid = new Float64Array(n);
     this.divByOffset = {};
+    this.earnOff = new Uint8Array(n);
     this.symIndex = Object.create(null);
     this.earningsByOffset = {};
 
@@ -959,6 +1004,7 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
       this.jumpRate[i] = (0.6 + smallness * 0.5) / 252;      // jumps per day
       this.earningsBias[i] = 0.25 * rr.normal();
       var off = T.hashStr("e" + row[0]) % 63;
+      this.earnOff[i] = off;
       (this.earningsByOffset[off] = this.earningsByOffset[off] || []).push(i);
       var lossMaker = row[5] < 2000 && (T.hashStr("l" + row[0]) % 100) < 55;
       this.eps[i] = lossMaker ? -row[4] * (0.02 + 0.13 * rr.next()) : row[4] / (SECTOR_PE[row[3]] * Math.exp(0.35 * rr.normal()));
@@ -1166,7 +1212,16 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
     return Math.round((100 * Math.sqrt(this.mVar * BPD * 252) * 1.12 + 2.5 + (this.regime >= 2 ? 4 : 0) + (this.regime === 3 ? 10 : 0)) * 100) / 100;
   };
 
+  /* True between the closing bell and the next open: prevClose has already rolled to today's close. */
+  Market.prototype.closed = function () { return this.bar === 0 && this.gBar > 0; };
+  Market.prototype.refClose = function (i) { return this.closed() ? this.dailyClose(i, 2) : this.prevClose[i]; };
+  /* Close k sessions before the current (or just-finished) session. */
+  Market.prototype.backClose = function (i, k) { return this.dailyClose(i, k + (this.closed() ? 1 : 0)); };
+  Market.prototype.indexRef = function () { return this.closed() ? this.idx.dC[(this.dayIdx - 2) % DAILY] : this.indexPrevClose; };
+  Market.prototype.sectorRet = function (s) { return this.closed() ? this.lastSectorRet[s] : this.sectorIdx[s] / this.sectorPrev[s] - 1; };
+
   Market.prototype.rsi = function (i) {
+    if (this.closed()) return this.rsiL[i] <= 0 ? 100 : 100 - 100 / (1 + this.rsiG[i] / this.rsiL[i]);
     var ch = this.price[i] - this.prevClose[i];
     var g = (this.rsiG[i] * 13 + Math.max(ch, 0)) / 14, l = (this.rsiL[i] * 13 + Math.max(-ch, 0)) / 14;
     return l <= 0 ? 100 : 100 - 100 / (1 + g / l);
@@ -1449,20 +1504,55 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
   Market.prototype.indexChangePct = function () { return this.index / this.indexPrevClose - 1; };
 
   /* Feature vector for bot brains, cached per bar. All values roughly in [-3, 3]. */
+  var FEATURE_KEYS = ["shortMom", "dayMom", "weekMom", "meanRev", "news", "vol", "volSurge", "mktTrend", "sectorTrend", "beta", "size", "rsi", "vwap", "earnYield", "shortInt"];
+  T.FEATURE_KEYS = FEATURE_KEYS;
+
+  /* Model-ready snapshot of one stock right now: raw values plus the 15 normalized bot inputs (x_f_*).
+   * Only uses information available at this moment (no look-ahead). */
+  Market.prototype.snapshot = function (i) {
+    var p = this.price[i], D = DAILY, r4 = function (x) { return isFinite(x) ? Math.round(x * 1e6) / 1e6 : ""; };
+    var dc = function (self, back) { return self.backClose(i, back); }, cl = this.closed() ? 1 : 0;
+    var sum = 0, sum2 = 0;
+    for (var k = 1; k <= 20; k++) { var c = dc(this, k); sum += c; sum2 += c * c; }
+    var mean = sum / 20, sd = Math.sqrt(Math.max(sum2 / 20 - mean * mean, 1e-12));
+    var frac = cl ? 1 : Math.max(this.bar, 1) / BPD, br = this.lastBreadth || {};
+    var idx1 = this.index / this.indexRef() - 1;
+    var idx5 = this.index / this.idx.dC[(this.dayIdx - 5 - cl + D) % D] - 1;
+    var s = this.sector[i], range = this.hiRange[i] - this.loRange[i];
+    var o = {
+      x_price: r4(p), x_logMcap: r4(Math.log10(this.marketCap(i) + 1)), x_beta: r4(this.beta[i]), x_idioVol: r4(this.idioVol[i]),
+      x_realVol: r4(Math.sqrt(this.ewVar[i] * 252)), x_ret1d: r4(p / this.refClose(i) - 1),
+      x_ret5d: r4(p / dc(this, 5) - 1), x_ret20d: r4(p / dc(this, 20) - 1), x_z20: r4((p - mean) / sd),
+      x_rsi14: r4(this.rsi(i)), x_atrPct: r4(this.atrPct[i]), x_vwapDist: r4(p / this.vwap(i) - 1),
+      x_volSurge: r4(this.dVolume[i] / (this.avgVol[i] * frac + 1)), x_sentiment: r4(this.sentiment[i]),
+      x_daysToEarnings: (this.earnOff[i] - this.day % 63 + 63) % 63, x_divYield: r4(this.divYield[i]), x_shortInt: r4(this.shortInt[i]),
+      x_epsYield: r4(this.eps[i] / p), x_rangePos: r4(range > 0 ? (p - this.loRange[i]) / range : 0.5), x_spreadBps: r4(this.quote(i).spread * 1e4),
+      x_sp500: this.sp[i], x_sectorCode: s, x_exchangeCode: this.exch[i], x_halted: this.isHalted(i) ? 1 : 0,
+      x_vix: this.vix(), x_regimeCode: this.regime, x_idxRet1d: r4(idx1), x_idxRet5d: r4(idx5),
+      x_sectorRet1d: r4(this.sectorRet(s)), x_adRatio: br.decliners ? r4(br.advancers / br.decliners) : "",
+      x_pctAbove20d: br.above20d !== undefined ? r4(br.above20d / this.n) : "", x_fedFunds: this.news.macro.fed, x_cpi: r4(this.news.macro.cpi),
+      x_unemployment: r4(this.news.macro.unemp)
+    };
+    var base = this.featuresOf(i);
+    for (k = 0; k < FEATURE_KEYS.length; k++) o["x_f_" + FEATURE_KEYS[k]] = r4(this.features[base + k]);
+    return o;
+  };
+
   Market.prototype.featuresOf = function (i) {
     var F = this.NF, base = i * F, f = this.features;
     if (this.featureStamp[i] === this.gBar) return base;
     var p = this.price[i];
     var dvol = Math.sqrt(Math.max(this.ewVar[i], 1e-6));
     var r6 = Math.log(p / this.intraClose(i, 6));
-    var r1d = Math.log(p / this.prevClose[i]);
-    var r5 = Math.log(p / this.dailyClose(i, 5));
+    var cl = this.closed() ? 1 : 0;
+    var r1d = Math.log(p / this.refClose(i));
+    var r5 = Math.log(p / this.backClose(i, 5));
     var sum = 0, sum2 = 0;
-    for (var k = 1; k <= 20; k++) { var c = this.dailyClose(i, k); sum += c; sum2 += c * c; }
+    for (var k = 1; k <= 20; k++) { var c = this.backClose(i, k); sum += c; sum2 += c * c; }
     var mean = sum / 20, sd = Math.sqrt(Math.max(sum2 / 20 - mean * mean, 1e-9));
-    var frac = Math.max(this.bar, 1) / BPD;
+    var frac = cl ? 1 : Math.max(this.bar, 1) / BPD;
     var vsurge = this.dVolume[i] / (this.avgVol[i] * frac + 1);
-    var idx5 = Math.log(this.index / this.idx.dC[(this.dayIdx - 5) % DAILY]);
+    var idx5 = Math.log(this.index / this.idx.dC[(this.dayIdx - 5 - cl + DAILY) % DAILY]);
     var s = this.sector[i];
     f[base] = Math.tanh(r6 / (dvol * 0.4));
     f[base + 1] = Math.tanh(r1d / dvol);
@@ -1472,7 +1562,7 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
     f[base + 5] = Math.tanh((dvol * Math.sqrt(252) - 0.35) * 2);
     f[base + 6] = Math.tanh(Math.log(vsurge + 0.05));
     f[base + 7] = Math.tanh(idx5 / 0.03);
-    f[base + 8] = Math.tanh(Math.log(this.sectorIdx[s] / this.sectorPrev[s]) / 0.012);
+    f[base + 8] = Math.tanh(Math.log(1 + this.sectorRet(s)) / 0.012);
     f[base + 9] = Math.tanh(this.beta[i] - 1);
     f[base + 10] = Math.tanh((Math.log10(this.mcap0[i] + 1) - 3.5) / 1.5);
     f[base + 11] = (this.rsi(i) - 50) / 25;
@@ -1611,6 +1701,36 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
     return imp;
   };
 
+  /* Apply trait phenotypes on top of the decoded continuous genes. */
+  function express(c, tr, geno) {
+    if (tr.temper === "Aggressive") { c.posSize = Math.min(0.36, c.posSize * 1.3); c.stopLoss *= 1.25; }
+    else { c.posSize *= 0.75; c.cashReserve = Math.min(0.6, c.cashReserve + 0.1); }
+    if (tr.horizon === "Scalper") { c.interval = Math.max(1, Math.round(c.interval / 2)); c.maxHold = Math.min(c.maxHold, 3); }
+    else { c.maxHold = Math.min(30, Math.round(c.maxHold * 1.5) + 1); c.takeProfit *= 1.2; }
+    c.newsMult = tr.news === "Newshound" ? 2 : 0.5;
+    c.herdBias = tr.herd === "Herd follower" ? 0.15 : tr.herd === "Mixed" ? 0.075 : 0;
+    c.sizeBias = tr.size === "Big caps" ? 0.12 : tr.size === "Small caps" ? -0.12 : 0;
+    c.shortOn = tr.short === "Short seller";
+    c.trail = tr.trail === "Trailing stops";
+    if (tr.conviction === "Bold") c.conviction = Math.min(1, c.conviction + 0.3); else c.conviction *= 0.5;
+    if (tr.greed === "Greedy") c.takeProfit *= 1.5; else if (tr.greed === "Quick to bank") c.takeProfit *= 0.6;
+    if (tr.loss === "Loss averse") c.stopLoss *= 0.6; else c.stopLoss *= 1.1;
+    c.entryFrom = tr.session === "Afternoon trader" ? 39 : 1;
+    c.entryTo = tr.session === "Morning trader" ? 39 : 77;
+    if (tr.spread === "Diversifier") { c.maxPos = Math.min(30, Math.round(c.maxPos * 1.5)); c.posSize *= 0.75; }
+    else { c.maxPos = Math.max(2, Math.round(c.maxPos * 0.6)); c.posSize = Math.min(0.36, c.posSize * 1.25); }
+    c.volBias = tr.vol === "Volatility seeker" ? 0.1 : tr.vol === "Calm seeker" ? -0.1 : 0;
+    c.fmult = new Float32Array(NF); for (var k = 0; k < NF; k++) c.fmult[k] = 1;
+    c.fmult[4] = c.newsMult;
+    if (tr.contrarian === "Contrarian") { c.fmult[0] = -1; c.fmult[1] = -1; c.fmult[2] = -1; }
+    c.sectors = null;
+    if (tr.focus === "Sector specialist" && geno) {
+      c.sectors = {};
+      c.sectors[SECTOR_ALLELES.indexOf(geno.sector[0])] = 1; c.sectors[SECTOR_ALLELES.indexOf(geno.sector[1])] = 1;
+    }
+    return c;
+  }
+
   function decode(p) {
     return {
       buyTh: 0.05 + 0.8 * p[0],
@@ -1628,17 +1748,115 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
     };
   }
 
+  /* Mendelian traits on 4 chromosomes. Each bot carries two copies of every gene (one from each parent).
+   * Uppercase = dominant allele. "dominant": one uppercase copy shows the dominant look; the recessive look needs
+   * two lowercase copies. "codominant": 2, 1 or 0 uppercase copies each look different. "multi": one of 12 sector
+   * alleles per copy. Genes on the same chromosome are linked: a parent passes on one copy of each chromosome,
+   * switching copies between neighbouring genes with probability RECOMBINATION (crossing over). */
+  var TRAITS = [
+    // chromosome 1: risk
+    { key: "temper", chr: 1, name: "Temperament", a: "A", mode: "dominant", dom: "Aggressive", rec: "Cautious", pDom: 0.5,
+      effect: "Aggressive: 30% bigger positions, 25% wider stops. Cautious: 25% smaller positions, 10% more cash held back." },
+    { key: "conviction", chr: 1, name: "Conviction", a: "K", mode: "dominant", dom: "Bold", rec: "Measured", pDom: 0.5,
+      effect: "Bold: sizes up hard on its strongest signals. Measured: keeps position sizes even." },
+    { key: "greed", chr: 1, name: "Greed", a: "G", mode: "codominant", looks: ["Quick to bank", "Balanced", "Greedy"], pDom: 0.5,
+      effect: "Greedy: profit target 50% higher. Quick to bank: profit target 40% lower." },
+    { key: "loss", chr: 1, name: "Loss handling", a: "L", mode: "dominant", dom: "Loss tolerant", rec: "Loss averse", pDom: 0.6,
+      effect: "Loss averse (ll): stop loss 40% tighter. Loss tolerant: stop loss 10% wider." },
+    // chromosome 2: style
+    { key: "horizon", chr: 2, name: "Horizon", a: "Q", mode: "dominant", dom: "Scalper", rec: "Swing trader", pDom: 0.45,
+      effect: "Scalper: decides twice as often, holds 3 days at most. Swing trader: holds 50% longer, 20% higher profit target." },
+    { key: "session", chr: 2, name: "Trading hours", a: "E", mode: "codominant", looks: ["Afternoon trader", "All-day trader", "Morning trader"], pDom: 0.5,
+      effect: "Morning traders only open new positions before 12:45, afternoon traders only after 12:45. Exits happen any time." },
+    { key: "trail", chr: 2, name: "Stops", a: "T", mode: "dominant", dom: "Trailing stops", rec: "Fixed stops", pDom: 0.5,
+      effect: "Trailing stops follow the best price reached; fixed stops stay at the entry level." },
+    { key: "spread", chr: 2, name: "Portfolio spread", a: "D", mode: "dominant", dom: "Diversifier", rec: "Concentrated", pDom: 0.5,
+      effect: "Diversifier: 50% more positions, each 25% smaller. Concentrated (dd): 40% fewer positions, each 25% bigger." },
+    // chromosome 3: signals
+    { key: "news", chr: 3, name: "News sense", a: "N", mode: "dominant", dom: "Newshound", rec: "Skeptic", pDom: 0.5,
+      effect: "Newshound: news sentiment counts double. Skeptic: counts half." },
+    { key: "herd", chr: 3, name: "Herding", a: "H", mode: "codominant", looks: ["Independent", "Mixed", "Herd follower"], pDom: 0.5,
+      effect: "Herd follower adds the market trend to every score (Mixed adds half)." },
+    { key: "contrarian", chr: 3, name: "Momentum view", a: "C", mode: "dominant", dom: "Trend reader", rec: "Contrarian", pDom: 0.7,
+      effect: "Contrarian (cc): reads every momentum signal backwards, buying what fell and selling what rose." },
+    { key: "vol", chr: 3, name: "Volatility appetite", a: "V", mode: "codominant", looks: ["Calm seeker", "Neutral on volatility", "Volatility seeker"], pDom: 0.5,
+      effect: "Volatility seekers tilt toward jumpy stocks, calm seekers away from them." },
+    // chromosome 4: focus
+    { key: "size", chr: 4, name: "Size taste", a: "B", mode: "codominant", looks: ["Small caps", "Any size", "Big caps"], pDom: 0.5,
+      effect: "Big caps tilts scores toward large companies, Small caps toward small ones." },
+    { key: "short", chr: 4, name: "Short selling", a: "R", mode: "dominant", dom: "Long only", rec: "Short seller", pDom: 0.62,
+      effect: "Only bots with two recessive r alleles (rr) sell short." },
+    { key: "focus", chr: 4, name: "Focus", a: "S", mode: "dominant", dom: "Generalist", rec: "Sector specialist", pDom: 0.65,
+      effect: "Sector specialists (ss) only open positions in their two favourite sectors." },
+    { key: "sector", chr: 4, name: "Favourite sectors", a: null, mode: "multi",
+      effect: "Two sector alleles, one from each parent. They only change trading for sector specialists." },
+    { key: "mutator", chr: 4, name: "Genome stability", a: "M", mode: "dominant", dom: "Stable genome", rec: "Mutator", pDom: 0.7,
+      effect: "Mutators (mm) pass on genes with three times the usual mutation rate." }
+  ];
+  var CHROMOSOMES = [1, 2, 3, 4].map(function (c) { return TRAITS.filter(function (t) { return t.chr === c; }); });
+  var CHR_NAMES = { 1: "Risk", 2: "Style", 3: "Signals", 4: "Focus" };
+  var ALLELE_MUTATION = 0.02, RECOMBINATION = 0.25;
+  var SECTOR_ALLELES = "abcdefghijkl";
+
+  function randomGenotype(r) {
+    var g = {};
+    TRAITS.forEach(function (t) {
+      g[t.key] = t.mode === "multi" ? SECTOR_ALLELES[r.int(0, 11)] + SECTOR_ALLELES[r.int(0, 11)]
+        : (r.next() < t.pDom ? t.a : t.a.toLowerCase()) + (r.next() < t.pDom ? t.a : t.a.toLowerCase());
+    });
+    return g;
+  }
+  function mutate(t, al, r) {
+    if (t.mode === "multi") { var k; do { k = SECTOR_ALLELES[r.int(0, 11)]; } while (k === al); return k; }
+    return al === t.a ? t.a.toLowerCase() : t.a;
+  }
+  /* One parent's contribution: a copy of each chromosome, with crossing over and mutation. */
+  function gamete(g, traits, r, mut) {
+    var out = {}, rate = ALLELE_MUTATION * mut * (traits && traits.mutator === "Mutator" ? 3 : 1);
+    CHROMOSOMES.forEach(function (chr) {
+      var h = r.next() < 0.5 ? 0 : 1;
+      chr.forEach(function (t, k) {
+        if (k > 0 && r.next() < RECOMBINATION) h = 1 - h;
+        var al = g[t.key][h];
+        if (r.next() < rate) al = mutate(t, al, r);
+        out[t.key] = al;
+      });
+    });
+    return out;
+  }
+  /* Child genotype: first copy from parent A, second from parent B (phase is kept, so linkage carries on). */
+  function inheritGenotype(ga, gb, r, mut, ta, tb) {
+    var x = gamete(ga, ta, r, mut), y = gamete(gb, tb, r, mut), g = {};
+    TRAITS.forEach(function (t) { g[t.key] = x[t.key] + y[t.key]; });
+    return g;
+  }
+  function sectorName(al) { return T.SECTORS ? T.SECTORS[SECTOR_ALLELES.indexOf(al)] : al; }
+  function phenotype(t, gt) {
+    if (t.mode === "multi") return gt[0] === gt[1] ? sectorName(gt[0]) : sectorName(gt[0]) + " & " + sectorName(gt[1]);
+    var up = (gt[0] === t.a ? 1 : 0) + (gt[1] === t.a ? 1 : 0);
+    if (t.mode === "codominant") return t.looks[up];
+    return up > 0 ? t.dom : t.rec;
+  }
+  function phenotypes(g) { var o = {}; TRAITS.forEach(function (t) { o[t.key] = phenotype(t, g[t.key]); }); return o; }
+  /* Genotype as people write it: dominant allele first; sectors by name. */
+  function showGenotype(t, gt) {
+    if (t.mode === "multi") return sectorName(gt[0]) + " / " + sectorName(gt[1]);
+    return gt[0] === t.a ? gt : gt[1] + gt[0];
+  }
+
   var NAME_A = ["Ash", "Brine", "Cobalt", "Dune", "Ember", "Flint", "Gale", "Harbor", "Iris", "Jade", "Kestrel", "Lumen", "Mako", "Nova",
     "Onyx", "Pike", "Quill", "Rook", "Slate", "Talon", "Umber", "Vale", "Wren", "Xeno", "Yarrow", "Zephyr"];
 
-  function Bot(id, gen, genome, parents, rng, startCash) {
+  function Bot(id, gen, genome, parents, rng, startCash, genotype) {
     this.id = id;
+    this.genotype = genotype || randomGenotype(rng);
+    this.traits = phenotypes(this.genotype);
     this.startCash = startCash > 0 ? startCash : START_CASH;
     this.gen = gen;            // generation this bot was born in
     this.genome = genome;
     this.parents = parents || [];
     this.name = NAME_A[id % NAME_A.length] + "-" + String(id).padStart(3, "0");
-    this.cfg = decode(genome.p);
+    this.cfg = express(decode(genome.p), this.traits, this.genotype);
     this.offset = rng.int(0, 11);
     this.style = styleOf(genome);
     this.age = 0;
@@ -1675,13 +1893,13 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
   }
 
   Bot.prototype.score = function (m, i) {
-    var base = m.featuresOf(i), f = m.features, w = this.genome.w, out = w[NW - 1];
+    var base = m.featuresOf(i), f = m.features, w = this.genome.w, out = w[NW - 1], c = this.cfg, fm = c.fmult;
     for (var h = 0; h < H; h++) {
       var a = w[NF * H + h];
-      for (var k = 0; k < NF; k++) a += f[base + k] * w[k * H + h];
+      for (var k = 0; k < NF; k++) a += f[base + k] * fm[k] * w[k * H + h];
       out += Math.tanh(a) * w[NF * H + H + h];
     }
-    return Math.tanh(out);
+    return Math.tanh(out + c.herdBias * f[base + 7] + c.sizeBias * f[base + 10] + c.volBias * f[base + 5]);
   };
 
   Bot.prototype.markEquity = function (m) {
@@ -1710,7 +1928,7 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
     this.roundTrips.push({ sym: sym, sector: sec, side: long ? "LONG" : "SHORT", qty: qty, entryDay: p.day, entryBar: p.bar, entryPx: p.avg,
       exitDay: m.day, exitBar: m.bar, exitPx: px, pnl: pnl, ret: ret, holdBars: m.gBar - p.gBar, mfe: mfe, mae: mae,
       entryScore: p.score, entryReason: p.why, exitReason: reason, regimeIn: p.regime, regimeOut: m.REGIMES[m.regime].name,
-      fees: p.fees, entryRsi: p.rsi });
+      fees: p.fees, entryRsi: p.rsi, snap: p.snap });
   };
 
   Bot.prototype.fill = function (m, i, qty, reason, score) {   // qty > 0 buy, < 0 sell
@@ -1730,7 +1948,7 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
     var p = this.pos[i], realized = null;
     if (!p) {
       this.pos[i] = { q: qty, avg: px, day: m.day, bar: m.bar, gBar: m.gBar, peak: px, trough: px, score: score === undefined ? null : score,
-        why: reason, regime: m.REGIMES[m.regime].name, fees: fee, rsi: Math.round(m.rsi(i) * 10) / 10 };
+        why: reason, regime: m.REGIMES[m.regime].name, fees: fee, rsi: Math.round(m.rsi(i) * 10) / 10, snap: m.snapshot(i) };
       this.nPos++;
     } else if ((p.q > 0) === (qty > 0)) {
       p.avg = (p.avg * p.q + px * qty) / (p.q + qty); p.q += qty; p.fees += fee;
@@ -1814,11 +2032,12 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
       if ((q > 0 && s < c.sellTh) || (q < 0 && s > -c.sellTh)) this.fill(m, +k, -q, "signal");
     }
     if (m.bar >= m.BARS_PER_DAY - 1) return true;  // no new entries into the closing print
+    if (m.bar < c.entryFrom || m.bar > c.entryTo) return true;   // outside this bot's trading hours (a trait)
 
     var pool = m.pool(), best = [], worst = [], buyTh = c.buyTh;
     for (var j = 0; j < pool.length; j++) {
       var i = pool[j];
-      if (this.pos[i]) continue;
+      if (this.pos[i] || (c.sectors && !c.sectors[m.sector[i]])) continue;
       var sc = this.score(m, i);
       if (sc > buyTh) best.push([sc, i]);
       else if (c.shortOn && sc < -buyTh) worst.push([sc, i]);
@@ -1946,10 +2165,287 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
     };
   };
 
+  T.TRAITS = TRAITS;
+  T.genetics = { random: randomGenotype, inherit: inheritGenotype, phenotypes: phenotypes, phenotype: phenotype, show: showGenotype,
+    gamete: gamete, CHROMOSOMES: CHROMOSOMES, CHR_NAMES: CHR_NAMES, RECOMBINATION: RECOMBINATION, ALLELE_MUTATION: ALLELE_MUTATION };
   T.Genome = Genome;
   T.Bot = Bot;
   T.decodeGenes = decode;
   T.BOT_CONST = { NF: NF, H: H, NW: NW, PARAMS: PARAMS, FEATURE_NAMES: FEATURE_NAMES, START_CASH: START_CASH, SAMPLES_PER_DAY: SAMPLES_PER_DAY };
+})(window.T = window.T || {});
+
+</script>
+<script>/* js/breeding.js */
+/* Breeding rules, built from three choices:
+ *   pool     who is allowed to breed (winners, losers, profitable, above a return, chosen brackets, ...)
+ *   pairing  how the pool pairs up (similar rank, opposite rank, same bracket, next bracket down, ...)
+ *   brackets how the generation is cut into brackets (quartiles, thirds, ... or profit levels you set)
+ * Presets are named combinations; changing any part makes it "custom".
+ * The population schedule never changes (20 -> 10 -> 20 ...): if a pool is smaller than the number of
+ * parents needed, its bots parent more than one pair; if fewer than 2 qualify, the next bots in line fill in. */
+(function (T) {
+  "use strict";
+
+  var POOLS = [
+    { key: "breeders", name: "The usual breeders", desc: "Gen 1: everyone. Gen 2: all of them. Gen 3 on: the surviving top half." },
+    { key: "all", name: "Everyone", desc: "Every bot in the generation can breed." },
+    { key: "winners", name: "Winners (top half)", desc: "Only the top half of the rankings breeds." },
+    { key: "losers", name: "Losers (bottom half)", desc: "Only the bottom half of the rankings breeds." },
+    { key: "split", name: "Winners and losers, kept apart", desc: "Half the pairs come from the top half, half from the bottom half; the halves never mix." },
+    { key: "profitable", name: "Profitable bots", desc: "Only bots that made money this generation." },
+    { key: "unprofitable", name: "Unprofitable bots", desc: "Only bots that lost money this generation." },
+    { key: "beatIndex", name: "Beat the SIM 500", desc: "Only bots whose return beat the index over the same days." },
+    { key: "lostToIndex", name: "Lost to the SIM 500", desc: "Only bots that trailed the index." },
+    { key: "above", name: "Return at or above a level", desc: "Only bots at or above the return you set." },
+    { key: "below", name: "Return below a level", desc: "Only bots below the return you set." },
+    { key: "between", name: "Return between two levels", desc: "Only bots inside the return range you set." },
+    { key: "topPct", name: "Top X%", desc: "Only the best X% of the rankings." },
+    { key: "bottomPct", name: "Bottom X%", desc: "Only the worst X% of the rankings." },
+    { key: "brackets", name: "Chosen brackets", desc: "Only the brackets you tick." }
+  ];
+  var PAIRINGS = [
+    { key: "similar", name: "Similar rank", desc: "Best with next best: 1st + 2nd, 3rd + 4th ..." },
+    { key: "opposite", name: "Opposite rank", desc: "Best with worst: 1st + last, 2nd + second-to-last ..." },
+    { key: "random", name: "Random", desc: "Partners drawn at random." },
+    { key: "closestProfit", name: "Closest profit", desc: "Each bot with the one whose return is nearest its own." },
+    { key: "sameBracket", name: "Same bracket only", desc: "Partners always come from the same bracket." },
+    { key: "crossBracket", name: "Next bracket down", desc: "Each bracket pairs with the bracket just below it." },
+    { key: "mirrorBracket", name: "Mirror brackets", desc: "Top bracket with bottom bracket, 2nd with second-to-last ..." },
+    { key: "tournament", name: "Tournament", desc: "Each parent is the best of 3 drawn at random." },
+    { key: "roulette", name: "Rank roulette", desc: "Better ranks are drawn more often." },
+    { key: "outbreed", name: "Least related", desc: "Each bot picks the partner it shares the least ancestry with." },
+    { key: "inbreed", name: "Most related", desc: "Each bot picks its closest relative, preferring its own house." }
+  ];
+  var BRACKETS = [
+    { key: "halves", name: "Halves", n: 2 }, { key: "thirds", name: "Thirds", n: 3 }, { key: "quartiles", name: "Quartiles", n: 4 },
+    { key: "quintiles", name: "Fifths", n: 5 }, { key: "deciles", name: "Tenths", n: 10 }, { key: "profit", name: "Profit levels (set your own)" }
+  ];
+  var PRESETS = [
+    { key: "ranked", name: "Ranked neighbours", pool: "breeders", pairing: "similar" },
+    { key: "winners", name: "Winners with winners", pool: "winners", pairing: "similar" },
+    { key: "losers", name: "Losers with losers", pool: "losers", pairing: "similar" },
+    { key: "assortative", name: "Winners with winners and losers with losers", pool: "split", pairing: "similar" },
+    { key: "disassortative", name: "Winners with losers", pool: "all", pairing: "opposite" },
+    { key: "profitable", name: "Only profitable bots", pool: "profitable", pairing: "similar" },
+    { key: "unprofitable", name: "Only losing bots", pool: "unprofitable", pairing: "similar" },
+    { key: "beatIndex", name: "Only bots that beat the SIM 500", pool: "beatIndex", pairing: "similar" },
+    { key: "above", name: "Only bots above a return you set", pool: "above", pairing: "similar", threshold: 1 },
+    { key: "between", name: "Only bots in a return range you set", pool: "between", pairing: "random", threshold: -1, threshold2: 1 },
+    { key: "topPct", name: "Top 25% mate at random", pool: "topPct", pairing: "random", pct: 25 },
+    { key: "bottomPct", name: "Bottom 25% mate at random", pool: "bottomPct", pairing: "random", pct: 25 },
+    { key: "sameBracket", name: "Within each quartile", pool: "all", pairing: "sameBracket", brackets: "quartiles" },
+    { key: "crossBracket", name: "Each quartile with the one below", pool: "all", pairing: "crossBracket", brackets: "quartiles" },
+    { key: "mirrorBracket", name: "Top quartile with bottom quartile", pool: "all", pairing: "mirrorBracket", brackets: "quartiles" },
+    { key: "topBrackets", name: "Top two quartiles only", pool: "brackets", pairing: "similar", brackets: "quartiles", allowed: [0, 1] },
+    { key: "profitLevels", name: "Within profit levels (below -2%, -2 to 0%, 0 to 2%, above 2%)", pool: "all", pairing: "sameBracket", brackets: "profit", levels: [-2, 0, 2] },
+    { key: "random", name: "Random mating", pool: "breeders", pairing: "random" },
+    { key: "tournament", name: "Tournament", pool: "all", pairing: "tournament" },
+    { key: "roulette", name: "Rank roulette", pool: "all", pairing: "roulette" },
+    { key: "outbreed", name: "Avoid relatives", pool: "breeders", pairing: "outbreed" },
+    { key: "inbreed", name: "Keep it in the family", pool: "breeders", pairing: "inbreed" },
+    { key: "custom", name: "Custom", pool: "breeders", pairing: "similar" }
+  ];
+  var LOSER_POOLS = { losers: 1, unprofitable: 1, lostToIndex: 1, below: 1, bottomPct: 1 };
+
+  function find(list, key) { for (var i = 0; i < list.length; i++) if (list[i].key === key) return list[i]; return null; }
+
+  /* Fill in a full settings object from a preset key plus any explicit overrides. */
+  function normalize(c) {
+    c = c || {};
+    var p = find(PRESETS, c.breeding) || PRESETS[0];
+    var s = {
+      preset: p.key,
+      pool: c.breedPool || p.pool, pairing: c.breedPairing || p.pairing,
+      brackets: c.brackets || p.brackets || "quartiles",
+      levels: (c.levels || p.levels || [-2, 0, 2]).map(Number).filter(isFinite).sort(function (a, b) { return a - b; }),
+      threshold: c.threshold !== undefined && c.threshold !== "" ? +c.threshold : (p.threshold !== undefined ? p.threshold : 0),
+      threshold2: c.threshold2 !== undefined && c.threshold2 !== "" ? +c.threshold2 : (p.threshold2 !== undefined ? p.threshold2 : 2),
+      pct: c.pct > 0 ? Math.min(100, +c.pct) : (p.pct || 25),
+      allowed: (c.allowed || p.allowed || [0]).map(Number)
+    };
+    if (!find(POOLS, s.pool)) throw new Error("Unknown breeding pool: " + s.pool);
+    if (!find(PAIRINGS, s.pairing)) throw new Error("Unknown pairing: " + s.pairing);
+    if (!find(BRACKETS, s.brackets)) throw new Error("Unknown brackets: " + s.brackets);
+    if (s.threshold2 < s.threshold) { var t = s.threshold; s.threshold = s.threshold2; s.threshold2 = t; }
+    if (!s.levels.length) s.levels = [0];
+    return s;
+  }
+
+  function bracketCount(s) { return s.brackets === "profit" ? s.levels.length + 1 : find(BRACKETS, s.brackets).n; }
+
+  /* Labels, best bracket first. */
+  function bracketLabels(s) {
+    var n = bracketCount(s), out = [], i;
+    if (s.brackets === "profit") {
+      var L = s.levels;
+      for (i = L.length; i >= 0; i--) {
+        out.push(i === L.length ? "at or above " + L[i - 1] + "%" : i === 0 ? "below " + L[0] + "%" : L[i - 1] + "% to " + L[i] + "%");
+      }
+      return out;
+    }
+    var nm = { 2: "Half", 3: "Third", 4: "Quartile", 5: "Fifth", 10: "Tenth" }[n] || "Bracket";
+    for (i = 0; i < n; i++) out.push(nm + " " + (i + 1) + (i === 0 ? " (top)" : i === n - 1 ? " (bottom)" : ""));
+    return out;
+  }
+
+  /* Bracket index (0 = best) for every bot in the ranked list. */
+  function bracketsOf(ranked, s) {
+    var N = ranked.length, n = bracketCount(s);
+    return ranked.map(function (b, k) {
+      if (s.brackets !== "profit") return Math.min(n - 1, Math.floor(k * n / N));
+      var pct = (b.lastReturn || 0) * 100, below = 0;
+      for (var j = 0; j < s.levels.length; j++) if (pct >= s.levels[j]) below++;
+      return s.levels.length - below;
+    });
+  }
+
+  function describe(s) {
+    var pool = find(POOLS, s.pool).name, pair = find(PAIRINGS, s.pairing).name, extra = "";
+    if (s.pool === "above") extra = " (" + s.threshold + "% or better)";
+    else if (s.pool === "below") extra = " (below " + s.threshold + "%)";
+    else if (s.pool === "between") extra = " (" + s.threshold + "% to " + s.threshold2 + "%)";
+    else if (s.pool === "topPct" || s.pool === "bottomPct") pool = pool.replace("X", s.pct);
+    var usesBr = s.pool === "brackets" || /Bracket$/.test(s.pairing);
+    var br = usesBr ? "; brackets: " + (s.brackets === "profit" ? "profit levels " + s.levels.join(", ") + "%" : find(BRACKETS, s.brackets).name.toLowerCase()) +
+      (s.pool === "brackets" ? " (" + s.allowed.map(function (i) { return bracketLabels(s)[i]; }).filter(Boolean).join(", ") + ")" : "") : "";
+    var preset = find(PRESETS, s.preset);
+    return (preset && preset.key !== "custom" ? preset.name + ": " : "Custom: ") + pool + extra + ", paired by " + pair.toLowerCase() + br;
+  }
+
+  /* --- pairing helpers --- */
+  function chunk(order, n) {
+    var out = [], L = order.length;
+    if (L < 2) return out;
+    // first pass 1+2, 3+4 ...; if more pairs are needed, bots parent again with the next-nearest partner
+    for (var d = 1; out.length < n; d = d % (L - 1) + 1)
+      for (var off = 0; off < 2 && out.length < n; off++)
+        for (var i = off; i + d < L && out.length < n; i += 2) out.push([order[i], order[i + d]]);
+    return out;
+  }
+  function interleave(order) { var o = [], i = 0, j = order.length - 1; while (i <= j) { o.push(order[i++]); if (i <= j) o.push(order[j--]); } return o; }
+
+  function pairPool(sim, pool, n, s, br, rankOf) {
+    var r = sim.rng, out = [], i, order = pool.slice().sort(function (a, b) { return rankOf(a) - rankOf(b); });
+    if (order.length < 2 || n <= 0) return out;
+    switch (s.pairing) {
+      case "opposite": return chunk(interleave(order), n);
+      case "random":
+        for (i = order.length - 1; i > 0; i--) { var j = Math.floor(r.next() * (i + 1)), t = order[i]; order[i] = order[j]; order[j] = t; }
+        return chunk(order, n);
+      case "closestProfit":
+        return chunk(order.slice().sort(function (a, b) { return (b.lastReturn || 0) - (a.lastReturn || 0); }), n);
+      case "tournament":
+      case "roulette": {
+        var N = order.length;
+        var draw = s.pairing === "tournament"
+          ? function () { var best = N; for (var k = 0; k < 3; k++) best = Math.min(best, Math.floor(r.next() * N)); return order[best]; }
+          : function () { var tot = N * (N + 1) / 2, x = r.next() * tot; for (var k = 0; k < N; k++) { x -= N - k; if (x <= 0) return order[k]; } return order[N - 1]; };
+        for (i = 0; i < n; i++) {
+          var a = draw(), b = a;
+          for (var tries = 0; b === a && tries < 50; tries++) b = draw();
+          if (b === a) b = order[order[0] === a ? 1 : 0];
+          out.push([a, b]);
+        }
+        return out;
+      }
+      case "outbreed":
+      case "inbreed": {
+        while (out.length < n) {
+          var left = order.slice();
+          while (left.length > 1 && out.length < n) {
+            var me = left.shift(), bestK = 0, bestV = s.pairing === "outbreed" ? Infinity : -Infinity;
+            for (var k = 0; k < left.length; k++) {
+              var v = sim.kin(me, left[k]) + (s.pairing === "inbreed" && left[k].house === me.house ? 0.01 : 0);
+              if (s.pairing === "outbreed" ? v < bestV - 1e-12 : v > bestV + 1e-12) { bestV = v; bestK = k; }
+            }
+            out.push([me, left.splice(bestK, 1)[0]]);
+          }
+        }
+        return out;
+      }
+      case "sameBracket":
+      case "crossBracket":
+      case "mirrorBracket": {
+        var groups = {};
+        order.forEach(function (b) { (groups[br.get(b)] = groups[br.get(b)] || []).push(b); });
+        var G = Object.keys(groups).map(Number).sort(function (a, b) { return a - b; }).map(function (k) { return groups[k]; });
+        if (s.pairing === "sameBracket") {
+          var usable = G.filter(function (g) { return g.length >= 2; });
+          if (!usable.length) return chunk(order, n);
+          var cap = usable.map(function (g) { return Math.floor(g.length / 2); }), tot = cap.reduce(function (x, y) { return x + y; }, 0);
+          var want = cap.map(function (c) { return Math.floor(n * c / tot); }), given = want.reduce(function (x, y) { return x + y; }, 0);
+          for (i = 0; given < n; i = (i + 1) % usable.length) { want[i]++; given++; }
+          usable.forEach(function (g, gi) { out = out.concat(chunk(g, want[gi])); });
+          return out;
+        }
+        if (G.length < 2) return chunk(order, n);
+        var used = G.map(function () { return 0; });
+        function next(gi) { var g = G[gi]; return g[used[gi]++ % g.length]; }
+        var lanes = s.pairing === "crossBracket" ? G.length - 1 : Math.ceil(G.length / 2);
+        for (i = 0; i < n; i++) {
+          var lane = i % lanes, ga = lane, gb = s.pairing === "crossBracket" ? lane + 1 : G.length - 1 - lane;
+          if (ga === gb) { var pr = chunk(G[ga].length >= 2 ? G[ga] : order, 1)[0]; out.push(pr); continue; }
+          out.push([next(ga), next(gb)]);
+        }
+        return out;
+      }
+      default: return chunk(order, n);
+    }
+  }
+
+  /* Pick nPairs parent pairs. ranked: whole generation, best first. elite: the usual breeders. */
+  function select(sim, ranked, nPairs, elite) {
+    var s = sim.breedSettings, N = ranked.length, rank = new Map(), br = new Map(), labels = bracketLabels(s), idxRet = sim.lastIdxRet || 0;
+    ranked.forEach(function (b, k) { rank.set(b, k); });
+    bracketsOf(ranked, s).forEach(function (x, k) { br.set(ranked[k], x); });
+    var rankOf = function (b) { return rank.get(b); }, ret = function (b) { return (b.lastReturn || 0) * 100; };
+    var half = Math.ceil(N / 2), note = "";
+    function qualify(fn) { return ranked.filter(fn); }
+    function topUp(pool, loserSide) {
+      if (pool.length >= 2) return pool;
+      var extra = (loserSide ? ranked.slice().reverse() : ranked).filter(function (b) { return pool.indexOf(b) < 0; });
+      note = "fewer than 2 bots qualified; the next in line filled in";
+      return pool.concat(extra.slice(0, 2 - pool.length));
+    }
+    var pairs;
+    if (s.pool === "split") {
+      var top = ranked.slice(0, half), bottom = ranked.slice(half), nTop = Math.ceil(nPairs / 2);
+      pairs = pairPool(sim, top, nTop, s, br, rankOf).concat(pairPool(sim, topUp(bottom, true), nPairs - nTop, s, br, rankOf));
+    } else {
+      var pool;
+      switch (s.pool) {
+        case "all": pool = ranked.slice(); break;
+        case "winners": pool = ranked.slice(0, half); break;
+        case "losers": pool = ranked.slice(N - half); break;
+        case "profitable": pool = qualify(function (b) { return b.lastReturn > 0; }); break;
+        case "unprofitable": pool = qualify(function (b) { return !(b.lastReturn > 0); }); break;
+        case "beatIndex": pool = qualify(function (b) { return b.lastReturn > idxRet; }); break;
+        case "lostToIndex": pool = qualify(function (b) { return !(b.lastReturn > idxRet); }); break;
+        case "above": pool = qualify(function (b) { return ret(b) >= s.threshold; }); break;
+        case "below": pool = qualify(function (b) { return ret(b) < s.threshold; }); break;
+        case "between": pool = qualify(function (b) { return ret(b) >= s.threshold && ret(b) <= s.threshold2; }); break;
+        case "topPct": pool = ranked.slice(0, Math.max(2, Math.round(N * s.pct / 100))); break;
+        case "bottomPct": pool = ranked.slice(N - Math.max(2, Math.round(N * s.pct / 100))); break;
+        case "brackets": pool = qualify(function (b) { return s.allowed.indexOf(br.get(b)) >= 0; }); break;
+        default: pool = elite.slice();
+      }
+      pairs = pairPool(sim, topUp(pool, !!LOSER_POOLS[s.pool]), nPairs, s, br, rankOf);
+    }
+    while (pairs.length < nPairs) pairs.push([ranked[0], ranked[1]]);   // safety net for tiny populations
+    return pairs.slice(0, nPairs).map(function (p) {
+      var a = p[0], b = p[1];
+      if (rankOf(b) < rankOf(a)) { var t = a; a = b; b = t; }   // the better-ranked parent passes on the house name
+      return { a: a, b: b, meta: { rule: s.preset, label: sim.ruleName, rankA: rankOf(a) + 1, rankB: rankOf(b) + 1,
+        retA: a.lastReturn, retB: b.lastReturn, bracketA: labels[br.get(a)], bracketB: labels[br.get(b)], note: note } };
+    });
+  }
+
+  T.Breeding = { POOLS: POOLS, PAIRINGS: PAIRINGS, BRACKETS: BRACKETS, PRESETS: PRESETS, normalize: normalize, describe: describe,
+    select: select, bracketLabels: bracketLabels, bracketCount: bracketCount, bracketsOf: bracketsOf, find: find };
+  // older code and the CLI list presets under this name
+  T.BREEDING_RULES = PRESETS.filter(function (p) { return p.key !== "custom"; }).map(function (p) {
+    return { key: p.key, name: p.name, desc: describe(normalize({ breeding: p.key })) };
+  });
 })(window.T = window.T || {});
 
 </script>
@@ -1965,14 +2461,20 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
  *
  * Data: summary tables (generations, genetics, bots, genomes, market/sector daily) are kept for the whole run.
  * Detail tables (trades, round trips, bot daily ledger, intraday equity, positions, news) are kept up to
- * cfg.detailBudget rows; past that the oldest generations' detail is dropped from memory. Every generation's
+ * cfg.detailBudget cells (rows x columns, roughly 50 bytes each in memory); past that the oldest generations'
+ * detail is dropped from memory. Per-bot summary tables (bots, genomes, market and sector days) and retired bots
+ * are kept for the last cfg.historyGens generations. Generations and genetics are kept in full. Every generation's
  * rows are also handed to listeners ("generation" event, d.rows) so the CLI can write them to disk as it goes.
  */
 (function (T) {
   "use strict";
 
   var BASE = 20;
-  var DETAIL = ["trades", "roundTrips", "botDaily", "equityIntraday", "positions", "news"];
+  var DETAIL = ["trades", "roundTrips", "botDaily", "equityIntraday", "positions", "news", "mlSamples"];
+
+  var HOUSES = ["Varga", "Okoro", "Lindqvist", "Moreau", "Tanaka", "Castell", "Adeyemi", "Kowal", "Ferreira", "Haldane", "Ivers", "Nakamura",
+    "Rourke", "Sato", "Bellamy", "Quist", "Duarte", "Falk", "Gallo", "Mbeki", "Oyelaran", "Petrov", "Reyes", "Strand", "Thorne", "Vance",
+    "Wexler", "Yilmaz", "Zoric", "Abara"];
 
   function Sim(cfg) {
     this.cfg = {
@@ -1982,9 +2484,19 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
       seed: cfg.seed || 20270104,
       fitness: cfg.fitness || "return",
       maxSymbols: cfg.maxSymbols || 0,
-      detailBudget: cfg.detailBudget || 1500000,
-      startCash: cfg.startCash > 0 ? cfg.startCash : 100000
+      detailBudget: cfg.detailBudget || 8000000,
+      historyGens: cfg.historyGens > 0 ? cfg.historyGens : 300,
+      startCash: cfg.startCash > 0 ? cfg.startCash : 100000,
+      breeding: cfg.breeding || "ranked",
+      breedPool: cfg.breedPool, breedPairing: cfg.breedPairing, brackets: cfg.brackets, levels: cfg.levels,
+      threshold: cfg.threshold, threshold2: cfg.threshold2, pct: cfg.pct, allowed: cfg.allowed,
+      mutation: cfg.mutation > 0 ? cfg.mutation : 1,
+      samplesPerDay: cfg.samplesPerDay >= 0 ? cfg.samplesPerDay : 150
     };
+    this.breedSettings = T.Breeding.normalize(this.cfg);
+    this.ruleName = T.Breeding.describe(this.breedSettings);
+    this.kinMemo = new Map();
+    this.pending = [];
     this.forever = this.cfg.generations === 0;
     this.rng = new T.RNG(this.cfg.seed);
     this.market = new T.Market({ seed: this.cfg.seed, maxSymbols: this.cfg.maxSymbols });
@@ -1998,7 +2510,7 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
     this.trimmedThrough = 0;
     this.fund = 1; this.idxFund = 1;
     this.log = { generations: [], genetics: [], bots: [], genomes: [], market: [], sectors: [],
-      trades: [], roundTrips: [], botDaily: [], equityIntraday: [], positions: [], news: [] };
+      trades: [], roundTrips: [], botDaily: [], equityIntraday: [], positions: [], news: [], mlSamples: [] };
     this.cur = this.emptyRows();
     this.allBots = Object.create(null);
     this.alive = Object.create(null);
@@ -2011,6 +2523,7 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
     this.regimeDays = [0, 0, 0, 0];
     this.listeners = [];
     this.startedAt = Date.now();
+    this.sampleRng = this.rng.fork("samples");
     var self = this;
     this.market.on(function (t, d) {
       if (t === "dividend") self.bots.forEach(function (b) { b.onDividend(d.i, d.amount); });
@@ -2018,14 +2531,20 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
     });
   }
 
-  Sim.prototype.emptyRows = function () { return { trades: [], roundTrips: [], botDaily: [], equityIntraday: [], positions: [], news: [], market: [], sectors: [] }; };
+  Sim.prototype.emptyRows = function () { return { trades: [], roundTrips: [], botDaily: [], equityIntraday: [], positions: [], news: [], mlSamples: [], market: [], sectors: [] }; };
   Sim.prototype.on = function (fn) { this.listeners.push(fn); };
   Sim.prototype.emit = function (t, d) { for (var k = 0; k < this.listeners.length; k++) this.listeners[k](t, d); };
   Sim.prototype.markAlive = function () { var a = Object.create(null); this.bots.forEach(function (b) { a[b.id] = 1; }); this.alive = a; };
 
-  Sim.prototype.newBot = function (genome, parents) {
-    var b = new T.Bot(this.nextId++, this.gen, genome, parents.map(function (p) { return p.name; }), this.rng, this.cfg.startCash);
+  Sim.prototype.newBot = function (genome, parents, meta) {
+    var gt = parents.length ? T.genetics.inherit(parents[0].genotype, parents[1].genotype, this.rng, this.cfg.mutation, parents[0].traits, parents[1].traits) : null;
+    var b = new T.Bot(this.nextId++, this.gen, genome, parents.map(function (p) { return p.name; }), this.rng, this.cfg.startCash, gt);
     b.parentIds = parents.map(function (p) { return p.id; });
+    var founders = this.nextId - 2;
+    b.house = parents.length ? parents[0].house : HOUSES[founders % HOUSES.length] + (founders >= HOUSES.length ? " " + (Math.floor(founders / HOUSES.length) + 1) : "");
+    b.lineageDepth = parents.length ? 1 + Math.max(parents[0].lineageDepth, parents[1].lineageDepth) : 0;
+    b.inbreeding = parents.length ? this.kin(parents[0], parents[1]) : 0;
+    b.breedMeta = meta || { rule: "founder", label: "founder", rankA: "", rankB: "", retA: "", retB: "", bracketA: "", bracketB: "", note: "" };
     this.allBots[b.id] = b;
     var c = b.cfg, imp = genome.importance(), names = T.BOT_CONST.FEATURE_NAMES;
     var top = Array.prototype.map.call(imp, function (v, k) { return [v, k]; }).sort(function (a, z) { return z[0] - a[0]; }).slice(0, 3)
@@ -2033,8 +2552,41 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
     this.log.genomes.push({ id: b.id, bot: b.name, born: this.gen, parents: b.parents.join(" + "), parentIds: b.parentIds.join(" "), style: b.style,
       topFeatures: top, buyThreshold: c.buyTh, sellThreshold: c.sellTh, maxPositions: c.maxPos, positionSize: c.posSize, stopLoss: c.stopLoss,
       takeProfit: c.takeProfit, decisionEveryBars: c.interval, maxHoldDays: c.maxHold, cashReserve: c.cashReserve, shorts: c.shortOn ? "yes" : "no",
-      trailingStop: c.trail ? "yes" : "no", conviction: c.conviction, genome: JSON.stringify(genome.toJSON()) });
+      trailingStop: c.trail ? "yes" : "no", conviction: c.conviction, house: b.house, lineageDepth: b.lineageDepth, inbreeding: r4(b.inbreeding),
+      genotype: this.genotypeString(b), traits: this.traitString(b), breedingRule: b.breedMeta.rule, breedingDetail: b.breedMeta.label,
+      parentBrackets: b.breedMeta.bracketA ? b.breedMeta.bracketA + " + " + b.breedMeta.bracketB : "",
+      parentReturns: b.breedMeta.retA === "" ? "" : pctStr(b.breedMeta.retA) + " + " + pctStr(b.breedMeta.retB), breedingNote: b.breedMeta.note,
+      parentRanks: b.breedMeta.rankA === "" ? "" : b.breedMeta.rankA + " + " + b.breedMeta.rankB, genome: JSON.stringify(genome.toJSON()) });
     return b;
+  };
+
+  Sim.prototype.genotypeString = function (b) { return T.TRAITS.map(function (t) { return t.mode === "multi" ? b.genotype[t.key] : T.genetics.show(t, b.genotype[t.key]); }).join(" "); };
+  Sim.prototype.traitString = function (b) { return T.TRAITS.map(function (t) { return b.traits[t.key]; }).join(", "); };
+  /* Columns describing a bot's genetics, prefixed so they can be joined onto any table. */
+  Sim.prototype.geneCols = function (b, prefix) {
+    var o = {}, c = b.cfg;
+    prefix = prefix || "";
+    o[prefix + "house"] = b.house; o[prefix + "lineageDepth"] = b.lineageDepth; o[prefix + "inbreeding"] = r4(b.inbreeding);
+    T.TRAITS.forEach(function (t) { o[prefix + "gt_" + t.key] = T.genetics.show(t, b.genotype[t.key]); o[prefix + "trait_" + t.key] = b.traits[t.key]; });
+    o[prefix + "buyTh"] = r4(c.buyTh); o[prefix + "sellTh"] = r4(c.sellTh); o[prefix + "maxPos"] = c.maxPos; o[prefix + "posSize"] = r4(c.posSize);
+    o[prefix + "stopLoss"] = r4(c.stopLoss); o[prefix + "takeProfit"] = r4(c.takeProfit); o[prefix + "interval"] = c.interval; o[prefix + "maxHold"] = c.maxHold;
+    o[prefix + "cashReserve"] = r4(c.cashReserve); o[prefix + "conviction"] = r4(c.conviction);
+    return o;
+  };
+
+  /* Wright's kinship coefficient (recursive, exact within the last 12 generations). The inbreeding
+   * coefficient of a child equals the kinship of its parents. */
+  Sim.prototype.kin = function (x, y) {
+    if (!x || !y) return 0;
+    if (x.id === y.id) return 0.5 * (1 + (x.inbreeding || 0));
+    if (x.id > y.id) { var t = x; x = y; y = t; }
+    if (!y.parentIds || !y.parentIds.length || y.gen < this.gen - 12) return 0;
+    var key = x.id + "|" + y.id, v = this.kinMemo.get(key);
+    if (v !== undefined) return v;
+    v = 0.5 * (this.kin(x, this.allBots[y.parentIds[0]]) + this.kin(x, this.allBots[y.parentIds[1]]));
+    if (this.kinMemo.size > 300000) this.kinMemo.clear();
+    this.kinMemo.set(key, v);
+    return v;
   };
 
   Sim.prototype.expectedSize = function (g) { var m = this.cfg.mult; return g === 2 ? BASE / 2 * m : BASE * m; };
@@ -2051,6 +2603,8 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
 
   function barTime(b) { var mins = 570 + b * 5, h = Math.floor(mins / 60), mm = mins % 60; return (h < 10 ? "0" : "") + h + ":" + (mm < 10 ? "0" : "") + mm; }
   function r4(x) { return x === null || x === undefined || !isFinite(x) ? x : Math.round(x * 10000) / 10000; }
+  function pctStr(x) { return (x >= 0 ? "+" : "") + (x * 100).toFixed(2) + "%"; }
+  function r6(x) { return x === null || x === undefined || !isFinite(x) ? x : Math.round(x * 1e6) / 1e6; }
   function r2(x) { return x === null || x === undefined || !isFinite(x) ? x : Math.round(x * 100) / 100; }
 
   Sim.prototype.onClose = function () {
@@ -2091,6 +2645,8 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
           unrealizedPct: (px / p.avg - 1) * (p.q > 0 ? 1 : -1), daysHeld: m.day - p.day, entryScore: p.score });
       }
     }
+    this.labelSamples(cur);
+    if (this.cfg.samplesPerDay > 0) this.sampleMarket(cur, d);
     this.genDay++;
     this.emit("day", d);
     if (this.genDay >= this.cfg.daysPerGen) this.endGeneration();
@@ -2105,10 +2661,14 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
     var rows = this.bots.map(function (b) { var s = b.stats(); return { bot: b, s: s, fit: self.fitnessOf(s) }; });
     rows.sort(function (a, b) { return b.fit - a.fit; });
     var idxRet = m.index / this.genStartIndex - 1;
+    this.lastIdxRet = idxRet;
     var botRows = [];
     rows.forEach(function (r, k) {
       var b = r.bot, s = r.s, c = b.cfg;
       b.history.push({ gen: g, ret: s.ret, rank: k + 1 });
+      b.lastRank = k + 1;
+      b.lastGen = g;
+      b.lastReturn = s.ret;
       botRows.push({
         gen: g, rank: k + 1, id: b.id, bot: b.name, born: b.gen, age: b.age, parents: b.parents.join(" + "), style: b.style,
         returnPct: s.ret, pnl: r2(s.pnl), finalEquity: r2(s.equity), annualizedReturn: s.annReturn, vsIndex: s.ret - idxRet,
@@ -2125,8 +2685,15 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
         bestTradePct: s.bestTrade, worstTradePct: s.worstTrade, symbolsTraded: s.symbolsTraded,
         bestSector: s.bestSector, worstSector: s.worstSector, bestSymbol: s.bestSymbol, worstSymbol: s.worstSymbol,
         maxPositions: c.maxPos, positionSize: c.posSize, stopLoss: c.stopLoss, takeProfit: c.takeProfit,
-        decisionEveryBars: c.interval, maxHoldDays: c.maxHold, shorts: c.shortOn ? "yes" : "no", trailingStop: c.trail ? "yes" : "no"
+        decisionEveryBars: c.interval, maxHoldDays: c.maxHold, shorts: c.shortOn ? "yes" : "no", trailingStop: c.trail ? "yes" : "no",
+        house: b.house, lineageDepth: b.lineageDepth, inbreeding: r4(b.inbreeding), genotype: self.genotypeString(b), traits: self.traitString(b),
+        breedingRule: b.breedMeta.rule, parentRanks: b.breedMeta.rankA === "" ? "" : b.breedMeta.rankA + " + " + b.breedMeta.rankB,
+        parentReturns: b.breedMeta.retA === "" ? "" : pctStr(b.breedMeta.retA) + " + " + pctStr(b.breedMeta.retB),
+        parentBrackets: b.breedMeta.bracketA ? b.breedMeta.bracketA + " + " + b.breedMeta.bracketB : "", breedingDetail: b.breedMeta.label,
+        breedingNote: b.breedMeta.note
       });
+      var tr = T.TRAITS, brow = botRows[botRows.length - 1];
+      tr.forEach(function (t) { brow["trait_" + t.key] = b.traits[t.key]; });
       var start = b.intraCurve.length - b.idxCurve.length;
       for (var t = 0; t < b.idxCurve.length; t++) {
         var sample = t, day = self.genStartDay + Math.floor(sample / 13);
@@ -2147,6 +2714,11 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
           holdBars: rt.holdBars, holdDays: r2(rt.holdBars / m.BARS_PER_DAY), pnl: r2(rt.pnl), returnPct: rt.ret, mfePct: rt.mfe, maePct: rt.mae,
           entrySignal: rt.entryScore === null ? "" : rt.entryScore, entryRsi: rt.entryRsi, entryReason: rt.entryReason, exitReason: rt.exitReason,
           regimeIn: rt.regimeIn, regimeOut: rt.regimeOut, fees: r2(rt.fees) });
+        var last = cur.roundTrips[cur.roundTrips.length - 1], gc = self.geneCols(b, "bot_");
+        for (var key in rt.snap) last[key] = rt.snap[key];
+        for (key in gc) last[key] = gc[key];
+        last.y_return = rt.ret; last.y_pnl = r2(rt.pnl); last.y_win = rt.pnl > 0 ? 1 : 0; last.y_holdDays = r2(rt.holdBars / m.BARS_PER_DAY);
+        last.y_mfe = rt.mfe; last.y_mae = rt.mae;
       }
     });
 
@@ -2183,11 +2755,13 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
     this.regimeDays = [0, 0, 0, 0];
 
     // move this generation's rows into the run log
-    var genRows = { generation: [summary], genetics: [this.log.genetics[this.log.genetics.length - 1]], bots: botRows,
+    var born = this.log.genomes.filter(function (r) { return r.born === g; });
+    var genRows = { generation: [summary], genetics: [this.log.genetics[this.log.genetics.length - 1]], bots: botRows, mlSamples: cur.mlSamples, births: born,
       trades: cur.trades, roundTrips: cur.roundTrips, botDaily: cur.botDaily, equityIntraday: cur.equityIntraday,
       positions: cur.positions, news: cur.news, market: cur.market, sectors: cur.sectors };
     push(this.log.bots, botRows); push(this.log.market, cur.market); push(this.log.sectors, cur.sectors);
-    DETAIL.forEach(function (k) { push(self.log[k], cur[k]); });
+    var cut = this.trimmedThrough;
+    DETAIL.forEach(function (k) { push(self.log[k], cut ? cur[k].filter(function (r) { return r.gen > cut; }) : cur[k]); });
     this.cur = this.emptyRows();
     this.trim();
 
@@ -2206,18 +2780,28 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
 
   /* Keep detail tables under the row budget by dropping the oldest generations' detail. */
   Sim.prototype.trim = function () {
-    var log = this.log, total = 0, self = this;
-    DETAIL.forEach(function (k) { total += log[k].length; });
+    var log = this.log, total = 0, self = this, cols = {};
+    // count cells, not rows: a training row has ~90 columns, a bot-day row ~20
+    DETAIL.forEach(function (k) { cols[k] = log[k].length ? Object.keys(log[k][log[k].length - 1]).length : 0; total += log[k].length * cols[k]; });
     while (total > this.cfg.detailBudget && this.trimmedThrough < this.gen - 1) {
       var g = this.trimmedThrough + 1;
       DETAIL.forEach(function (k) {
-        var a = log[k], n = 0;
-        while (n < a.length && a[n].gen <= g) n++;
-        if (n) { a.splice(0, n); total -= n; }
+        var before = log[k].length;
+        log[k] = log[k].filter(function (r) { return r.gen > g; });   // training samples can finish labelling a generation late
+        total -= (before - log[k].length) * cols[k];
       });
       this.trimmedThrough = g;
     }
     if (this.trimmedThrough) this.emit("trimmed", this.trimmedThrough);
+    // long runs: keep per-bot history and retired bots for the last historyGens generations only
+    var cut = this.gen - this.cfg.historyGens;
+    if (cut > (this.historyFrom || 0)) {
+      this.historyFrom = cut;
+      ["bots", "market", "sectors"].forEach(function (k) { if (log[k].length && log[k][0].gen <= cut) log[k] = log[k].filter(function (r) { return r.gen > cut; }); });
+      if (log.genomes.length && log.genomes[0].born <= cut) log.genomes = log.genomes.filter(function (r) { return r.born > cut || self.alive[r.id]; });
+      for (var id in this.allBots) { var b = this.allBots[id]; if (b.gen <= cut && !this.alive[id] && b.lastGen !== undefined && b.lastGen <= cut) delete this.allBots[id]; }
+      this.kinMemo.clear();
+    }
     return self;
   };
 
@@ -2235,22 +2819,45 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
     var styles = {};
     bots.forEach(function (b) { styles[b.style] = (styles[b.style] || 0) + 1; });
     row.styles = Object.keys(styles).sort(function (a, b) { return styles[b] - styles[a]; }).map(function (s) { return s + " x" + styles[s]; }).join("; ");
+    row.breedingRule = this.ruleName;
+    row.avgInbreeding = T.stat.mean(bots.map(function (b) { return b.inbreeding; }));
+    row.maxInbreeding = Math.max.apply(null, bots.map(function (b) { return b.inbreeding; }));
+    row.avgLineageDepth = T.stat.mean(bots.map(function (b) { return b.lineageDepth; }));
+    var houses = {};
+    bots.forEach(function (b) { houses[b.house] = (houses[b.house] || 0) + 1; });
+    var hk = Object.keys(houses).sort(function (a, b) { return houses[b] - houses[a]; });
+    row.housesAlive = hk.length; row.topHouse = hk[0] + " x" + houses[hk[0]]; row.houseShares = hk.map(function (h) { return h + " x" + houses[h]; }).join("; ");
+    T.TRAITS.forEach(function (t) {
+      if (t.mode === "multi") {
+        var cnt = {};
+        bots.forEach(function (b) { for (var q = 0; q < 2; q++) { var nm = T.genetics.show(t, b.genotype[t.key]).split(" / ")[q]; cnt[nm] = (cnt[nm] || 0) + 1; } });
+        row["alleles_" + t.key] = Object.keys(cnt).sort(function (a, b) { return cnt[b] - cnt[a]; }).map(function (k) { return k + " x" + cnt[k]; }).join("; ");
+        return;
+      }
+      var dom = 0, looks = {};
+      bots.forEach(function (b) { var gt = b.genotype[t.key]; dom += (gt[0] === t.a ? 1 : 0) + (gt[1] === t.a ? 1 : 0); looks[b.traits[t.key]] = (looks[b.traits[t.key]] || 0) + 1; });
+      row["allele_" + t.a] = dom / (2 * n);
+      row["looks_" + t.key] = Object.keys(looks).map(function (k) { return k + " x" + looks[k]; }).join("; ");
+    });
     return row;
   };
 
   Sim.prototype.breed = function (ranked) {
-    var r = this.rng, next = [], i, sigma = 0.25 * Math.pow(0.9, this.gen - 1) + 0.06;
-    var retired = ranked.slice();
+    var r = this.rng, next = [], i, sigma = (0.25 * Math.pow(0.9, this.gen - 1) + 0.06) * this.cfg.mutation;
+    var retired = ranked.slice(), self = this, pairs;
     this.gen++;  // children are born into the next generation
     if (this.gen === 2) {
-      for (i = 0; i + 1 < ranked.length; i += 2) next.push(this.child(ranked[i], ranked[i + 1], r, sigma));
+      // everyone breeds: half as many pairs as bots, one child each
+      pairs = T.Breeding.select(this, ranked, ranked.length / 2, ranked);
+      pairs.forEach(function (p) { next.push(self.child(p, r, sigma)); });
     } else {
-      var parents = this.gen === 3 ? ranked : ranked.slice(0, ranked.length / 2);
-      for (i = 0; i < parents.length; i++) { parents[i].age++; parents[i].reset(); next.push(parents[i]); }
-      for (i = 0; i + 1 < parents.length; i += 2) {
-        next.push(this.child(parents[i], parents[i + 1], r, sigma));
-        next.push(this.child(parents[i], parents[i + 1], r, sigma));   // twin
-      }
+      var survivors = this.gen === 3 ? ranked : ranked.slice(0, ranked.length / 2);
+      pairs = T.Breeding.select(this, ranked, survivors.length / 2, survivors);
+      for (i = 0; i < survivors.length; i++) { survivors[i].age++; survivors[i].reset(); next.push(survivors[i]); }
+      pairs.forEach(function (p) {
+        next.push(self.child(p, r, sigma));
+        next.push(self.child(p, r, sigma));   // twin
+      });
     }
     this.gen--;
     retired.forEach(function (b) { if (next.indexOf(b) < 0) { b.trades = []; b.roundTrips = []; b.intraCurve = []; b.idxCurve = []; b.expCurve = []; b.pos = {}; } });
@@ -2258,8 +2865,89 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
     this.markAlive();
   };
 
-  Sim.prototype.child = function (a, b, r, sigma) {
-    return this.newBot(T.Genome.cross(a.genome, b.genome, r, sigma), [a, b]);
+  Sim.prototype.child = function (p, r, sigma) {
+    return this.newBot(T.Genome.cross(p.a.genome, p.b.genome, r, sigma), [p.a, p.b], p.meta);
+  };
+
+  /* Training data: a labeled sample of stocks at each close. Labels are filled in as the future arrives. */
+  Sim.prototype.sampleMarket = function (cur, d) {
+    var m = this.market, r = this.sampleRng, seen = Object.create(null), list = [], why = {}, i, k;
+    function add(j, reason) { if (!seen[j] && m.price[j] >= 1) { seen[j] = 1; list.push(j); why[j] = reason; } }
+    this.bots.forEach(function (b) { for (var key in b.pos) add(+key, "held"); });
+    var news = m.recentNews;
+    for (k = news.length - 1; k >= 0 && news[k].day >= d; k--) if (news[k].scope === "stock" && news[k].day === d) add(news[k].target, "news");
+    var want = list.length + this.cfg.samplesPerDay, tries = 0;
+    while (list.length < want && tries++ < this.cfg.samplesPerDay * 20) {
+      i = Math.floor(r.next() * m.n);
+      if (m.avgVol[i] * m.price[i] > 1e6) add(i, "random");
+    }
+    var date = m.dateStr(d), regime = m.REGIMES[m.regime].name;
+    for (k = 0; k < list.length; k++) {
+      i = list[k];
+      var row = { gen: this.gen, date: date, symbol: m.sym[i], sector: T.SECTORS[m.sector[i]], regime: regime, sampleReason: why[i],
+        botsHolding: 0 };
+      this.bots.forEach(function (b) { if (b.pos[i]) row.botsHolding++; });
+      var snap = m.snapshot(i);
+      for (var key in snap) row[key] = snap[key];
+      row.y_fwdRet1d = ""; row.y_fwdRet5d = ""; row.y_fwdRet10d = ""; row.y_fwdIdxRet5d = ""; row.y_fwdExcess5d = ""; row.y_fwdExcess10d = "";
+      row.y_up5d = ""; row.y_maxUp5d = ""; row.y_maxDown5d = "";
+      this.pending.push({ row: row, i: i, p0: m.price[i], adj0: m.splitAdj[i], idx0: m.index, day0: m.day, hi: 0, lo: 0 });
+    }
+  };
+
+  Sim.prototype.labelSamples = function (cur) {
+    var m = this.market, keep = [];
+    for (var k = 0; k < this.pending.length; k++) {
+      var s = this.pending[k], el = m.day - s.day0, row = s.row;
+      var p = m.price[s.i] / (m.splitAdj[s.i] / s.adj0), ret = p / s.p0 - 1, idx = m.index / s.idx0 - 1;
+      if (el <= 5) { s.hi = Math.max(s.hi, ret); s.lo = Math.min(s.lo, ret); }
+      if (el === 1) row.y_fwdRet1d = r6(ret);
+      if (el === 5) {
+        row.y_fwdRet5d = r6(ret); row.y_fwdIdxRet5d = r6(idx); row.y_fwdExcess5d = r6(ret - idx); row.y_up5d = ret > 0 ? 1 : 0;
+        row.y_maxUp5d = r6(s.hi); row.y_maxDown5d = r6(s.lo);
+      }
+      if (el >= 10) { row.y_fwdRet10d = r6(ret); row.y_fwdExcess10d = r6(ret - idx); cur.mlSamples.push(row); }
+      else keep.push(s);
+    }
+    this.pending = keep;
+  };
+
+  /* Every bot that ever lived, with parents, grandparents, genotype and how the line did. */
+  Sim.prototype.familyTree = function () {
+    var all = this.allBots, ids = Object.keys(all).map(Number).sort(function (a, b) { return a - b; }), kids = {}, self = this;
+    var runs = {};
+    this.log.bots.forEach(function (r) { (runs[r.id] = runs[r.id] || []).push(r.returnPct); });
+    ids.forEach(function (id) { (all[id].parentIds || []).forEach(function (p) { (kids[p] = kids[p] || []).push(id); }); });
+    return ids.map(function (id) {
+      var b = all[id], pa = all[b.parentIds[0]], pb = all[b.parentIds[1]], gp = [];
+      [pa, pb].forEach(function (p) { if (p) p.parentIds.forEach(function (q) { if (all[q]) gp.push(all[q].name); }); });
+      var ch = kids[id] || [], grand = 0;
+      ch.forEach(function (c) { grand += (kids[c] || []).length; });
+      var rr = runs[id] || [];
+      var row = { id: id, bot: b.name, house: b.house, born: b.gen, lineageDepth: b.lineageDepth, parentA: pa ? pa.name : "", parentB: pb ? pb.name : "",
+        parentAHouse: pa ? pa.house : "", parentBHouse: pb ? pb.house : "", grandparents: gp.join(", "),
+        breedingRule: b.breedMeta.rule, parentRanks: b.breedMeta.rankA === "" ? "" : b.breedMeta.rankA + " + " + b.breedMeta.rankB,
+        parentReturns: b.breedMeta.retA === "" ? "" : pctStr(b.breedMeta.retA) + " + " + pctStr(b.breedMeta.retB),
+        parentBrackets: b.breedMeta.bracketA ? b.breedMeta.bracketA + " + " + b.breedMeta.bracketB : "", breedingDetail: b.breedMeta.label,
+        inbreeding: r4(b.inbreeding), children: ch.length, grandchildren: grand,
+        status: self.alive[id] && !self.done ? "alive" : rr.length ? "retired" : "never traded", generationsTraded: rr.length,
+        compoundedReturn: rr.length ? rr.reduce(function (a, x) { return a * (1 + x); }, 1) - 1 : "", genotype: self.genotypeString(b) };
+      T.TRAITS.forEach(function (t) { row["gt_" + t.key] = T.genetics.show(t, b.genotype[t.key]); row["trait_" + t.key] = b.traits[t.key]; });
+      return row;
+    });
+  };
+
+  /* Parent -> child edges, for graph and family-tree tools. */
+  Sim.prototype.pedigree = function () {
+    var all = this.allBots, out = [];
+    Object.keys(all).map(Number).sort(function (a, b) { return a - b; }).forEach(function (id) {
+      var b = all[id];
+      (b.parentIds || []).forEach(function (p, k) {
+        var pp = all[p];
+        out.push({ parentId: p, parent: pp ? pp.name : "(older than kept history)", parentHouse: pp ? pp.house : "", childId: id, child: b.name, childHouse: b.house, born: b.gen, role: k ? "B" : "A (house)" });
+      });
+    });
+    return out;
   };
 
   /* Stop after the current generation finishes. */
@@ -2282,6 +2970,11 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
 
   Sim.prototype.finish = function () {
     if (this.done) return;
+    // samples still waiting for 10-day labels go in with the labels that are known so far
+    var cut = this.trimmedThrough;
+    this.unfinishedSamples = this.pending.map(function (s) { return s.row; });
+    push(this.log.mlSamples, this.unfinishedSamples.filter(function (r) { return r.gen > cut; }));
+    this.pending = [];
     this.done = true;
     this.finishedAt = Date.now();
     this.emit("done", this.report());
@@ -2308,7 +3001,8 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
         avgMaxDrawdown: runs.length ? mean(runs.map(function (r) { return r.maxDrawdown; })) : "", avgAlphaAnn: runs.length ? mean(runs.map(function (r) { return r.alphaAnn; })) : "",
         bestRank: runs.length ? Math.min.apply(null, runs.map(function (r) { return r.rank; })) : "", avgRank: runs.length ? r2(mean(runs.map(function (r) { return r.rank; }))) : "",
         buyThreshold: gm.buyThreshold, sellThreshold: gm.sellThreshold, maxPositions: gm.maxPositions, positionSize: gm.positionSize, stopLoss: gm.stopLoss,
-        takeProfit: gm.takeProfit, decisionEveryBars: gm.decisionEveryBars, maxHoldDays: gm.maxHoldDays, shorts: gm.shorts, trailingStop: gm.trailingStop
+        takeProfit: gm.takeProfit, decisionEveryBars: gm.decisionEveryBars, maxHoldDays: gm.maxHoldDays, shorts: gm.shorts, trailingStop: gm.trailingStop,
+        house: gm.house, lineageDepth: gm.lineageDepth, inbreeding: gm.inbreeding, genotype: gm.genotype, traits: gm.traits, breedingRule: gm.breedingRule
       };
     });
   };
@@ -2336,7 +3030,8 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
     return {
       config: this.cfg, forever: this.forever,
       generations: gens.length, botRuns: bots.length, uniqueBots: this.log.genomes.length,
-      tradingDays: mkt.length, startDate: mkt.length ? mkt[0].date : "", endDate: mkt.length ? mkt[mkt.length - 1].date : "",
+      tradingDays: this.market.day, startDate: this.market.dateStr(0), endDate: this.market.day ? this.market.dateStr(this.market.day - 1) : "",
+      historyFrom: this.historyFrom || 0,
       avgReturn: mean(allRet), medianReturn: T.stat.median(allRet),
       avgSharpe: mean(bots.map(function (b) { return b.sharpe; })), avgSortino: mean(bots.map(function (b) { return b.sortino; })),
       avgAlpha: mean(bots.map(function (b) { return b.alphaAnn; })), avgBeta: mean(bots.map(function (b) { return b.beta; })),
@@ -2389,6 +3084,7 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
       ["Generations", rep.generations + (rep.forever ? " (endless run)" : "")], ["Trading days per generation", c.daysPerGen],
       ["Trading days simulated", rep.tradingDays], ["Simulated dates", rep.startDate + " to " + rep.endDate],
       ["Seed", c.seed], ["Fitness", c.fitness === "risk" ? "Return - 0.5 x max drawdown" : "Total return"],
+      ["Breeding rule", sim.ruleName], ["Mutation strength", c.mutation + "x"], ["Training samples per day", c.samplesPerDay],
       ["Symbols", sim.market.n], ["Unique bots", rep.uniqueBots], ["Bot-generation runs", rep.botRuns],
       ["Average return (all runs)", rep.avgReturn], ["Median return (all runs)", rep.medianReturn],
       ["Average P/L $ (all runs)", r2(rep.avgPnl)], ["Average Sharpe", r2(rep.avgSharpe)], ["Average Sortino", r2(rep.avgSortino)],
@@ -2400,6 +3096,7 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
       ["Total fees $", r2(rep.totalFees)],
       ["Best single run", rep.best ? rep.best.bot + " (gen " + rep.best.gen + ", " + (rep.best.returnPct * 100).toFixed(2) + "%)" : ""],
       ["Detail rows dropped from memory", rep.trimmedThrough ? "generations 1-" + rep.trimmedThrough + " (summaries kept)" : "none"],
+      ["Per-bot history kept in memory", rep.historyFrom ? "generations " + (rep.historyFrom + 1) + " onward (the CLI's gen folders hold every generation)" : "all generations"],
       ["Wall-clock seconds", r2(rep.wallSeconds)],
       ["Note", "Fictional market. Symbols are real US listings; every price after the start is simulated."]
     ];
@@ -2424,7 +3121,10 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
       ["Market Daily", L.market],
       ["Sector Daily", L.sectors],
       ["News", L.news],
-      ["Symbols", sim.symbols()]
+      ["Symbols", sim.symbols()],
+      ["Market Samples", L.mlSamples],
+      ["Family Tree", sim.familyTree()],
+      ["Pedigree", sim.pedigree()]
     ];
   }
 
@@ -2487,6 +3187,14 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
     for (var i = 0; i < rows.length; i++) { var k = rows[i][key]; (g[k] = g[k] || []).push(rows[i]); }
     return g;
   }
+
+  /* Training-ready files: inputs are x_* columns, targets are y_* columns. */
+  function trainingFiles(sim) {
+    return [["training/market-samples.csv", sim.log.mlSamples], ["training/round-trips.csv", sim.log.roundTrips],
+      ["training/bot-generations.csv", sim.log.bots], ["training/family-tree.csv", sim.familyTree()]]
+      .map(function (x) { return { path: x[0], text: toCSV(x[1]) }; });
+  }
+  function trainingZip(sim, XLSX, type) { return zip(XLSX, trainingFiles(sim), type); }
 
   /* One big spreadsheet: every table across all generations, then one sheet per generation. */
   function master(sim, XLSX, opts) {
@@ -2558,7 +3266,8 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
   }
 
   var GEN_TABLES = [["bots", "bots"], ["trades", "trades"], ["round-trips", "roundTrips"], ["bot-daily", "botDaily"], ["equity-intraday", "equityIntraday"],
-    ["positions", "positions"], ["market-daily", "market"], ["sector-daily", "sectors"], ["news", "news"], ["generation", "generations"], ["genetics", "genetics"]];
+    ["positions", "positions"], ["market-daily", "market"], ["sector-daily", "sectors"], ["news", "news"], ["generation", "generations"], ["genetics", "genetics"],
+    ["market-samples", "mlSamples"], ["births", "births"]];
 
   /* Rows of a single generation, keyed by CSV file name. */
   function generationFiles(rows) {
@@ -2573,7 +3282,7 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
 
   function generationsZip(sim, XLSX, type) {
     var L = sim.log, files = [], by = {};
-    GEN_TABLES.forEach(function (t) { by[t[1]] = groupBy(L[t[1]], "gen"); });
+    GEN_TABLES.forEach(function (t) { by[t[1]] = t[1] === "births" ? groupBy(L.genomes, "born") : groupBy(L[t[1]], "gen"); });
     L.generations.forEach(function (g) {
       var rows = { generation: [g] };
       GEN_TABLES.forEach(function (t) { if (t[1] !== "generations") rows[t[1]] = by[t[1]][g.gen] || []; });
@@ -2588,7 +3297,8 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
   function runLevelFiles(sim) {
     return [["summary.csv", summaryRows(sim.report(), sim)], ["generations.csv", sim.log.generations], ["genetics.csv", sim.log.genetics],
       ["bots.csv", sim.log.bots], ["bot-profiles.csv", sim.profiles()], ["genomes.csv", sim.log.genomes], ["symbols.csv", sim.symbols()],
-      ["market-daily.csv", sim.log.market], ["sector-daily.csv", sim.log.sectors]].map(function (x) { return { name: x[0], text: toCSV(x[1]) }; });
+      ["market-daily.csv", sim.log.market], ["sector-daily.csv", sim.log.sectors], ["family-tree.csv", sim.familyTree()],
+      ["pedigree.csv", sim.pedigree()]].map(function (x) { return { name: x[0], text: toCSV(x[1]) }; });
   }
 
   function botsZip(sim, XLSX, type) {
@@ -2640,7 +3350,7 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
 
   T.Report = {
     sheets: sheets, toCSV: toCSV, master: master, workbook: master, botWorkbook: botWorkbook, botTables: botTables, perBotWorkbook: perBotWorkbook,
-    generationsZip: generationsZip, generationFiles: generationFiles, runLevelFiles: runLevelFiles, genDir: genDir, botsZip: botsZip,
+    generationsZip: generationsZip, trainingZip: trainingZip, trainingFiles: trainingFiles, generationFiles: generationFiles, runLevelFiles: runLevelFiles, genDir: genDir, botsZip: botsZip,
     combine: combine, unzip: unzip, summaryRows: summaryRows, appendSheet: appendSheet
   };
 })(window.T = window.T || {});
@@ -2879,7 +3589,7 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
   var S = {
     sim: null, running: false, speed: 15, sel: -1, tf: "5m", filter: "all", sector: -1, query: "",
     feed: "news", acc: 0, lastT: 0, lastList: 0, lastMinis: 0, minis: [], newsSeen: 0, filtered: [], heldCount: null,
-    tradeSeen: {}, cfg: { mult: 1, generations: 6, daysPerGen: 10, seed: 20270104, fitness: "return", detailBudget: 1500000, startCash: 100000 }, dirtyBots: true
+    tradeSeen: {}, cfg: { mult: 1, generations: 6, daysPerGen: 10, seed: 20270104, fitness: "return", detailBudget: 8000000, startCash: 100000 }, dirtyBots: true
   };
 
   var chart = new T.CandleChart($("mainChart"));
@@ -3153,7 +3863,7 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
       var pnl = b.equity - start, ret = pnl / start;
       sum += pnl; if (pnl > 0) up++;
       r.rk.textContent = k + 1; r.nm.textContent = b.name;
-      r.st.textContent = b.style + " · " + b.nPos + " pos" + (b.age ? " · survived " + b.age : "");
+      r.st.textContent = b.house + " · " + b.style + " · " + b.nPos + " pos" + (b.age ? " · survived " + b.age : "");
       r.btn.classList.toggle("new", b.gen === sim.gen && sim.gen > 1 && b.age === 0);
       r.plA.textContent = signed$(pnl); r.plP.textContent = pct(ret);
       r.pl.className = "pl num " + cls(pnl);
@@ -3191,7 +3901,24 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
     dl.appendChild(btnB);
     dl.appendChild(el("span", "hint", "Data from finished generations. Best " + (s.bestSector || "n/a") + ", worst " + (s.worstSector || "n/a") + "."));
     body.appendChild(dl);
-    var c = b.cfg;
+    var c = b.cfg, all = S.sim.allBots;
+    body.appendChild(el("h3", null, "Family"));
+    var pa = all[b.parentIds[0]], pb = all[b.parentIds[1]], gps = [];
+    [pa, pb].forEach(function (p) { if (p) p.parentIds.forEach(function (q) { if (all[q]) gps.push(all[q].name + " (" + all[q].house + ")"); }); });
+    var kids = Object.keys(all).map(function (k) { return all[k]; }).filter(function (x) { return x.parentIds.indexOf(b.id) >= 0; });
+    body.appendChild(el("p", "hint", "House " + b.house + ", generation depth " + b.lineageDepth + ". " +
+      (pa ? "Parents: " + pa.name + " (" + pa.house + ", ranked " + b.breedMeta.rankA + ") and " + pb.name + " (" + pb.house + ", ranked " + b.breedMeta.rankB + "), paired by " +
+        (b.breedMeta.label || b.breedMeta.rule) + (b.breedMeta.bracketA ? " (brackets: " + b.breedMeta.bracketA + " and " + b.breedMeta.bracketB + ")" : "") +
+        ". Parents' returns: " + pct(b.breedMeta.retA) + " and " + pct(b.breedMeta.retB) + ". " + (b.breedMeta.note ? "Note: " + b.breedMeta.note + ". " : "") : "Founder of the house. ") +
+      (gps.length ? "Grandparents: " + gps.join(", ") + ". " : "") +
+      (kids.length ? "Children: " + kids.map(function (x) { return x.name; }).join(", ") + ". " : "No children yet. ") +
+      "Inbreeding coefficient " + b.inbreeding.toFixed(3) + (b.inbreeding >= 0.25 ? " (as close as full siblings' children)" : b.inbreeding >= 0.0625 ? " (as close as first cousins' children or closer)" : "") + "."));
+    body.appendChild(el("h3", null, "Traits"));
+    var traitTable = table(["Chromosome", "Trait", "Genotype", "Shows as", "Effect"], T.TRAITS.map(function (t) {
+      return [t.chr + " " + T.genetics.CHR_NAMES[t.chr], t.name, T.genetics.show(t, b.genotype[t.key]), b.traits[t.key], t.effect];
+    }), -1);
+    traitTable.classList.add("wrap-last");
+    body.appendChild(traitTable);
     body.appendChild(el("h3", null, "Genes"));
     body.appendChild(el("p", "hint", "Buys above score " + c.buyTh.toFixed(2) + ", exits below " + c.sellTh.toFixed(2) + ". Up to " + c.maxPos + " positions at " +
       (c.posSize * 100).toFixed(1) + "% of equity each. Stop " + (c.stopLoss * 100).toFixed(1) + "%" + (c.trail ? " (trailing)" : "") + ", target " +
@@ -3319,6 +4046,17 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
         return ["G" + g.gen, g.bots, pct(g.avgReturn), pct(g.medianReturn), pct(g.bestReturn), pct(g.worstReturn), g.profitableBots, g.beatIndex,
           g.avgSharpe.toFixed(2), pct(g.avgAlphaAnn, 1), (g.avgWinRate * 100).toFixed(1) + "%", gen.diversity ? gen.diversity.toFixed(3) : "", pct(g.indexReturn), g.avgSimVix.toFixed(1), g.avgReturn];
       }), 2));
+    body.appendChild(el("h3", null, "Genetics" + (gensAll.length > 20 ? " (last 20 generations)" : "")));
+    var bin = T.TRAITS.filter(function (t) { return t.mode !== "multi"; });
+    body.appendChild(el("p", "hint", "Breeding rule: " + sim.ruleName + ". Letter columns show how common each dominant allele is: " +
+      bin.map(function (t) { return t.a + " " + (t.dom || t.looks[2]).toLowerCase(); }).join(", ") + "."));
+    var gtab = table(["Gen", "Inbreeding", "Houses", "Top house"].concat(bin.map(function (t) { return t.a; })).concat(["Favourite sectors"]),
+      sim.log.genetics.slice(-20).reverse().map(function (g) {
+        return ["G" + g.gen, g.avgInbreeding.toFixed(3), g.housesAlive, g.topHouse].concat(bin.map(function (t) { return Math.round(g["allele_" + t.a] * 100) + "%"; }))
+          .concat([(g.alleles_sector || "").split("; ").slice(0, 2).join("; ")]);
+      }), -1);
+    gtab.classList.add("wrap-last");
+    body.appendChild(gtab);
     body.appendChild(el("h3", null, "Top 10 bot runs"));
     var top = sim.log.bots.slice().sort(function (a, b) { return b.returnPct - a.returnPct; }).slice(0, 10);
     body.appendChild(table(["Bot", "Gen", "Style", "Return", "P/L", "Max DD", "Sharpe", "Trades", "Win rate"],
@@ -3373,6 +4111,86 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
     });
   }
 
+  /* ---------- breeding settings ---------- */
+  var BR = T.Breeding, PRESET_GROUPS = [
+    ["Winners and losers", ["ranked", "winners", "losers", "assortative", "disassortative"]],
+    ["By profit", ["profitable", "unprofitable", "beatIndex", "above", "between", "topPct", "bottomPct"]],
+    ["By bracket", ["sameBracket", "crossBracket", "mirrorBracket", "topBrackets", "profitLevels"]],
+    ["Other", ["random", "tournament", "roulette", "outbreed", "inbreed"]],
+    ["Your own", ["custom"]]
+  ];
+  function fillSelect(id, list) { var sel = $(id); list.forEach(function (x) { var o = el("option", null, x.name); o.value = x.key; sel.appendChild(o); }); }
+  function wireBreeding() {
+    PRESET_GROUPS.forEach(function (g) {
+      var og = document.createElement("optgroup"); og.label = g[0];
+      g[1].forEach(function (k) { var p = BR.find(BR.PRESETS, k); if (p) { var o = el("option", null, p.name); o.value = k; og.appendChild(o); } });
+      $("inBreed").appendChild(og);
+    });
+    fillSelect("inPool", BR.POOLS); fillSelect("inPair", BR.PAIRINGS); fillSelect("inBrackets", BR.BRACKETS);
+    $("inBreed").addEventListener("change", function () { if (this.value !== "custom") loadBreeding({ breeding: this.value }); else refreshBreeding(); });
+    ["inPool", "inPair", "inBrackets", "inThresh", "inThresh2", "inPct", "inLevels"].forEach(function (id) {
+      $(id).addEventListener(id === "inLevels" || /Thresh|Pct/.test(id) ? "input" : "change", function () { $("inBreed").value = "custom"; refreshBreeding(); });
+    });
+    $("allowedBoxes").addEventListener("change", function () { $("inBreed").value = "custom"; refreshBreeding(); });
+    loadBreeding(S.cfg);
+  }
+  function loadBreeding(cfg) {
+    var s;
+    try { s = BR.normalize(cfg); } catch (e) { s = BR.normalize({}); }
+    $("inBreed").value = s.preset; $("inPool").value = s.pool; $("inPair").value = s.pairing; $("inBrackets").value = s.brackets;
+    $("inThresh").value = s.threshold; $("inThresh2").value = s.threshold2; $("inPct").value = s.pct; $("inLevels").value = s.levels.join(", ");
+    renderAllowed(s, s.allowed);
+    refreshBreeding();
+  }
+  function renderAllowed(s, checked) {
+    var box = $("allowedBoxes"), labels = BR.bracketLabels(s);
+    clear(box);
+    labels.forEach(function (lab, k) {
+      var l = el("label", "check"), c = el("input"); c.type = "checkbox"; c.value = k; c.checked = checked.indexOf(k) >= 0;
+      l.appendChild(c); l.appendChild(document.createTextNode(" " + lab)); box.appendChild(l);
+    });
+  }
+  function readBreeding() {
+    var levels = $("inLevels").value.split(/[,\s]+/).filter(function (x) { return x !== ""; }).map(Number);
+    var out = { breeding: $("inBreed").value, breedPool: $("inPool").value, breedPairing: $("inPair").value, brackets: $("inBrackets").value,
+      levels: levels, threshold: $("inThresh").value, threshold2: $("inThresh2").value, pct: +$("inPct").value,
+      allowed: Array.prototype.filter.call($("allowedBoxes").querySelectorAll("input"), function (c) { return c.checked; }).map(function (c) { return +c.value; }) };
+    if (out.brackets === "profit" && (!levels.length || levels.some(function (x) { return !isFinite(x); }))) out.error = "Profit levels must be numbers separated by commas, like -2, 0, 2.";
+    else if (out.breedPool === "brackets" && !out.allowed.length) out.error = "Tick at least one bracket that can breed.";
+    else if (/^(above|below|between)$/.test(out.breedPool) && !isFinite(parseFloat(out.threshold))) out.error = "Enter a return level, for example 1 for +1%.";
+    else if (out.breedPool === "between" && !isFinite(parseFloat(out.threshold2))) out.error = "Enter the upper return level.";
+    else if (/Pct$/.test(out.breedPool) && !(out.pct >= 1 && out.pct <= 100)) out.error = "The share must be between 1% and 100%.";
+    return out;
+  }
+  function refreshBreeding() {
+    var r = readBreeding(), pool = r.breedPool, pair = r.breedPairing;
+    var usesBr = pool === "brackets" || /Bracket$/.test(pair);
+    $("fThresh").hidden = !/^(above|below|between)$/.test(pool);
+    $("lblThresh").textContent = pool === "between" ? "Lower return level (%)" : "Return level (%)";
+    $("fThresh2").hidden = pool !== "between";
+    $("fPct").hidden = !/Pct$/.test(pool);
+    $("fBrackets").hidden = !usesBr;
+    $("fLevels").hidden = !usesBr || r.brackets !== "profit";
+    $("fAllowed").hidden = pool !== "brackets";
+    $("poolHint").textContent = BR.find(BR.POOLS, pool).desc;
+    $("pairHint").textContent = BR.find(BR.PAIRINGS, pair).desc;
+    var sum = $("breedSummary");
+    if (!r.error) {
+      try {
+        var s = BR.normalize(r);
+        if (pool === "brackets" && $("allowedBoxes").children.length !== BR.bracketCount(s)) renderAllowed(s, r.allowed.filter(function (k) { return k < BR.bracketCount(s); }));
+        else Array.prototype.forEach.call($("allowedBoxes").querySelectorAll("label"), function (l, k) { l.lastChild.textContent = " " + BR.bracketLabels(s)[k]; });
+        r = readBreeding();
+        if (!r.error) {
+          sum.textContent = BR.describe(BR.normalize(r)) + ". The top half still survives each generation from Gen 3 on; only who parents the children changes.";
+          sum.classList.remove("bad");
+          return;
+        }
+      } catch (e) { r.error = e.message; }
+    }
+    sum.textContent = r.error; sum.classList.add("bad");
+  }
+
   function wire() {
     T.SECTORS.forEach(function (s, k) { var o = el("option", null, s); o.value = k; $("sectorSel").appendChild(o); });
     $("btnPlay").addEventListener("click", function () {
@@ -3409,7 +4227,9 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
       S.running = false; setPlay();
       mult = S.cfg.mult; popText();
       $("inGens").value = S.cfg.generations || 6; $("inForever").checked = !!S.cfg.forever; $("inGens").disabled = !!S.cfg.forever;
-      $("inBudget").value = String(S.cfg.detailBudget || 1500000); $("inDays").value = S.cfg.daysPerGen; $("inCash").value = S.cfg.startCash || 100000; $("inSeed").value = S.cfg.seed; $("inFit").value = S.cfg.fitness;
+      $("inBudget").value = String(S.cfg.detailBudget || 8000000); $("inDays").value = S.cfg.daysPerGen; $("inCash").value = S.cfg.startCash || 100000; $("inSeed").value = S.cfg.seed; $("inFit").value = S.cfg.fitness;
+      $("inMut").value = String(S.cfg.mutation || 1); loadBreeding(S.cfg);
+      $("inSamples").value = String(S.cfg.samplesPerDay !== undefined ? S.cfg.samplesPerDay : 150);
       $("newErr").hidden = true;
       $("dlgNew").showModal();
     });
@@ -3417,19 +4237,26 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
     $("popHalf").addEventListener("click", function () { if (mult > 1) mult /= 2; popText(); });
     $("btnCancelNew").addEventListener("click", function () { $("dlgNew").close(); });
     $("inForever").addEventListener("change", function () { $("inGens").disabled = this.checked; });
+    wireBreeding();
     $("formNew").addEventListener("submit", function (e) {
       var forever = $("inForever").checked;
       var g = forever ? 0 : +$("inGens").value, d = +$("inDays").value, s = +$("inSeed").value, cash = +$("inCash").value, err = $("newErr");
       var bad = !forever && !(g >= 2 && g <= 100000) ? "Generations must be between 2 and 100,000, or tick Run forever." : !(d >= 1 && d <= 120) ? "Days per generation must be between 1 and 120." :
         !(s >= 1) ? "Seed must be a positive whole number." : !(cash >= 100 && cash <= 1e12) ? "Starting cash must be between $100 and $1,000,000,000,000." : "";
+      var br = readBreeding();
+      if (!bad && br.error) bad = br.error;
       if (bad) { e.preventDefault(); err.textContent = bad; err.hidden = false; return; }
       build({ mult: mult, generations: Math.round(g), forever: forever, daysPerGen: Math.round(d), seed: Math.round(s), fitness: $("inFit").value,
-        detailBudget: +$("inBudget").value, startCash: Math.round(cash * 100) / 100 });
+        detailBudget: +$("inBudget").value, startCash: Math.round(cash * 100) / 100, mutation: +$("inMut").value, samplesPerDay: +$("inSamples").value, breeding: br.breeding, breedPool: br.breedPool,
+        breedPairing: br.breedPairing, brackets: br.brackets, levels: br.levels, threshold: br.threshold, threshold2: br.threshold2, pct: br.pct, allowed: br.allowed });
     });
     $("btnCloseBot").addEventListener("click", function () { $("dlgBot").close(); });
     $("btnCloseReport").addEventListener("click", function () { $("dlgReport").close(); });
     $("btnXlsx").addEventListener("click", function () {
       if (needX()) busy(this, function () { saveBook(T.Report.master(S.sim, window.XLSX), runName() + "-all-generations.xlsx"); });
+    });
+    $("btnTrainZip").addEventListener("click", function () {
+      if (needX()) busy(this, function () { download(runName() + "-training.zip", new Blob([T.Report.trainingZip(S.sim, window.XLSX)], { type: "application/zip" })); });
     });
     $("btnGenZip").addEventListener("click", function () {
       if (needX()) busy(this, function () { download(runName() + "-generations.zip", new Blob([T.Report.generationsZip(S.sim, window.XLSX)], { type: "application/zip" })); });

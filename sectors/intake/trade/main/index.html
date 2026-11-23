@@ -176,14 +176,49 @@
       <div class="field"><label class="label" for="inSeed">Seed</label><input class="input" id="inSeed" type="number" min="1" max="2147483647" value="20270104" required></div>
       <div class="field"><label class="label" for="inFit">Breeding picks by</label>
         <select class="select full" id="inFit"><option value="return">Total return</option><option value="risk">Return minus half max drawdown</option></select></div>
+      <div class="field"><label class="label" for="inMut">Mutation</label>
+        <select class="select full" id="inMut"><option value="0.5">Low (0.5x)</option><option value="1" selected>Normal</option><option value="2">High (2x)</option><option value="4">Wild (4x)</option></select>
+        <span class="hint">How much children's genes and alleles drift from their parents'.</span></div>
     </div>
-    <div class="field"><label class="label" for="inBudget">Trade-level rows kept in memory</label>
-      <select class="select full" id="inBudget">
-        <option value="500000">500,000 (phones)</option>
-        <option value="1500000" selected>1.5 million</option>
-        <option value="4000000">4 million (desktop, lots of RAM)</option>
+    <fieldset class="breed" id="breedBox">
+      <legend>Breeding</legend>
+      <div class="field"><label class="label" for="inBreed">Preset</label>
+        <select class="select full" id="inBreed"></select></div>
+      <div class="grid2">
+        <div class="field"><label class="label" for="inPool">Who can breed</label>
+          <select class="select full" id="inPool" aria-describedby="poolHint"></select><span class="hint" id="poolHint"></span></div>
+        <div class="field"><label class="label" for="inPair">How they pair up</label>
+          <select class="select full" id="inPair" aria-describedby="pairHint"></select><span class="hint" id="pairHint"></span></div>
+        <div class="field" id="fThresh"><label class="label" for="inThresh" id="lblThresh">Return level (%)</label>
+          <input class="input" id="inThresh" type="number" step="0.1" inputmode="decimal"></div>
+        <div class="field" id="fThresh2"><label class="label" for="inThresh2">Upper return level (%)</label>
+          <input class="input" id="inThresh2" type="number" step="0.1" inputmode="decimal"></div>
+        <div class="field" id="fPct"><label class="label" for="inPct">Share of the generation (%)</label>
+          <input class="input" id="inPct" type="number" min="1" max="100" step="1"></div>
+        <div class="field" id="fBrackets"><label class="label" for="inBrackets">Brackets</label>
+          <select class="select full" id="inBrackets"></select></div>
+        <div class="field" id="fLevels"><label class="label" for="inLevels">Profit levels (%), comma-separated</label>
+          <input class="input" id="inLevels" type="text" inputmode="decimal" spellcheck="false">
+          <span class="hint">-2, 0, 2 makes four brackets: below -2%, -2 to 0%, 0 to 2%, 2% and up.</span></div>
+      </div>
+      <fieldset class="field" id="fAllowed"><legend class="label">Brackets that can breed</legend><div id="allowedBoxes" class="checks"></div></fieldset>
+      <p class="breed-summary" id="breedSummary"></p>
+    </fieldset>
+    <div class="field"><label class="label" for="inSamples">Training samples per day</label>
+      <select class="select full" id="inSamples">
+        <option value="0">Off (smallest data)</option>
+        <option value="50">50 stocks a day (lean)</option>
+        <option value="150" selected>150 stocks a day</option>
+        <option value="400">400 stocks a day (big model, big files)</option>
       </select>
-      <p class="hint">Long and endless runs drop the oldest generations' trade-level rows once this fills up. Generation, bot, genetics, market and genome tables are always kept in full. Download the generation CSVs as you go to keep everything, or use the CLI, which writes every generation to disk.</p>
+      <span class="hint">Stocks the bots hold and stocks with news that day are always sampled too. This is the biggest table in the training data.</span></div>
+    <div class="field"><label class="label" for="inBudget">Memory for trade-level data</label>
+      <select class="select full" id="inBudget">
+        <option value="3000000">About 150 MB (phones)</option>
+        <option value="8000000" selected>About 400 MB</option>
+        <option value="30000000">About 1.5 GB (desktop with plenty of memory)</option>
+      </select>
+      <p class="hint">Long and endless runs drop the oldest generations' trade-level rows once this fills up, and keep per-bot history for the last 300 generations. The generation and genetics tables are always kept in full. To keep everything, download the generation CSVs as you go, or use the CLI or the cloud workflow, which write every generation to disk.</p>
     </div>
     <p class="err" id="newErr" role="alert" hidden></p>
     <div class="dlg-actions">
@@ -223,10 +258,12 @@
       <h3 id="hExports">Export</h3>
       <p class="hint" id="exportNote"></p>
       <div class="export-grid">
-        <div class="export"><b>Master workbook</b><span class="hint">All 15 tables with every generation stacked, plus one sheet per generation.</span>
+        <div class="export"><b>Master workbook</b><span class="hint">All 18 tables with every generation stacked, plus one sheet per generation.</span>
           <button type="button" class="btn primary" id="btnXlsx">Download .xlsx</button></div>
         <div class="export"><b>Generation CSVs</b><span class="hint">A .zip with a gen-0001, gen-0002 ... folder of CSVs for each generation, plus run-level CSVs.</span>
           <button type="button" class="btn" id="btnGenZip">Download .zip</button></div>
+        <div class="export"><b>Training data</b><span class="hint">Model-ready CSVs: labeled market samples, labeled round trips, bot generations and the family tree. Inputs start with x_, targets with y_.</span>
+          <button type="button" class="btn" id="btnTrainZip">Download .zip</button></div>
         <div class="export"><b>Every bot, individually</b><span class="hint">A .zip with a folder per bot: profile, generations, daily ledger, round trips, trades, positions, sector and symbol P/L.</span>
           <button type="button" class="btn" id="btnBotZip">Download .zip</button></div>
         <div class="export"><b>Bot ledger workbook</b><span class="hint">An index of every bot plus one daily-ledger sheet per bot.</span>
@@ -253,6 +290,7 @@
 <script src="js/news.js"></script>
 <script src="js/market.js"></script>
 <script src="js/bots.js"></script>
+<script src="js/breeding.js"></script>
 <script src="js/sim.js"></script>
 <script src="js/report.js"></script>
 <script src="js/charts.js"></script>

@@ -1,13 +1,55 @@
 {
  "commits": [
   {
+   "sha": "63337513e77314d24b3e7acc67c95f1aa6bfa7f6",
+   "date": "2026-11-23T16:52:34Z",
+   "author": "gkson",
+   "message": "README: measured cloud output size (about 650 MB per hour)",
+   "tips": [
+    "main"
+   ]
+  },
+  {
+   "sha": "6aa21dde9e5d2be18e7894bec92d4414a78500bf",
+   "date": "2026-11-23T16:48:59Z",
+   "author": "gkson",
+   "message": "Keep long and cloud runs bounded: memory counted in cells, rolling history, sized cloud defaults",
+   "tips": []
+  },
+  {
+   "sha": "39aeda07827efd7368e90e46f04b748f781fbb66",
+   "date": "2026-11-23T16:32:29Z",
+   "author": "gkson",
+   "message": "Add 10 inherited traits on 4 chromosomes, smaller data output, free cloud workflows",
+   "tips": []
+  },
+  {
+   "sha": "cd35eb707a971669282f151d1c15dc33ddf18703",
+   "date": "2026-11-23T11:08:31-05:00",
+   "author": "gkson",
+   "message": "Remove mobile usage instructions from README",
+   "tips": []
+  },
+  {
+   "sha": "a1333690be081a0fab32b4c8e0e11bdaa4ecc578",
+   "date": "2026-11-23T16:02:29Z",
+   "author": "gkson",
+   "message": "Make breeding rules specific: presets plus who-can-breed, pairing and brackets",
+   "tips": []
+  },
+  {
+   "sha": "d053dcea95e7ca4c3d064d98cb96c17e6ef15c60",
+   "date": "2026-11-23T15:41:03Z",
+   "author": "gkson",
+   "message": "Add training datasets, Mendelian genetics with family trees, and breeding rules",
+   "tips": []
+  },
+  {
    "sha": "caffcfec3485f39e120f7d95f4c4a6a7e7804e54",
    "date": "2026-11-23T04:13:41Z",
    "author": "gkson",
    "message": "Add a phone version: hosted link and a single-file offline build",
-   "tips": [
-    "main"
-   ]
+   "tips": []
   },
   {
    "sha": "d58d60c1541759a415cddce87d5162674526ae3b",

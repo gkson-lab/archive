@@ -14,7 +14,7 @@
   var S = {
     sim: null, running: false, speed: 15, sel: -1, tf: "5m", filter: "all", sector: -1, query: "",
     feed: "news", acc: 0, lastT: 0, lastList: 0, lastMinis: 0, minis: [], newsSeen: 0, filtered: [], heldCount: null,
-    tradeSeen: {}, cfg: { mult: 1, generations: 6, daysPerGen: 10, seed: 20270104, fitness: "return", detailBudget: 1500000, startCash: 100000 }, dirtyBots: true
+    tradeSeen: {}, cfg: { mult: 1, generations: 6, daysPerGen: 10, seed: 20270104, fitness: "return", detailBudget: 8000000, startCash: 100000 }, dirtyBots: true
   };
 
   var chart = new T.CandleChart($("mainChart"));
@@ -288,7 +288,7 @@
       var pnl = b.equity - start, ret = pnl / start;
       sum += pnl; if (pnl > 0) up++;
       r.rk.textContent = k + 1; r.nm.textContent = b.name;
-      r.st.textContent = b.style + " · " + b.nPos + " pos" + (b.age ? " · survived " + b.age : "");
+      r.st.textContent = b.house + " · " + b.style + " · " + b.nPos + " pos" + (b.age ? " · survived " + b.age : "");
       r.btn.classList.toggle("new", b.gen === sim.gen && sim.gen > 1 && b.age === 0);
       r.plA.textContent = signed$(pnl); r.plP.textContent = pct(ret);
       r.pl.className = "pl num " + cls(pnl);
@@ -326,7 +326,24 @@
     dl.appendChild(btnB);
     dl.appendChild(el("span", "hint", "Data from finished generations. Best " + (s.bestSector || "n/a") + ", worst " + (s.worstSector || "n/a") + "."));
     body.appendChild(dl);
-    var c = b.cfg;
+    var c = b.cfg, all = S.sim.allBots;
+    body.appendChild(el("h3", null, "Family"));
+    var pa = all[b.parentIds[0]], pb = all[b.parentIds[1]], gps = [];
+    [pa, pb].forEach(function (p) { if (p) p.parentIds.forEach(function (q) { if (all[q]) gps.push(all[q].name + " (" + all[q].house + ")"); }); });
+    var kids = Object.keys(all).map(function (k) { return all[k]; }).filter(function (x) { return x.parentIds.indexOf(b.id) >= 0; });
+    body.appendChild(el("p", "hint", "House " + b.house + ", generation depth " + b.lineageDepth + ". " +
+      (pa ? "Parents: " + pa.name + " (" + pa.house + ", ranked " + b.breedMeta.rankA + ") and " + pb.name + " (" + pb.house + ", ranked " + b.breedMeta.rankB + "), paired by " +
+        (b.breedMeta.label || b.breedMeta.rule) + (b.breedMeta.bracketA ? " (brackets: " + b.breedMeta.bracketA + " and " + b.breedMeta.bracketB + ")" : "") +
+        ". Parents' returns: " + pct(b.breedMeta.retA) + " and " + pct(b.breedMeta.retB) + ". " + (b.breedMeta.note ? "Note: " + b.breedMeta.note + ". " : "") : "Founder of the house. ") +
+      (gps.length ? "Grandparents: " + gps.join(", ") + ". " : "") +
+      (kids.length ? "Children: " + kids.map(function (x) { return x.name; }).join(", ") + ". " : "No children yet. ") +
+      "Inbreeding coefficient " + b.inbreeding.toFixed(3) + (b.inbreeding >= 0.25 ? " (as close as full siblings' children)" : b.inbreeding >= 0.0625 ? " (as close as first cousins' children or closer)" : "") + "."));
+    body.appendChild(el("h3", null, "Traits"));
+    var traitTable = table(["Chromosome", "Trait", "Genotype", "Shows as", "Effect"], T.TRAITS.map(function (t) {
+      return [t.chr + " " + T.genetics.CHR_NAMES[t.chr], t.name, T.genetics.show(t, b.genotype[t.key]), b.traits[t.key], t.effect];
+    }), -1);
+    traitTable.classList.add("wrap-last");
+    body.appendChild(traitTable);
     body.appendChild(el("h3", null, "Genes"));
     body.appendChild(el("p", "hint", "Buys above score " + c.buyTh.toFixed(2) + ", exits below " + c.sellTh.toFixed(2) + ". Up to " + c.maxPos + " positions at " +
       (c.posSize * 100).toFixed(1) + "% of equity each. Stop " + (c.stopLoss * 100).toFixed(1) + "%" + (c.trail ? " (trailing)" : "") + ", target " +
@@ -454,6 +471,17 @@
         return ["G" + g.gen, g.bots, pct(g.avgReturn), pct(g.medianReturn), pct(g.bestReturn), pct(g.worstReturn), g.profitableBots, g.beatIndex,
           g.avgSharpe.toFixed(2), pct(g.avgAlphaAnn, 1), (g.avgWinRate * 100).toFixed(1) + "%", gen.diversity ? gen.diversity.toFixed(3) : "", pct(g.indexReturn), g.avgSimVix.toFixed(1), g.avgReturn];
       }), 2));
+    body.appendChild(el("h3", null, "Genetics" + (gensAll.length > 20 ? " (last 20 generations)" : "")));
+    var bin = T.TRAITS.filter(function (t) { return t.mode !== "multi"; });
+    body.appendChild(el("p", "hint", "Breeding rule: " + sim.ruleName + ". Letter columns show how common each dominant allele is: " +
+      bin.map(function (t) { return t.a + " " + (t.dom || t.looks[2]).toLowerCase(); }).join(", ") + "."));
+    var gtab = table(["Gen", "Inbreeding", "Houses", "Top house"].concat(bin.map(function (t) { return t.a; })).concat(["Favourite sectors"]),
+      sim.log.genetics.slice(-20).reverse().map(function (g) {
+        return ["G" + g.gen, g.avgInbreeding.toFixed(3), g.housesAlive, g.topHouse].concat(bin.map(function (t) { return Math.round(g["allele_" + t.a] * 100) + "%"; }))
+          .concat([(g.alleles_sector || "").split("; ").slice(0, 2).join("; ")]);
+      }), -1);
+    gtab.classList.add("wrap-last");
+    body.appendChild(gtab);
     body.appendChild(el("h3", null, "Top 10 bot runs"));
     var top = sim.log.bots.slice().sort(function (a, b) { return b.returnPct - a.returnPct; }).slice(0, 10);
     body.appendChild(table(["Bot", "Gen", "Style", "Return", "P/L", "Max DD", "Sharpe", "Trades", "Win rate"],
@@ -508,6 +536,86 @@
     });
   }
 
+  /* ---------- breeding settings ---------- */
+  var BR = T.Breeding, PRESET_GROUPS = [
+    ["Winners and losers", ["ranked", "winners", "losers", "assortative", "disassortative"]],
+    ["By profit", ["profitable", "unprofitable", "beatIndex", "above", "between", "topPct", "bottomPct"]],
+    ["By bracket", ["sameBracket", "crossBracket", "mirrorBracket", "topBrackets", "profitLevels"]],
+    ["Other", ["random", "tournament", "roulette", "outbreed", "inbreed"]],
+    ["Your own", ["custom"]]
+  ];
+  function fillSelect(id, list) { var sel = $(id); list.forEach(function (x) { var o = el("option", null, x.name); o.value = x.key; sel.appendChild(o); }); }
+  function wireBreeding() {
+    PRESET_GROUPS.forEach(function (g) {
+      var og = document.createElement("optgroup"); og.label = g[0];
+      g[1].forEach(function (k) { var p = BR.find(BR.PRESETS, k); if (p) { var o = el("option", null, p.name); o.value = k; og.appendChild(o); } });
+      $("inBreed").appendChild(og);
+    });
+    fillSelect("inPool", BR.POOLS); fillSelect("inPair", BR.PAIRINGS); fillSelect("inBrackets", BR.BRACKETS);
+    $("inBreed").addEventListener("change", function () { if (this.value !== "custom") loadBreeding({ breeding: this.value }); else refreshBreeding(); });
+    ["inPool", "inPair", "inBrackets", "inThresh", "inThresh2", "inPct", "inLevels"].forEach(function (id) {
+      $(id).addEventListener(id === "inLevels" || /Thresh|Pct/.test(id) ? "input" : "change", function () { $("inBreed").value = "custom"; refreshBreeding(); });
+    });
+    $("allowedBoxes").addEventListener("change", function () { $("inBreed").value = "custom"; refreshBreeding(); });
+    loadBreeding(S.cfg);
+  }
+  function loadBreeding(cfg) {
+    var s;
+    try { s = BR.normalize(cfg); } catch (e) { s = BR.normalize({}); }
+    $("inBreed").value = s.preset; $("inPool").value = s.pool; $("inPair").value = s.pairing; $("inBrackets").value = s.brackets;
+    $("inThresh").value = s.threshold; $("inThresh2").value = s.threshold2; $("inPct").value = s.pct; $("inLevels").value = s.levels.join(", ");
+    renderAllowed(s, s.allowed);
+    refreshBreeding();
+  }
+  function renderAllowed(s, checked) {
+    var box = $("allowedBoxes"), labels = BR.bracketLabels(s);
+    clear(box);
+    labels.forEach(function (lab, k) {
+      var l = el("label", "check"), c = el("input"); c.type = "checkbox"; c.value = k; c.checked = checked.indexOf(k) >= 0;
+      l.appendChild(c); l.appendChild(document.createTextNode(" " + lab)); box.appendChild(l);
+    });
+  }
+  function readBreeding() {
+    var levels = $("inLevels").value.split(/[,\s]+/).filter(function (x) { return x !== ""; }).map(Number);
+    var out = { breeding: $("inBreed").value, breedPool: $("inPool").value, breedPairing: $("inPair").value, brackets: $("inBrackets").value,
+      levels: levels, threshold: $("inThresh").value, threshold2: $("inThresh2").value, pct: +$("inPct").value,
+      allowed: Array.prototype.filter.call($("allowedBoxes").querySelectorAll("input"), function (c) { return c.checked; }).map(function (c) { return +c.value; }) };
+    if (out.brackets === "profit" && (!levels.length || levels.some(function (x) { return !isFinite(x); }))) out.error = "Profit levels must be numbers separated by commas, like -2, 0, 2.";
+    else if (out.breedPool === "brackets" && !out.allowed.length) out.error = "Tick at least one bracket that can breed.";
+    else if (/^(above|below|between)$/.test(out.breedPool) && !isFinite(parseFloat(out.threshold))) out.error = "Enter a return level, for example 1 for +1%.";
+    else if (out.breedPool === "between" && !isFinite(parseFloat(out.threshold2))) out.error = "Enter the upper return level.";
+    else if (/Pct$/.test(out.breedPool) && !(out.pct >= 1 && out.pct <= 100)) out.error = "The share must be between 1% and 100%.";
+    return out;
+  }
+  function refreshBreeding() {
+    var r = readBreeding(), pool = r.breedPool, pair = r.breedPairing;
+    var usesBr = pool === "brackets" || /Bracket$/.test(pair);
+    $("fThresh").hidden = !/^(above|below|between)$/.test(pool);
+    $("lblThresh").textContent = pool === "between" ? "Lower return level (%)" : "Return level (%)";
+    $("fThresh2").hidden = pool !== "between";
+    $("fPct").hidden = !/Pct$/.test(pool);
+    $("fBrackets").hidden = !usesBr;
+    $("fLevels").hidden = !usesBr || r.brackets !== "profit";
+    $("fAllowed").hidden = pool !== "brackets";
+    $("poolHint").textContent = BR.find(BR.POOLS, pool).desc;
+    $("pairHint").textContent = BR.find(BR.PAIRINGS, pair).desc;
+    var sum = $("breedSummary");
+    if (!r.error) {
+      try {
+        var s = BR.normalize(r);
+        if (pool === "brackets" && $("allowedBoxes").children.length !== BR.bracketCount(s)) renderAllowed(s, r.allowed.filter(function (k) { return k < BR.bracketCount(s); }));
+        else Array.prototype.forEach.call($("allowedBoxes").querySelectorAll("label"), function (l, k) { l.lastChild.textContent = " " + BR.bracketLabels(s)[k]; });
+        r = readBreeding();
+        if (!r.error) {
+          sum.textContent = BR.describe(BR.normalize(r)) + ". The top half still survives each generation from Gen 3 on; only who parents the children changes.";
+          sum.classList.remove("bad");
+          return;
+        }
+      } catch (e) { r.error = e.message; }
+    }
+    sum.textContent = r.error; sum.classList.add("bad");
+  }
+
   function wire() {
     T.SECTORS.forEach(function (s, k) { var o = el("option", null, s); o.value = k; $("sectorSel").appendChild(o); });
     $("btnPlay").addEventListener("click", function () {
@@ -544,7 +652,9 @@
       S.running = false; setPlay();
       mult = S.cfg.mult; popText();
       $("inGens").value = S.cfg.generations || 6; $("inForever").checked = !!S.cfg.forever; $("inGens").disabled = !!S.cfg.forever;
-      $("inBudget").value = String(S.cfg.detailBudget || 1500000); $("inDays").value = S.cfg.daysPerGen; $("inCash").value = S.cfg.startCash || 100000; $("inSeed").value = S.cfg.seed; $("inFit").value = S.cfg.fitness;
+      $("inBudget").value = String(S.cfg.detailBudget || 8000000); $("inDays").value = S.cfg.daysPerGen; $("inCash").value = S.cfg.startCash || 100000; $("inSeed").value = S.cfg.seed; $("inFit").value = S.cfg.fitness;
+      $("inMut").value = String(S.cfg.mutation || 1); loadBreeding(S.cfg);
+      $("inSamples").value = String(S.cfg.samplesPerDay !== undefined ? S.cfg.samplesPerDay : 150);
       $("newErr").hidden = true;
       $("dlgNew").showModal();
     });
@@ -552,19 +662,26 @@
     $("popHalf").addEventListener("click", function () { if (mult > 1) mult /= 2; popText(); });
     $("btnCancelNew").addEventListener("click", function () { $("dlgNew").close(); });
     $("inForever").addEventListener("change", function () { $("inGens").disabled = this.checked; });
+    wireBreeding();
     $("formNew").addEventListener("submit", function (e) {
       var forever = $("inForever").checked;
       var g = forever ? 0 : +$("inGens").value, d = +$("inDays").value, s = +$("inSeed").value, cash = +$("inCash").value, err = $("newErr");
       var bad = !forever && !(g >= 2 && g <= 100000) ? "Generations must be between 2 and 100,000, or tick Run forever." : !(d >= 1 && d <= 120) ? "Days per generation must be between 1 and 120." :
         !(s >= 1) ? "Seed must be a positive whole number." : !(cash >= 100 && cash <= 1e12) ? "Starting cash must be between $100 and $1,000,000,000,000." : "";
+      var br = readBreeding();
+      if (!bad && br.error) bad = br.error;
       if (bad) { e.preventDefault(); err.textContent = bad; err.hidden = false; return; }
       build({ mult: mult, generations: Math.round(g), forever: forever, daysPerGen: Math.round(d), seed: Math.round(s), fitness: $("inFit").value,
-        detailBudget: +$("inBudget").value, startCash: Math.round(cash * 100) / 100 });
+        detailBudget: +$("inBudget").value, startCash: Math.round(cash * 100) / 100, mutation: +$("inMut").value, samplesPerDay: +$("inSamples").value, breeding: br.breeding, breedPool: br.breedPool,
+        breedPairing: br.breedPairing, brackets: br.brackets, levels: br.levels, threshold: br.threshold, threshold2: br.threshold2, pct: br.pct, allowed: br.allowed });
     });
     $("btnCloseBot").addEventListener("click", function () { $("dlgBot").close(); });
     $("btnCloseReport").addEventListener("click", function () { $("dlgReport").close(); });
     $("btnXlsx").addEventListener("click", function () {
       if (needX()) busy(this, function () { saveBook(T.Report.master(S.sim, window.XLSX), runName() + "-all-generations.xlsx"); });
+    });
+    $("btnTrainZip").addEventListener("click", function () {
+      if (needX()) busy(this, function () { download(runName() + "-training.zip", new Blob([T.Report.trainingZip(S.sim, window.XLSX)], { type: "application/zip" })); });
     });
     $("btnGenZip").addEventListener("click", function () {
       if (needX()) busy(this, function () { download(runName() + "-generations.zip", new Blob([T.Report.generationsZip(S.sim, window.XLSX)], { type: "application/zip" })); });

@@ -1,0 +1,1 @@
+d0fc873  2026-11-23  gkson  add archival plan and blueprints (HEAD -> main, origin/main, origin/HEAD)

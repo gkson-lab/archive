@@ -6,13 +6,6 @@ There is also a headless CLI that writes the same data sheets.
 
 The market is fictional. The 6,138 symbols are real NASDAQ, NYSE and AMEX listings, and each starts from its real price, market cap, volume and sector. Every price after that is simulated.
 
-## On your phone
-
-**Easiest: the hosted link.** Open https://claude.ai/artifact/LXnD6DYBZJpWWAFite1hLW on your phone while signed in to claude.ai, in a browser or the Claude app. Downloads open your phone's save prompt (on iPhone, the share sheet: pick *Save to Files*). To make it feel like an app, add it to your home screen: in Safari, tap **Share → Add to Home Screen**; in Chrome on Android, tap **⋮ → Add to Home screen**.
-
-**Offline: one file.** [`dist/trade-box.html`](dist/trade-box.html) is the whole app in a single 1.5 MB file, with no server or internet needed after the first load of the fonts. On Android, download it from GitHub (open the file, then the **⋯ → Download** button), then open it from the *Files* app in Chrome. On iPhone, Safari won't run a local HTML file, so use the hosted link instead.
-
-Rebuild both after changing the code: `node tools/build_single.js` writes `dist/trade-box.html`; `node tools/build_single.js --artifact` writes the hosted-link version.
 
 ## Run it
 
@@ -20,7 +13,7 @@ Rebuild both after changing the code: `node tools/build_single.js` writes `dist/
 |---|---|
 | Any browser | Open `index.html` directly, or serve the folder: `python3 -m http.server 8080` |
 | Phone / tablet | Host the folder (GitHub Pages: Settings → Pages → Deploy from branch `main`, root) and open the URL. It installs as an app and works offline after the first visit. |
-| Headless | `node cli.js --mult 2 --gens 6 --days 10 --seed 42` |
+| Headless | `node cli.js --mult 2 --gens 6 --days 10 --seed 42` (add `--gzip` or `--lean` for smaller files, `--xlsx` for Excel copies) |
 | Endless | Browser: **New run → Run forever**, then **Finish** when you want to stop. CLI: `node cli.js --forever` (Ctrl+C finishes the current generation and saves everything; `--max-gens N` and `--max-minutes M` also work) |
 | Combine CSVs | `node tools/combine.js out/run-20270104-x1` or `node tools/combine.js a.zip b/*.csv --out merged.xlsx`. In the browser: **Data → Combine CSVs into one spreadsheet** |
 | Update checker | Built into the page: checks GitHub every 5-10 minutes and shows a **Reload** bar when a new commit lands on `main`. For a local clone: `node tools/check-updates.js` (add `--pull` to fast-forward automatically, `--branch` to pick a branch, `--once` for a single check) |
@@ -40,6 +33,55 @@ Every bot starts each generation with $100,000 by default. Change it in **New ru
 - SEC fee on sells
 - borrow fees on shorts
 - margin calls
+
+### Genetics and family trees
+
+Every bot carries **17 Mendelian genes on 4 chromosomes**, two copies of each, one inherited from each parent. They work like real inheritance:
+
+- **Expression:** genes can be dominant, recessive or codominant. One gene has 12 sector alleles.
+- **Crossing over:** genes on the same chromosome tend to be inherited together.
+- **Mutation:** a mutator gene makes a bot's children mutate more.
+
+The traits change how a bot trades:
+
+- **Risk:** Aggressive or Cautious · Bold or Measured · Greedy, Balanced or Quick to bank · Loss tolerant or Loss averse
+- **Style:** Scalper or Swing trader · Morning, All-day or Afternoon trader · Trailing or Fixed stops · Diversifier or Concentrated
+- **Signals:** Newshound or Skeptic · Herd follower, Mixed or Independent · Trend reader or Contrarian · Volatility seeker or Calm seeker
+- **Focus:** Big caps or Small caps · Short seller (only `rr`) · Sector specialist (only `ss`, trades just its two favourite sectors) · Mutator (`mm`)
+
+Founders each start a **house**, and children take the house of their better-ranked parent. Every bot records its parents, grandparents, children, lineage depth and inbreeding coefficient (Wright's F). Open a bot's panel to see its family and its genes chromosome by chromosome; the **Family Tree** and **Pedigree** tables export all of it. Details are in [docs/DATASET.md](docs/DATASET.md#genetics-in-brief).
+
+### Breeding rules
+
+In **New run → Breeding**, pick a preset or build your own from three parts. On the CLI, use `--breeding PRESET`, or `--pool`, `--pairing` and `--brackets`; run `node cli.js --list-breeding` to see every choice.
+
+**Presets**
+
+| Group | Presets |
+|---|---|
+| Winners and losers | Ranked neighbours (default) · Winners with winners · Losers with losers · Winners with winners and losers with losers · Winners with losers |
+| By profit | Only profitable bots · Only losing bots · Only bots that beat the SIM 500 · Only bots above a return you set · Only bots in a return range you set · Top 25% mate at random · Bottom 25% mate at random |
+| By bracket | Within each quartile · Each quartile with the one below · Top quartile with bottom quartile · Top two quartiles only · Within profit levels (below -2%, -2 to 0%, 0 to 2%, above 2%) |
+| Other | Random mating · Tournament · Rank roulette · Avoid relatives · Keep it in the family |
+
+**Build your own** (changing any of these switches the preset to Custom):
+
+| Part | Choices |
+|---|---|
+| Who can breed (`--pool`) | The usual breeders · Everyone · Winners (top half) · Losers (bottom half) · Winners and losers kept apart · Profitable bots · Unprofitable bots · Beat the SIM 500 · Lost to the SIM 500 · Return at or above a level · Return below a level · Return between two levels · Top X% · Bottom X% · Chosen brackets |
+| How they pair up (`--pairing`) | Similar rank · Opposite rank · Random · Closest profit · Same bracket only · Next bracket down · Mirror brackets (top with bottom) · Tournament · Rank roulette · Least related · Most related |
+| Brackets (`--brackets`) | Halves · Thirds · Quartiles · Fifths · Tenths · Profit levels you set (`--levels -2,0,2`) |
+| Settings | Return levels in % (`--threshold`, `--threshold2`), share for Top/Bottom X% (`--pct`), which brackets may breed (`--allowed 1,2`, where 1 is the top bracket) |
+
+Example: `node cli.js --pool brackets --brackets profit --levels -3,0,3 --allowed 1,4 --pairing mirrorBracket` lets only bots above +3% and bots below -3% breed, each high earner paired with a big loser.
+
+**How it works**
+
+- The schedule never changes (20 → 10 → 20). Rules choose who *parents* the children; from Gen 3 on, the top half still survives into the next generation.
+- If a rule's pool has fewer bots than the pairs needed, bots in it parent more than one pair. If fewer than 2 bots qualify, the next in line fill in, and the child's record says so.
+- Every child records its parents' ranks, returns and brackets, plus the rule that paired them (`parentRanks`, `parentReturns`, `parentBrackets`, `breedingDetail`).
+
+**Mutation** (Low / Normal / High / Wild, `--mutation`) scales how far children drift from their parents.
 
 ### Breeding schedule
 
@@ -97,13 +139,66 @@ On phones, a bottom tab bar switches between panels.
 
 At the end of a run, the report shows run-wide averages (return, P/L, win rate, Sharpe, drawdown), a per-generation chart and table, and the top bot runs. It also offers downloads.
 
+## Training a model
+
+Every run writes model-ready data: inputs are `x_*` columns, targets are `y_*` columns. There are three datasets:
+
+- **Market samples:** about 150+ stocks a day, ~50 inputs, with 1/5/10-day forward returns.
+- **Round trips:** every bot trade, with the stock's inputs at entry and the bot's genes, labeled win/loss and return.
+- **Bot generations:** genes and traits labeled with performance.
+
+To get them, use **Data → Training data (.zip)** in the browser; the CLI writes them into every generation folder. Stack any number of runs and train:
+
+```bash
+pip install pandas scikit-learn
+python3 tools/train_model.py out/run-1-x1 out/run-2-x1 out/run-3-x1                 # stock vs SIM 500 over 5 days
+python3 tools/train_model.py out/run-* --task trips --save trips-model.joblib       # will this bot's trade win?
+python3 tools/train_model.py out/run-* --task bots                                  # which genes and traits pay?
+```
+
+The test set is always the latest 20% of dates. Every column is documented in [docs/DATASET.md](docs/DATASET.md).
+
+### Why the data gets big, and how to keep it small
+
+A 60-trading-day run makes about **18 MB of real data**. The biggest tables are:
+
+- training samples: ~150+ stocks a day × ~60 columns
+- round trips: ~90 columns each, because every trade carries the stock's inputs and the bot's genes
+
+Earlier versions also wrote the same rows three more times (two Excel workbooks and a folder per bot), which made the same run **98 MB**. Now:
+
+- **CLI default:** writes each row once, as CSV. The extra copies are opt-in: `--xlsx` and `--bot-folders`.
+- **`--gzip`:** writes `.csv.gz`, about 3x smaller. pandas, `tools/train_model.py` and `tools/combine.js` read it directly.
+- **`--lean`:** gzip plus 50 training samples a day instead of 150. The same 60-day run is **4.7 MB**.
+- **In the app:** New run → *Training samples per day* (Off / 50 / 150 / 400) sets the biggest table. *Memory for trade-level data* (about 150 MB, 400 MB or 1.5 GB) caps how much an endless run holds.
+- **Memory is counted in cells** (rows × columns, about 50 bytes each), because a training row has ~90 columns. Per-bot history and retired bots are kept for the last 300 generations (`--history`), so endless runs stay flat in memory. The CLI's generation folders, including `births.csv` for every bot born, always hold everything.
+
+### Run it in the cloud for free
+
+The repo is public, so **GitHub Actions minutes are free**, on 4-core, 16 GB runners with up to 6 hours per job. Two workflows are ready:
+
+1. **Simulate** (Actions tab → *Simulate* → *Run workflow*). It runs the box for 60 minutes by default (up to 330), endless, with your choice of days, population, breeding and samples.
+   - A runner simulates roughly 200 trading days a minute, so an hour is decades of market history: about 650 MB of gzipped data at 50 samples a day (measured). That speed is why the data gets big.
+   - Archives over 1.9 GB are split into parts, which *Train* joins back together.
+   - The gzipped data is saved as a workflow artifact for 90 days.
+   - It's also saved as a **GitHub Release** `run-N`, which is kept until you delete it; each file can be up to 2 GB.
+   - Uncomment the `schedule:` lines in `.github/workflows/simulate.yml` to run it every day automatically.
+2. **Train** (Actions tab → *Train* → *Run workflow*). It downloads every `run-*` release, stacks them, trains one model with `tools/train_model.py`, and saves `model.joblib`, the report and the predictions. Tick *release* to keep them as a `model-N` release. It uses at most 3 million rows (a random sample, `--max-rows`) so training fits the runner's 16 GB.
+
+Free places to go bigger:
+
+- **Kaggle Notebooks:** free CPU, plus about 30 GPU hours a week. Upload the release files as a Kaggle dataset.
+- **Google Colab:** free notebooks.
+- **Hugging Face Datasets:** free hosting for large public datasets.
+- **Oracle Cloud Always Free:** a small ARM virtual machine that can run `node cli.js --forever` around the clock.
+
 ## Data
 
 Open **Data** at any time, even mid-run, to see the report and export. The exports are:
 
 | Export | What's in it |
 |---|---|
-| Master workbook (.xlsx) | All 15 tables below, with every generation stacked and a `gen` column, plus one `Gen N` sheet per generation |
+| Master workbook (.xlsx) | All 18 tables below, with every generation stacked and a `gen` column, plus one `Gen N` sheet per generation |
 | Generation CSVs (.zip) | `gen-0001/`, `gen-0002/` ... with that generation's bots, trades, round trips, bot daily, intraday equity, positions, market, sectors, news and genetics, plus run-level CSVs |
 | Every bot (.zip) | `bots/<name>/` for every bot: profile (with genome), per-generation results, daily ledger, round trips, trades, intraday equity, positions, sector P/L, symbol P/L |
 | Bot ledger workbook (.xlsx) | An index of every bot, then one daily-ledger sheet per bot |
@@ -128,9 +223,12 @@ Sheets that would pass Excel's row limit continue on a `(2)` sheet.
 | Market Daily | SIM 500 OHLC, SIM VIX, regime, fed funds, CPI, unemployment, GDP, advancers/decliners, up/down volume, new highs/lows, % above the 20-day average, dollar volume, halts |
 | Sector Daily | Daily return and level of all 12 sector indices |
 | News | Every headline with impact, sentiment, VIX at the time, and EPS actual/estimate/surprise for earnings |
+| Market Samples | Labeled training rows: a stock's inputs at the close and its 1/5/10-day forward returns |
+| Family Tree | Every bot ever born: house, parents, grandparents, genotype, traits, inbreeding, children, lifetime return |
+| Pedigree | Parent → child edges |
 | Symbols | All 6,138 symbols: price and return since start (split-adjusted), market cap, EPS, P/E, dividend yield and amount paid, short interest, beta, volatility, RSI, ATR, 6-month range, news/earnings/split counts, bot round trips and P/L |
 
-**Endless runs** keep every summary table in full. Trade-level tables keep the newest rows up to a memory budget (New run → *Trade-level rows kept in memory*); past that, the oldest generations' trade-level rows are dropped from memory, and the exports say which ones. The CLI writes every generation's CSVs to disk as it goes, so nothing is lost there.
+**Endless runs** keep the Generations and Genetics tables in full, per-bot tables for the last 300 generations, and trade-level tables up to a memory budget (New run → *Memory for trade-level data*). Past that, the oldest rows are dropped from memory, and the exports say which ones. The CLI writes every generation's CSVs to disk as it goes, so nothing is lost there.
 
 ## Files
 
@@ -147,6 +245,10 @@ js/updates.js                GitHub update checker (in the page)
 cli.js                       headless runner (endless mode, writes each generation to disk)
 tools/combine.js             merge generation CSVs / ZIPs into one workbook
 tools/check-updates.js       update checker for a local clone
+tools/train_model.py         train one model on any number of runs (pandas + scikit-learn)
+.github/workflows/simulate.yml   run the box on GitHub's free runners, save data as a release
+.github/workflows/train.yml      train one model on every saved run
+docs/DATASET.md              every training column explained
 vendor/xlsx.full.min.js      SheetJS 0.18.5 (Apache-2.0)
 ```
 

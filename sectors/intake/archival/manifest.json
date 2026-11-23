@@ -1,0 +1,34 @@
+{
+ "name": "archival",
+ "title": "archival",
+ "sector": "intake",
+ "summary": "",
+ "source": "https://github.com/gkson-lab/archival",
+ "repo": "gkson-lab/archival",
+ "kind": "source",
+ "first": "2026-11-23",
+ "last": "2026-11-23",
+ "commits": 1,
+ "pulls": {
+  "open": 0,
+  "total": 0
+ },
+ "signature": "824cd5eeec63510b84cd7cf03505573e851b9692",
+ "versions": [
+  {
+   "id": "main",
+   "branch": "main",
+   "head": "d0fc873",
+   "sha": "d0fc8733d4a77cb472bb0428bd34c4aed9d66b7e",
+   "date": "2026-11-23",
+   "message": "add archival plan and blueprints",
+   "commits": 1,
+   "files": [
+    [
+     "PLAN.md",
+     22117
+    ]
+   ]
+  }
+ ]
+}

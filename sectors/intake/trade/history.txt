@@ -1,4 +1,10 @@
-caffcfe  2026-11-23  gkson  Add a phone version: hosted link and a single-file offline build (HEAD -> main, origin/main, origin/HEAD)
+6333751  2026-11-23  gkson  README: measured cloud output size (about 650 MB per hour) (HEAD -> main, origin/main, origin/HEAD)
+6aa21dd  2026-11-23  gkson  Keep long and cloud runs bounded: memory counted in cells, rolling history, sized cloud defaults
+39aeda0  2026-11-23  gkson  Add 10 inherited traits on 4 chromosomes, smaller data output, free cloud workflows
+cd35eb7  2026-11-23  gkson  Remove mobile usage instructions from README
+a133369  2026-11-23  gkson  Make breeding rules specific: presets plus who-can-breed, pairing and brackets
+d053dce  2026-11-23  gkson  Add training datasets, Mendelian genetics with family trees, and breeding rules
+caffcfe  2026-11-23  gkson  Add a phone version: hosted link and a single-file offline build
 d58d60c  2026-11-23  gkson  Make each bot's starting cash configurable
 2a886c8  2026-11-23  gkson  Endless runs, advanced data, per-bot and combined exports, update checker
 2c2f1d5  2026-11-22  gkson  import full program

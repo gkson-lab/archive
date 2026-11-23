@@ -1,13 +1,78 @@
 {
  "commits": [
   {
+   "sha": "f616967a1be46f8c5a568d5f5dc8c14d2babda6a",
+   "date": "2026-11-23T20:12:58Z",
+   "author": "gkson",
+   "message": "remove CLAUDE.md from the repo",
+   "tips": [
+    "claude/happy-mendel-7xev5b"
+   ]
+  },
+  {
+   "sha": "145772514f9631d84f614737d3939c449b130126",
+   "date": "2026-11-23T19:54:13Z",
+   "author": "gkson",
+   "message": "add design laws to CLAUDE.md",
+   "tips": []
+  },
+  {
+   "sha": "76fc4c7e751573437a1e8d8384e670c101396cb3",
+   "date": "2026-11-23T10:31:58-05:00",
+   "author": "gkson",
+   "message": "Merge pull request #8 from gkson-lab/claude/happy-mendel-7xev5b",
+   "tips": [
+    "main"
+   ]
+  },
+  {
+   "sha": "e885d5b928017b1614a9ed4e5218753f878ead0b",
+   "date": "2026-11-23T10:31:06-05:00",
+   "author": "gkson",
+   "message": "Update README to simplify project description",
+   "tips": []
+  },
+  {
+   "sha": "b3c987dba31807abbc54d7a3d57f84d5b19b276f",
+   "date": "2026-11-23T15:29:49Z",
+   "author": "gkson",
+   "message": "remove cursor-driven light on the prism",
+   "tips": []
+  },
+  {
+   "sha": "63e289635a60fc504cf2907e33993525c9049d3d",
+   "date": "2026-11-23T10:26:07-05:00",
+   "author": "gkson",
+   "message": "Merge pull request #7 from gkson-lab/claude/happy-mendel-7xev5b",
+   "tips": []
+  },
+  {
+   "sha": "24fecbfbeedd729b8f461870977d8e187d83a2f8",
+   "date": "2026-11-23T15:22:37Z",
+   "author": "gkson",
+   "message": "stop hero flashing on mouse movement",
+   "tips": []
+  },
+  {
+   "sha": "47ae6ab5fce4a0e78959d4afc13008b5313ad0db",
+   "date": "2026-11-23T10:20:30-05:00",
+   "author": "gkson",
+   "message": "Merge pull request #6 from gkson-lab/claude/happy-mendel-7xev5b",
+   "tips": []
+  },
+  {
+   "sha": "be10e3b94a03f674535a84a85c3668a9c4c805d3",
+   "date": "2026-11-23T15:19:55Z",
+   "author": "gkson",
+   "message": "fix profile stats: working badges + own roles/stats card",
+   "tips": []
+  },
+  {
    "sha": "23c8b2b636b4b7cfcc2431b84a4fdbeaa8dd2373",
    "date": "2026-11-22T19:49:55-05:00",
    "author": "gkson",
    "message": "Merge pull request #5 from gkson-lab/claude/happy-mendel-7xev5b",
-   "tips": [
-    "main"
-   ]
+   "tips": []
   },
   {
    "sha": "1c20d68f939466132990060200d4715fd838b3cc",
@@ -115,15 +180,6 @@
    "tips": []
   },
   {
-   "sha": "c084c5224a41cd1e9e814211a99f02eab9a3f835",
-   "date": "2026-11-15T02:22:24Z",
-   "author": "Claude",
-   "message": "Add Zephyr: real-time 3D wind tunnel simulator",
-   "tips": [
-    "claude/exciting-shannon-b4yeu2"
-   ]
-  },
-  {
    "sha": "4f31b9fb8f10e6b1918edea357101645f3de1eaf",
    "date": "2026-11-11T21:01:49-06:00",
    "author": "gkson",
@@ -153,6 +209,51 @@
   }
  ],
  "pulls": [
+  {
+   "number": 8,
+   "title": "remove cursor-driven light on the prism",
+   "state": "merged",
+   "draft": false,
+   "author": "gkson-lab",
+   "head": "claude/happy-mendel-7xev5b",
+   "base": "main",
+   "sha": "b3c987dba31807abbc54d7a3d57f84d5b19b276f",
+   "created": "2026-11-23T15:29:56Z",
+   "updated": "2026-11-23T15:32:01Z",
+   "closed": "2026-11-23T15:31:58Z",
+   "merged": "2026-11-23T15:31:58Z",
+   "url": "https://github.com/gkson-lab/gkson-lab/pull/8"
+  },
+  {
+   "number": 7,
+   "title": "stop hero flashing on mouse movement",
+   "state": "merged",
+   "draft": false,
+   "author": "gkson-lab",
+   "head": "claude/happy-mendel-7xev5b",
+   "base": "main",
+   "sha": "24fecbfbeedd729b8f461870977d8e187d83a2f8",
+   "created": "2026-11-23T15:22:45Z",
+   "updated": "2026-11-23T15:26:14Z",
+   "closed": "2026-11-23T15:26:07Z",
+   "merged": "2026-11-23T15:26:07Z",
+   "url": "https://github.com/gkson-lab/gkson-lab/pull/7"
+  },
+  {
+   "number": 6,
+   "title": "fix profile stats + roles/stats card",
+   "state": "merged",
+   "draft": false,
+   "author": "gkson-lab",
+   "head": "claude/happy-mendel-7xev5b",
+   "base": "main",
+   "sha": "be10e3b94a03f674535a84a85c3668a9c4c805d3",
+   "created": "2026-11-23T15:20:04Z",
+   "updated": "2026-11-23T15:20:35Z",
+   "closed": "2026-11-23T15:20:31Z",
+   "merged": "2026-11-23T15:20:31Z",
+   "url": "https://github.com/gkson-lab/gkson-lab/pull/6"
+  },
   {
    "number": 5,
    "title": "Claude/happy mendel 7xev5b",
@@ -208,7 +309,7 @@
    "base": "main",
    "sha": "c084c5224a41cd1e9e814211a99f02eab9a3f835",
    "created": "2026-11-15T02:39:24Z",
-   "updated": "2026-11-15T02:41:26Z",
+   "updated": "2026-11-23T15:31:44Z",
    "closed": "2026-11-15T02:41:26Z",
    "merged": null,
    "url": "https://github.com/gkson-lab/gkson-lab/pull/2"

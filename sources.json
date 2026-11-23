@@ -75,6 +75,14 @@
    "title": "trade",
    "summary": "trading bot simulation",
    "auto": true
+  },
+  {
+   "repo": "https://github.com/gkson-lab/archival",
+   "sector": "intake",
+   "name": "archival",
+   "title": "archival",
+   "summary": "",
+   "auto": true
   }
  ]
 }
