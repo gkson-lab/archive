@@ -1,0 +1,55 @@
+002c30a  2026-10-21  Claude  Phones: command lines take input at full width, with a Run button and no zoom; all tabs visible (HEAD -> main, origin/main, origin/HEAD)
+49b9962  2026-10-20  gkson  readme edit
+a236f1b  2026-10-20  gkson  Rename the repository to longshot10
+0e280a9  2026-10-20  Claude  Release notes: one page per release, with an index (tag: v3.4)
+3efc17a  2026-10-20  Claude  Add full release notes for every release, v3.0 to v5.0
+08ebfb7  2026-10-20  gkson  Merge pull request #1 from gkson-lab/claude/kind-goodall-e1da0u
+f2482c5  2026-10-20  Claude  v5.0: seasons, skins that follow the system or change daily, Void and Diamond skins (tag: v5.0)
+2241dc0  2026-10-20  Claude  v4.8: challenges with exact chances, Smartwatch skin, compact layout, two skins (tag: v4.8)
+0f9f437  2026-10-20  Claude  v4.6: Ticker skin, prestige perks, hall of fame by difficulty, Bronze, Silver and Platinum skins (tag: v4.6)
+f8c69eb  2026-10-20  Claude  v4.4: rolling while away, Night shift, Hourglass, sound settings, haptics, two skins (tag: v4.4)
+4a4cef6  2026-10-20  Claude  v4.2: Receipt skin, profile with titles and an image card, automatic save backups, Newsprint skin (tag: v4.2)
+4fd5deb  2026-10-20  Claude  v4.0: the Arcade, with higher or lower, digit pick, a daily wheel and scratch cards, two skins (tag: v4.0)
+bf1554d  2026-10-20  Claude  v3.9: Spreadsheet skin, run summaries, collection sorting, badge mastery, Olive skin (tag: v3.9)
+a2ecd93  2026-10-20  Claude  v3.8: bingo, bounty board, hunt three at once, stop on new badge, Endless limits, two skins (tag: v3.8)
+8a7b77b  2026-10-20  Claude  v3.7: daily streak, Streak Freeze, lucky hour, weekend coins, quest rerolls, weekly quests, two skins (tag: v3.7)
+dec4339  2026-10-20  Claude  v3.6: token workshop, coin shop, Coin Magnet and Token Charm, auto-fuse, quick use, two skins (tag: v3.6)
+35b4887  2026-10-20  Claude  v3.5: how lucky you have been, odds calculator, records, milestones, log filters and CSV, two skins (tag: v3.5)
+0138a78  2026-10-20  Claude  v3.4: what's new with timestamps, keys, text size, notice switches, bigger batches, keep boosts going, two skins
+6e30815  2026-10-19  gkson-lab  Instant rolls and instant batches (v3.33) (tag: v3.33)
+f7117e1  2026-10-18  gkson-lab  Label the release v3.32 (tag: v3.32)
+199a0cb  2026-10-18  gkson-lab  Endless in batches
+51a559d  2026-10-18  gkson-lab  Batch roll: x100, x1,000 or x5,000 in one go
+92d3720  2026-10-18  gkson-lab  Label the release v3.31 (tag: v3.31)
+71886f5  2026-10-18  gkson-lab  Full-strength, fast luck on every difficulty
+b5672ff  2026-10-18  gkson-lab  Label the release v3.3 (tag: v3.3)
+c5e5b51  2026-10-18  gkson-lab  More rarity tiers and item tiers
+1f39e94  2026-10-18  gkson-lab  Label the release v3.26 (tag: v3.26)
+a9c3c0d  2026-10-18  gkson-lab  Luck items work on every difficulty
+11ebd6a  2026-10-18  gkson-lab  v3.25: spin a billion coins at once, Use all (tag: v3.25)
+fd6705c  2026-10-18  gkson-lab  Label the release v3.2 (tag: v3.2)
+8f0f5ee  2026-10-18  gkson-lab  Difficulties and lucky tokens
+a2aa543  2026-10-18  gkson-lab  v3.05: instant huge luck, Turbo up to 5,000 a second (tag: v3.05)
+0f9eb0c  2026-10-17  gkson-lab  v3.1: Long Shot 10, doubled badges and achievements, three playable skins (tag: v3.1)
+37f6cc2  2026-10-17  gkson-lab  v3.0 (skins): skins, Console mode, new tiers, quests, prestige (tag: v3.0)
+3fbad2c  2026-10-17  gkson-lab  Label the release v2.8.3 (tag: v2.8.3)
+fea7c1f  2026-10-17  gkson-lab  Slot rebalance: base prize 60% -> 40%, every other prize ×1.5, lower pities
+e792163  2026-10-17  gkson-lab  v2.8.2: spin 20 at a time, or all your coins at once (tag: v2.8.2)
+664aee0  2026-10-17  gkson-lab  v2.8.1: steady screen in Turbo, every spin wins, coins 1 in 3 (tag: v2.8.1)
+5809fd2  2026-10-17  gkson-lab  v2.8: slot overhaul (tag: v2.8)
+d2a2ace  2026-10-17  gkson-lab  Label the release v2.7 (major update) (tag: v2.7)
+1b595b5  2026-10-17  gkson-lab  Coin drops and a coin slot machine
+eef5fa8  2026-10-17  gkson-lab  v2.6.1: install each release's offline copy fresh from the CDN (tag: v2.6.1)
+cbf3890  2026-10-17  gkson-lab  Label the release v2.6 (tag: v2.6)
+2d26d79  2026-10-17  gkson-lab  Giant luck charms, drop boosters and fusing
+db2256e  2026-10-17  gkson-lab  Label the inventory release v2.5 (Inventory update) (tag: v2.5)
+362e2d3  2026-10-17  gkson-lab  v2.3: inventory with luck boosts, saved per save file
+4f4f734  2026-10-17  gkson-lab  Point links at the renamed repository, gkson-lab/rngexp10
+ab4f635  2026-10-17  gkson-lab  v2.2: faster Endless, save files, sharing saves on GitHub (tag: v2.2)
+a3f28ab  2026-10-17  gkson-lab  Faster Endless without lag, save files (work in progress for v2.2)
+6a703fa  2026-10-17  gkson-lab  v2.1: math modes, 100 multipliers, 1/N odds for every roll (tag: v2.1)
+fd4fa1c  2026-10-17  gkson-lab  v2.0.2: fetch fresh files when a new offline cache installs (tag: v2.0.2)
+062fb00  2026-10-17  gkson-lab  v2.0.1: PNG app icons for install (tag: v2.0.1)
+e4d0210  2026-10-17  gkson-lab  v2.0: ten digits, Exponent mode, Endless with side leaderboards (tag: v2.0)
+531a4d7  2026-10-17  gkson-lab  v1.1: badge hunt, new-badge alerts, number checker, save export (tag: v1.1)
+8820f5f  2026-10-17  gkson-lab  RNGdle 9: nine-digit random number badge game (tag: v1.0)

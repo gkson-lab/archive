@@ -1,0 +1,218 @@
+{
+ "name": "longshot10",
+ "title": "long shot 10",
+ "sector": "browser",
+ "summary": "a ten-digit luck game with unlimited rolls, 300-odd badges and a multiplier reel. formerly rngdle 10.",
+ "source": "https://github.com/gkson-lab/longshot10",
+ "repo": "gkson-lab/longshot10",
+ "kind": "source",
+ "first": "2026-10-17",
+ "last": "2026-10-21",
+ "commits": 55,
+ "pulls": {
+  "open": 0,
+  "total": 0
+ },
+ "signature": "1d233606ce490ed377d835da45c478d1f8ab9772",
+ "versions": [
+  {
+   "id": "main",
+   "branch": "main",
+   "head": "002c30a",
+   "sha": "002c30acddfd951137a960b802d54fec40e1dea1",
+   "date": "2026-10-21",
+   "message": "Phones: command lines take input at full width, with a Run button and no zoom; all tabs visible",
+   "commits": 55,
+   "files": [
+    [
+     "DESIGN.md",
+     10338
+    ],
+    [
+     "README.md",
+     22988
+    ],
+    [
+     "app.js",
+     308059
+    ],
+    [
+     "badges.js",
+     98040
+    ],
+    [
+     "data.js",
+     65333
+    ],
+    [
+     "icon-192.png",
+     2546
+    ],
+    [
+     "icon-512.png",
+     7026
+    ],
+    [
+     "icon.svg",
+     865
+    ],
+    [
+     "index.html",
+     40003
+    ],
+    [
+     "manifest.webmanifest",
+     577
+    ],
+    [
+     "package.json",
+     311
+    ],
+    [
+     "styles.css",
+     78490
+    ],
+    [
+     "sw.js",
+     1418
+    ],
+    [
+     ".github/DISCUSSION_TEMPLATE/show-and-tell.yml",
+     1083
+    ],
+    [
+     ".github/ISSUE_TEMPLATE/config.yml",
+     237
+    ],
+    [
+     ".github/ISSUE_TEMPLATE/share-save.yml",
+     915
+    ],
+    [
+     "docs/HOW-TO-PLAY.md",
+     14564
+    ],
+    [
+     "docs/ODDS.md",
+     63288
+    ],
+    [
+     "docs/RELEASE-NOTES.md",
+     1603
+    ],
+    [
+     "docs/SKINS-AND-COMMANDS.md",
+     9902
+    ],
+    [
+     "docs/releases/v3.0.md",
+     164
+    ],
+    [
+     "docs/releases/v3.1.md",
+     192
+    ],
+    [
+     "docs/releases/v3.2.md",
+     214
+    ],
+    [
+     "docs/releases/v3.25.md",
+     197
+    ],
+    [
+     "docs/releases/v3.26.md",
+     201
+    ],
+    [
+     "docs/releases/v3.3.md",
+     264
+    ],
+    [
+     "docs/releases/v3.31.md",
+     227
+    ],
+    [
+     "docs/releases/v3.32.md",
+     207
+    ],
+    [
+     "docs/releases/v3.33.md",
+     243
+    ],
+    [
+     "docs/releases/v3.4.md",
+     1088
+    ],
+    [
+     "docs/releases/v3.5.md",
+     1079
+    ],
+    [
+     "docs/releases/v3.6.md",
+     1006
+    ],
+    [
+     "docs/releases/v3.7.md",
+     1086
+    ],
+    [
+     "docs/releases/v3.8.md",
+     884
+    ],
+    [
+     "docs/releases/v3.9.md",
+     921
+    ],
+    [
+     "docs/releases/v4.0.md",
+     1098
+    ],
+    [
+     "docs/releases/v4.2.md",
+     883
+    ],
+    [
+     "docs/releases/v4.4.md",
+     1012
+    ],
+    [
+     "docs/releases/v4.6.md",
+     859
+    ],
+    [
+     "docs/releases/v4.8.md",
+     771
+    ],
+    [
+     "docs/releases/v5.0.md",
+     779
+    ],
+    [
+     "tools/build-data.js",
+     7870
+    ],
+    [
+     "tools/check.js",
+     9261
+    ],
+    [
+     "tools/contrast.js",
+     4865
+    ],
+    [
+     "tools/docs.js",
+     20367
+    ],
+    [
+     "tools/icons.js",
+     3721
+    ],
+    [
+     "tools/smoke.js",
+     33372
+    ]
+   ]
+  }
+ ]
+}
