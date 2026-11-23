@@ -1,0 +1,21 @@
+23c8b2b  2026-11-22  gkson  Merge pull request #5 from gkson-lab/claude/happy-mendel-7xev5b (HEAD -> main, origin/main, origin/HEAD)
+1c20d68  2026-11-22  gkson  Merge branch 'main' into claude/happy-mendel-7xev5b
+80db398  2026-11-23  gkson  add merged PRs badge to profile
+0446ba6  2026-11-22  gkson  Update founder title in README
+1718b7b  2026-11-22  gkson  chrome look: liquid metal everywhere, color only as an oil-slick rim
+73e7ae3  2026-11-22  gkson  Remove organizations section from README
+7ff5961  2026-11-22  gkson  Update README to introduce GK-Labs and remove tagline
+8b1b1a9  2026-11-22  gkson  Expand README with organizations and team details
+1562d94  2026-11-22  gkson  Add GitHub stats card to README
+c10fc21  2026-11-22  gkson  Add GitHub stats section with badges to README
+c2ec8e2  2026-11-22  gkson  Merge pull request #4 from gkson-lab/claude/happy-mendel-7xev5b
+4258c11  2026-11-22  gkson  form the site around gk-labs
+4756871  2026-11-22  gkson  put the site in the readme, chiller intro line
+fd9d2c1  2026-11-22  gkson  Merge pull request #3 from gkson-lab/claude/happy-mendel-7xev5b
+2c8c32e  2026-11-22  gkson  shaders, liquid glass and chromatic themes
+eb68392  2026-11-22  gkson  add about me site for github pages
+c084c52  2026-11-15  Claude  Add Zephyr: real-time 3D wind tunnel simulator (origin/claude/exciting-shannon-b4yeu2)
+4f31b9f  2026-11-11  gkson  Revise README introduction and project details
+d9fd6bf  2026-10-16  gkson  Update README.md (fix typo)
+fb32323  2026-10-16  gkson  Update README.md
+bae3b75  2026-10-16  gkson  Create README.md

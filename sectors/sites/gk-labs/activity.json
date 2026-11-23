@@ -1,0 +1,156 @@
+{
+ "commits": [
+  {
+   "sha": "23c8b2b636b4b7cfcc2431b84a4fdbeaa8dd2373",
+   "date": "2026-11-22T19:49:55-05:00",
+   "author": "gkson",
+   "message": "Merge pull request #5 from gkson-lab/claude/happy-mendel-7xev5b",
+   "tips": [
+    "main"
+   ]
+  },
+  {
+   "sha": "1c20d68f939466132990060200d4715fd838b3cc",
+   "date": "2026-11-22T19:47:20-05:00",
+   "author": "gkson",
+   "message": "Merge branch 'main' into claude/happy-mendel-7xev5b",
+   "tips": []
+  },
+  {
+   "sha": "80db398a97f0ca036628625cbc402a551f852143",
+   "date": "2026-11-23T00:43:01+00:00",
+   "author": "gkson",
+   "message": "add merged PRs badge to profile",
+   "tips": []
+  },
+  {
+   "sha": "0446ba62838716b89cf6c97523182b554dc8f881",
+   "date": "2026-11-22T16:23:03-05:00",
+   "author": "gkson",
+   "message": "Update founder title in README",
+   "tips": []
+  },
+  {
+   "sha": "1718b7be8c90af6b4c915ba607d6923af4361f17",
+   "date": "2026-11-22T19:23:45+00:00",
+   "author": "gkson",
+   "message": "chrome look: liquid metal everywhere, color only as an oil-slick rim",
+   "tips": []
+  },
+  {
+   "sha": "73e7ae3994b0710a64dbeb96f64041466503eb88",
+   "date": "2026-11-22T13:24:12-05:00",
+   "author": "gkson",
+   "message": "Remove organizations section from README",
+   "tips": []
+  },
+  {
+   "sha": "7ff59615cac61b03bd53d3caaadf6b75c9c9cf24",
+   "date": "2026-11-22T13:22:30-05:00",
+   "author": "gkson",
+   "message": "Update README to introduce GK-Labs and remove tagline",
+   "tips": []
+  },
+  {
+   "sha": "8b1b1a9dd0fc6e382e4d29d248c8aee7bc4173f2",
+   "date": "2026-11-22T13:21:00-05:00",
+   "author": "gkson",
+   "message": "Expand README with organizations and team details",
+   "tips": []
+  },
+  {
+   "sha": "1562d949dc4663ab95895127ea14ccda34e11a38",
+   "date": "2026-11-22T13:16:41-05:00",
+   "author": "gkson",
+   "message": "Add GitHub stats card to README",
+   "tips": []
+  },
+  {
+   "sha": "c10fc21ba1356abdacb967301a38859081604d4c",
+   "date": "2026-11-22T13:15:50-05:00",
+   "author": "gkson",
+   "message": "Add GitHub stats section with badges to README",
+   "tips": []
+  },
+  {
+   "sha": "c2ec8e2ebf3055e87276f29d633e9cf498a1935d",
+   "date": "2026-11-22T10:59:51-05:00",
+   "author": "gkson",
+   "message": "Merge pull request #4 from gkson-lab/claude/happy-mendel-7xev5b",
+   "tips": []
+  },
+  {
+   "sha": "4258c116660ba2a5260e8b7df9109e8b7901900a",
+   "date": "2026-11-22T15:54:03+00:00",
+   "author": "gkson",
+   "message": "form the site around gk-labs",
+   "tips": []
+  },
+  {
+   "sha": "4756871d50de81e2c0bca50bab42986bb0507505",
+   "date": "2026-11-22T15:49:11+00:00",
+   "author": "gkson",
+   "message": "put the site in the readme, chiller intro line",
+   "tips": []
+  },
+  {
+   "sha": "fd9d2c1cd59bcb7d9011cd4d61533578a1f2ea39",
+   "date": "2026-11-22T10:46:26-05:00",
+   "author": "gkson",
+   "message": "Merge pull request #3 from gkson-lab/claude/happy-mendel-7xev5b",
+   "tips": []
+  },
+  {
+   "sha": "2c8c32e57bbcba8c8a9f236975c3aa458e31342e",
+   "date": "2026-11-22T15:30:12+00:00",
+   "author": "gkson",
+   "message": "shaders, liquid glass and chromatic themes",
+   "tips": []
+  },
+  {
+   "sha": "eb6839203296257d903915e208a74a294dbf6a31",
+   "date": "2026-11-22T15:09:21+00:00",
+   "author": "gkson",
+   "message": "add about me site for github pages",
+   "tips": []
+  },
+  {
+   "sha": "c084c5224a41cd1e9e814211a99f02eab9a3f835",
+   "date": "2026-11-15T02:22:24+00:00",
+   "author": "Claude",
+   "message": "Add Zephyr: real-time 3D wind tunnel simulator",
+   "tips": [
+    "claude/exciting-shannon-b4yeu2"
+   ]
+  },
+  {
+   "sha": "4f31b9fb8f10e6b1918edea357101645f3de1eaf",
+   "date": "2026-11-11T21:01:49-06:00",
+   "author": "gkson",
+   "message": "Revise README introduction and project details",
+   "tips": []
+  },
+  {
+   "sha": "d9fd6bf5df6295650d195abfa8ffd9a8a2eb4d88",
+   "date": "2026-10-16T22:00:25-05:00",
+   "author": "gkson",
+   "message": "Update README.md (fix typo)",
+   "tips": []
+  },
+  {
+   "sha": "fb3232355ea5067abb94e12c5912407c51bcbc0b",
+   "date": "2026-10-16T21:57:37-05:00",
+   "author": "gkson",
+   "message": "Update README.md",
+   "tips": []
+  },
+  {
+   "sha": "bae3b75b91c3dfa7df5b45b7aef5807300a74d8b",
+   "date": "2026-10-16T21:55:33-05:00",
+   "author": "gkson",
+   "message": "Create README.md",
+   "tips": []
+  }
+ ],
+ "pulls": []
+}
