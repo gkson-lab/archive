@@ -2,7 +2,7 @@
  "commits": [
   {
    "sha": "002c30acddfd951137a960b802d54fec40e1dea1",
-   "date": "2026-10-21T02:44:21+00:00",
+   "date": "2026-10-21T02:44:21Z",
    "author": "Claude",
    "message": "Phones: command lines take input at full width, with a Run button and no zoom; all tabs visible",
    "tips": [
@@ -25,14 +25,14 @@
   },
   {
    "sha": "0e280a9d5180961ce30a9babbe98109f4885f791",
-   "date": "2026-10-20T12:15:52+00:00",
+   "date": "2026-10-20T12:15:52Z",
    "author": "Claude",
    "message": "Release notes: one page per release, with an index",
    "tips": []
   },
   {
    "sha": "3efc17a67333318bd06252c0eb5802af8af8e5e7",
-   "date": "2026-10-20T12:15:28+00:00",
+   "date": "2026-10-20T12:15:28Z",
    "author": "Claude",
    "message": "Add full release notes for every release, v3.0 to v5.0",
    "tips": []
@@ -46,84 +46,84 @@
   },
   {
    "sha": "f2482c53082f0821259d2bc2fa61697b89b69db7",
-   "date": "2026-10-20T04:43:07+00:00",
+   "date": "2026-10-20T04:43:07Z",
    "author": "Claude",
    "message": "v5.0: seasons, skins that follow the system or change daily, Void and Diamond skins",
    "tips": []
   },
   {
    "sha": "2241dc085b62e0d88579ac2d0659dc3164bee54f",
-   "date": "2026-10-20T04:27:43+00:00",
+   "date": "2026-10-20T04:27:43Z",
    "author": "Claude",
    "message": "v4.8: challenges with exact chances, Smartwatch skin, compact layout, two skins",
    "tips": []
   },
   {
    "sha": "0f9f437561d47596d358d4fd7d6cc4a019b7ebcf",
-   "date": "2026-10-20T04:20:22+00:00",
+   "date": "2026-10-20T04:20:22Z",
    "author": "Claude",
    "message": "v4.6: Ticker skin, prestige perks, hall of fame by difficulty, Bronze, Silver and Platinum skins",
    "tips": []
   },
   {
    "sha": "f8c69ebaea1c20067a392108aa2eaa0aa0e3b9da",
-   "date": "2026-10-20T04:05:59+00:00",
+   "date": "2026-10-20T04:05:59Z",
    "author": "Claude",
    "message": "v4.4: rolling while away, Night shift, Hourglass, sound settings, haptics, two skins",
    "tips": []
   },
   {
    "sha": "4a4cef6fc7836bc9fa4126fcf3ac5a1df82e3860",
-   "date": "2026-10-20T03:59:55+00:00",
+   "date": "2026-10-20T03:59:55Z",
    "author": "Claude",
    "message": "v4.2: Receipt skin, profile with titles and an image card, automatic save backups, Newsprint skin",
    "tips": []
   },
   {
    "sha": "4fd5debd10933dbd7ece9d7e115fafdea6f8b061",
-   "date": "2026-10-20T03:55:27+00:00",
+   "date": "2026-10-20T03:55:27Z",
    "author": "Claude",
    "message": "v4.0: the Arcade, with higher or lower, digit pick, a daily wheel and scratch cards, two skins",
    "tips": []
   },
   {
    "sha": "bf1554df74b34d3e4127d9d5916aeb88e95350c7",
-   "date": "2026-10-20T03:47:20+00:00",
+   "date": "2026-10-20T03:47:20Z",
    "author": "Claude",
    "message": "v3.9: Spreadsheet skin, run summaries, collection sorting, badge mastery, Olive skin",
    "tips": []
   },
   {
    "sha": "a2ecd9391ca3e85c85a3cc1f55bea5833fd424dd",
-   "date": "2026-10-20T03:39:33+00:00",
+   "date": "2026-10-20T03:39:33Z",
    "author": "Claude",
    "message": "v3.8: bingo, bounty board, hunt three at once, stop on new badge, Endless limits, two skins",
    "tips": []
   },
   {
    "sha": "8a7b77b41a040bfc18c3b7fa4024695573eb0382",
-   "date": "2026-10-20T03:31:28+00:00",
+   "date": "2026-10-20T03:31:28Z",
    "author": "Claude",
    "message": "v3.7: daily streak, Streak Freeze, lucky hour, weekend coins, quest rerolls, weekly quests, two skins",
    "tips": []
   },
   {
    "sha": "dec433934136fb377876cf89a40b9fac832393a6",
-   "date": "2026-10-20T03:23:42+00:00",
+   "date": "2026-10-20T03:23:42Z",
    "author": "Claude",
    "message": "v3.6: token workshop, coin shop, Coin Magnet and Token Charm, auto-fuse, quick use, two skins",
    "tips": []
   },
   {
    "sha": "35b4887ba331c71a0bfd10eef4df07fa88c26c51",
-   "date": "2026-10-20T03:14:14+00:00",
+   "date": "2026-10-20T03:14:14Z",
    "author": "Claude",
    "message": "v3.5: how lucky you have been, odds calculator, records, milestones, log filters and CSV, two skins",
    "tips": []
   },
   {
    "sha": "0138a788d303f33a2c398761d3756c39ae76554d",
-   "date": "2026-10-20T03:08:54+00:00",
+   "date": "2026-10-20T03:08:54Z",
    "author": "Claude",
    "message": "v3.4: what's new with timestamps, keys, text size, notice switches, bigger batches, keep boosts going, two skins",
    "tips": []
@@ -388,5 +388,21 @@
    "tips": []
   }
  ],
- "pulls": []
+ "pulls": [
+  {
+   "number": 1,
+   "title": "Claude/kind goodall e1da0u merge",
+   "state": "merged",
+   "draft": false,
+   "author": "gkson-lab",
+   "head": "claude/kind-goodall-e1da0u",
+   "base": "main",
+   "sha": "f2482c53082f0821259d2bc2fa61697b89b69db7",
+   "created": "2026-10-20T12:13:00Z",
+   "updated": "2026-10-20T12:14:17Z",
+   "closed": "2026-10-20T12:13:16Z",
+   "merged": "2026-10-20T12:13:16Z",
+   "url": "https://github.com/gkson-lab/longshot10/pull/1"
+  }
+ ]
 }

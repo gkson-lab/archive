@@ -4,15 +4,22 @@
  "sector": "desktop",
  "summary": "150 developer and everyday tools in one window, with the labscode editor built in and an agent that can run the tools for you.",
  "source": "https://github.com/gkson-lab/omnitool",
+ "repo": "gkson-lab/omnitool",
  "kind": "source",
  "first": "2026-10-22",
  "last": "2026-10-23",
  "commits": 8,
+ "pulls": {
+  "open": 0,
+  "total": 1
+ },
+ "signature": "ec889c5646a7b11ebbe85754d721f1a57806c203",
  "versions": [
   {
    "id": "main",
    "branch": "main",
    "head": "23f887a",
+   "sha": "23f887a329fb8a21f705722f85720e2597b2a624",
    "date": "2026-10-22",
    "message": "OmniTool 1.2: Onyx does math and knows many more words",
    "commits": 8,

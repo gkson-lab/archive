@@ -1,0 +1,502 @@
+{
+ "commits": [
+  {
+   "sha": "f376c4ffc95dcf1014eee9b2ee32fee03821a716",
+   "date": "2026-11-22T22:30:52Z",
+   "author": "Claude",
+   "message": "A demo of the app with no AI inside, in one HTML file for a Mac",
+   "tips": [
+    "demo"
+   ]
+  },
+  {
+   "sha": "a7613d29a2a0feb0b9f6a090a5dcd1a8a89d764c",
+   "date": "2026-11-22T17:16:00-05:00",
+   "author": "gkson",
+   "message": "uses claude to merge over items from figma to finsih development",
+   "tips": [
+    "main",
+    "gh-pages"
+   ]
+  },
+  {
+   "sha": "983f895ee4efe884491c305f192482a55b41aece",
+   "date": "2026-11-22T22:14:30Z",
+   "author": "Claude",
+   "message": "Themes: Standard, Liquid glass and Black chrome, chosen in Settings",
+   "tips": [
+    "themes"
+   ]
+  },
+  {
+   "sha": "d804f9af2e9831e122c35b997756f59d259c5c3c",
+   "date": "2026-11-22T22:02:16Z",
+   "author": "Claude",
+   "message": "Black chrome (beta 2): black liquid metal edges with hot chromatic fringes",
+   "tips": [
+    "black-chrome"
+   ]
+  },
+  {
+   "sha": "b6c3ca1fb9ce793576c906cd2ce54294fd0c92ce",
+   "date": "2026-11-22T21:46:00Z",
+   "author": "Claude",
+   "message": "Liquid glass everywhere: outward liquid edges, glass surfaces, chromatic accents, and glass that answers back",
+   "tips": [
+    "glass"
+   ]
+  },
+  {
+   "sha": "fb65bd8abac121ab338955ee1912fff9c6e7e93f",
+   "date": "2026-11-22T15:40:47Z",
+   "author": "Claude",
+   "message": "Liquid glass with glisse: the intro page and the app",
+   "tips": []
+  },
+  {
+   "sha": "35e7a76bd8f1244fbc405f7f84f8a3fe00322585",
+   "date": "2026-11-22T02:11:44Z",
+   "author": "Claude",
+   "message": "Intro page: smooth on any device, with quality levels and stills",
+   "tips": [
+    "perf"
+   ]
+  },
+  {
+   "sha": "caf8749338c21df6f5cf85f2c6bf06361d0f4d5a",
+   "date": "2026-11-22T01:17:35Z",
+   "author": "Claude",
+   "message": "Intro page: chromatic logo, a 3D glass prism, detailed hardware, and a chromatic style throughout",
+   "tips": []
+  },
+  {
+   "sha": "beaa34ee0123232f92b80d54291187a1429eed66",
+   "date": "2026-11-22T01:04:30Z",
+   "author": "Claude",
+   "message": "Work in progress: detailed graphics card and memory, prism labels that never overlap",
+   "tips": [
+    "chromatic"
+   ]
+  },
+  {
+   "sha": "7d4378747fae71987b6a2b9362f25c3992a82202",
+   "date": "2026-11-22T00:49:56Z",
+   "author": "Claude",
+   "message": "Work in progress: chromatic restyle of the whole page, prism full width",
+   "tips": []
+  },
+  {
+   "sha": "fbf17f82fa9fcbca0bdac82b371d9b3e841a6d00",
+   "date": "2026-11-22T00:44:00Z",
+   "author": "Claude",
+   "message": "Work in progress: chromatic logo and a 3D glass prism",
+   "tips": []
+  },
+  {
+   "sha": "cd3bbcf0f551491784fa96189cc63bc99b5808a0",
+   "date": "2026-11-21T21:23:56Z",
+   "author": "Claude",
+   "message": "Rework the intro page: liquid chrome, the sky over Austin, a prism, a glass graphics card",
+   "tips": []
+  },
+  {
+   "sha": "ff60f1e2940a8b1bde59e6009a99ab5a1085d77d",
+   "date": "2026-11-21T01:22:23Z",
+   "author": "Claude",
+   "message": "Intro page: works on phones and PCs alike, and bigger cost examples",
+   "tips": []
+  },
+  {
+   "sha": "ce2ddbf7f3c3e35d72502a92ffa176a0b48d4b57",
+   "date": "2026-11-21T00:56:44Z",
+   "author": "Claude",
+   "message": "Intro page: background settings in place of the stone section, and new copy",
+   "tips": []
+  },
+  {
+   "sha": "cd4a985e7b6194c7a137a71e09fd90caaf6e6007",
+   "date": "2026-11-21T00:43:57Z",
+   "author": "Claude",
+   "message": "Intro page: a playground for the stone gradient",
+   "tips": []
+  },
+  {
+   "sha": "1c876bef7a44ea10d4ccd3a33529a5552923a7d3",
+   "date": "2026-11-21T00:37:20Z",
+   "author": "Claude",
+   "message": "Intro page redesigned: things to do, not slides to read",
+   "tips": []
+  },
+  {
+   "sha": "f0cc03c1f000cdf6ee2eb92282f070f4ae67fc53",
+   "date": "2026-11-20T04:39:03Z",
+   "author": "Claude",
+   "message": "Intro page: every feature, in detail, with screens from the real app",
+   "tips": []
+  },
+  {
+   "sha": "ebd72ee2cc3b64800af3c4d4e24126e840038984",
+   "date": "2026-11-19T13:43:03Z",
+   "author": "Claude",
+   "message": "The intro page, rebuilt: the new stone in 3D, opening into its six agents",
+   "tips": []
+  },
+  {
+   "sha": "9382da71683299d17ad51d61f764dc88abdafd54",
+   "date": "2026-11-19T13:43:03Z",
+   "author": "Claude",
+   "message": "Onyx Agents: a new mark, the pentagon-cut stone, on every platform",
+   "tips": []
+  },
+  {
+   "sha": "82bfc9a87622496fa7611c794def18d60a76a69f",
+   "date": "2026-11-19T04:45:13Z",
+   "author": "Claude",
+   "message": "Link the Onyx Agents intro page from the READMEs and the trailer page",
+   "tips": [
+    "intro-page"
+   ]
+  },
+  {
+   "sha": "706c2f0f2493afb44e649aef29bf9fb1cbb1c006",
+   "date": "2026-11-19T04:43:06Z",
+   "author": "Claude",
+   "message": "Onyx Agents intro page: the Onyx cube in 3D, its five specialists and a ring of type",
+   "tips": []
+  },
+  {
+   "sha": "6ca0b5fe6049acf7991129cfbc4fd2e3d108eeaa",
+   "date": "2026-11-18T14:17:57Z",
+   "author": "Claude",
+   "message": "Onyx Agents: Claude and ChatGPT as optional cloud models, with your own keys",
+   "tips": []
+  },
+  {
+   "sha": "1b77691137b91db98606bd1fa284de9e932b52d5",
+   "date": "2026-11-18T01:04:30Z",
+   "author": "Claude",
+   "message": "Post the Onyx Agents trailer, with its own page on the website",
+   "tips": []
+  },
+  {
+   "sha": "8edc259399e183226e88b63729baf019b6c66d67",
+   "date": "2026-11-18T00:57:14Z",
+   "author": "Claude",
+   "message": "Onyx Agents: Setup goes on when a model cannot be downloaded, and says why",
+   "tips": []
+  },
+  {
+   "sha": "12451f14f5fa1b0c0aa135050989a3893252fd73",
+   "date": "2026-11-17T16:16:35Z",
+   "author": "Claude",
+   "message": "Onyx Agents: reminders in local time; a reply that is only thinking is tried again",
+   "tips": []
+  },
+  {
+   "sha": "83b4cf87f98ab68aeb8c4a5e6295b99843c63556",
+   "date": "2026-11-17T15:53:59Z",
+   "author": "Claude",
+   "message": "Onyx Agents: recover the tool calls Ollama loses, the cause of the qwen3:8b failures",
+   "tips": []
+  },
+  {
+   "sha": "90357849e3689b7fc333fb4e442269bdc584a75e",
+   "date": "2026-11-17T14:43:08Z",
+   "author": "Claude",
+   "message": "Onyx Agents: updates itself from GitHub; a careful second pass over chats and attachments",
+   "tips": []
+  },
+  {
+   "sha": "76cfb22f1dbca938a9ff29a639a4f27bcab52402",
+   "date": "2026-11-17T14:04:41Z",
+   "author": "Claude",
+   "message": "Onyx Agents: gpt-oss 20B and more models, chats, attachments, health check, backups",
+   "tips": []
+  },
+  {
+   "sha": "f83439e46bd8ce6ed0afceee7f42e73437508455",
+   "date": "2026-11-17T04:22:58Z",
+   "author": "Claude",
+   "message": "Onyx Agents: fix the failed model calls, and set up the phone through Tailscale",
+   "tips": []
+  },
+  {
+   "sha": "89eccf3206a5c0348fe8769a474c38483ed2b8c7",
+   "date": "2026-11-17T02:42:34Z",
+   "author": "Claude",
+   "message": "README: one guide to both Onyx 3 and Onyx Agents",
+   "tips": []
+  },
+  {
+   "sha": "8c5506169484796c5cc86e2a337af4057956aa78",
+   "date": "2026-11-17T02:40:51Z",
+   "author": "Claude",
+   "message": "Show what each local answer would cost on a paid host",
+   "tips": []
+  },
+  {
+   "sha": "77be9dafd0887514f3e1040bc3ce77ce618918aa",
+   "date": "2026-11-17T02:25:47Z",
+   "author": "Claude",
+   "message": "Windows scripts: find newly installed programs without a restart",
+   "tips": []
+  },
+  {
+   "sha": "bded4bf8cb5b830908043c6004c4441adb59bfb2",
+   "date": "2026-11-17T02:11:44Z",
+   "author": "Claude",
+   "message": "Keep this PC's tier choices in tiers.local.yaml, so updates never conflict",
+   "tips": []
+  },
+  {
+   "sha": "4e81c4a8477197c04d84504ef4606967a226d098",
+   "date": "2026-11-17T02:10:23Z",
+   "author": "Claude",
+   "message": "Setup: a password prompt that works with any input and never hangs",
+   "tips": []
+  },
+  {
+   "sha": "3f94211c18ca7b184f7b785aa8a8d1dba55f7e9d",
+   "date": "2026-11-17T02:09:59Z",
+   "author": "Claude",
+   "message": "Windows: Setup, Start and Update scripts",
+   "tips": []
+  },
+  {
+   "sha": "834918e1c87b0cfac8d53ea725b42dd918c87f6a",
+   "date": "2026-11-17T02:08:51Z",
+   "author": "Claude",
+   "message": "Onyx Agents: fixes from the first run against a real Qwen model",
+   "tips": []
+  },
+  {
+   "sha": "0ac7e5307e6f5d0eeb9972327672f1046fcf3562",
+   "date": "2026-11-17T00:28:07Z",
+   "author": "Claude",
+   "message": "Onyx Agents, milestone (f): what your PC can run, SMS catch-up, accounts",
+   "tips": []
+  },
+  {
+   "sha": "ef8146d72b7195406e6fdc0b8ab3fd0e7c8f7eb7",
+   "date": "2026-11-17T00:20:51Z",
+   "author": "Claude",
+   "message": "README: using the app on your phone through Tailscale",
+   "tips": []
+  },
+  {
+   "sha": "8ff1f85b3551950b625a6d665bbfbda17b3df6db",
+   "date": "2026-11-16T23:16:45Z",
+   "author": "Claude",
+   "message": "Onyx Agents, milestone (e): WhatsApp, SMS, sign-in, push; no token limit",
+   "tips": []
+  },
+  {
+   "sha": "4b3385e9711774096254a5eaa3f1b60e843c7cee",
+   "date": "2026-11-16T23:06:21Z",
+   "author": "Claude",
+   "message": "README: the test count",
+   "tips": []
+  },
+  {
+   "sha": "d4f2438abe96762d8c05977ee1181ced5b8821ea",
+   "date": "2026-11-16T23:06:14Z",
+   "author": "Claude",
+   "message": "Onyx Agents, milestone (c): the web app",
+   "tips": []
+  },
+  {
+   "sha": "8f31102ec0a373fa54c7dacf9f139dd99075f52c",
+   "date": "2026-11-16T22:52:14Z",
+   "author": "Claude",
+   "message": "Onyx Agents, milestone (b): the agent runtime, tools, reminders and connectors",
+   "tips": []
+  },
+  {
+   "sha": "a5a7f9c4a68401fb0c31752f1cb2e2ba15b11e1b",
+   "date": "2026-11-16T17:11:38Z",
+   "author": "Claude",
+   "message": "Onyx Agents, milestone (a): local Qwen tiers, a router and fallbacks",
+   "tips": []
+  },
+  {
+   "sha": "dc5c510c0eac7dd31090c84aca3a71eed21e169b",
+   "date": "2026-11-16T17:07:04Z",
+   "author": "Claude",
+   "message": "Onyx Agents: the empty workspace",
+   "tips": []
+  },
+  {
+   "sha": "2a493d151fdd0b6b67f698a68df4de08dcb93f32",
+   "date": "2026-11-11T22:23:21Z",
+   "author": "Claude",
+   "message": "The website follows main",
+   "tips": []
+  },
+  {
+   "sha": "bb51ec02c60fc7f31bb5bc8e012bdb30c6b8e707",
+   "date": "2026-11-11T22:23:06Z",
+   "author": "Claude",
+   "message": "The app at the top of the repository, so it can be served as a website",
+   "tips": [
+    "onyx-3.0"
+   ]
+  },
+  {
+   "sha": "31fbab5031d99b38baa1ee5aff5e330f6b6fa6cf",
+   "date": "2026-11-11T14:09:05Z",
+   "author": "Claude",
+   "message": "Dictionaries: leave out entries the source files hold damaged",
+   "tips": []
+  },
+  {
+   "sha": "2f8c877d83c8fef5a5a597724da09cc2bf1af9b9",
+   "date": "2026-11-11T14:04:15Z",
+   "author": "Claude",
+   "message": "Onyx 3: a new look, an app with the internet switch and the thinking on the side",
+   "tips": []
+  },
+  {
+   "sha": "2506cc440c939f4a9745b4d4f4bfe9856130fe7d",
+   "date": "2026-11-11T13:54:58Z",
+   "author": "Claude",
+   "message": "Tests: tone changes checked both ways",
+   "tips": []
+  },
+  {
+   "sha": "f66e528adacb42ddfe6faca1a63a0eb6e43c81cb",
+   "date": "2026-11-11T13:53:53Z",
+   "author": "Claude",
+   "message": "Onyx 3 (in progress): a mind that plans in steps and shows its thinking",
+   "tips": []
+  },
+  {
+   "sha": "52d76fc6ab3068616c69e9b881b4c5d8ed19eeec",
+   "date": "2026-11-11T13:35:08Z",
+   "author": "Claude",
+   "message": "Onyx 3 (in progress): programs, pages and requests composed from a prompt",
+   "tips": []
+  },
+  {
+   "sha": "12298c57aa6a2a35bfe102273376f5f20aa80544",
+   "date": "2026-11-09T23:14:48Z",
+   "author": "Claude",
+   "message": "Onyx 3 (in progress): longer writing from a prompt",
+   "tips": []
+  },
+  {
+   "sha": "89c9bfdf91420ecd97719ae4038f8a0935ae632a",
+   "date": "2026-11-09T23:08:31Z",
+   "author": "Claude",
+   "message": "Onyx 3 (in progress): dictionaries for 31 languages",
+   "tips": []
+  },
+  {
+   "sha": "6ecda176305dbe2d836ed6ed583c0729e774ec5e",
+   "date": "2026-11-09T06:01:39Z",
+   "author": "Claude",
+   "message": "Onyx 2.5: the whole dictionary, sentence translation, predictions, code",
+   "tips": [
+    "onyx-2.5"
+   ]
+  },
+  {
+   "sha": "b9d00dd3a4ac3c2a468660e7473822dffc258c23",
+   "date": "2026-11-09T05:54:02Z",
+   "author": "Claude",
+   "message": "Onyx 2.5 (in progress): a neural network that predicts what people say",
+   "tips": []
+  },
+  {
+   "sha": "f65eb4ccd39e550257cdfd8765c0daa967230347",
+   "date": "2026-11-09T05:23:23Z",
+   "author": "Claude",
+   "message": "Onyx 2.5 (in progress): small programs in eight languages",
+   "tips": []
+  },
+  {
+   "sha": "78e21ba0e34d1c9812bc151601e36f446d15fe9d",
+   "date": "2026-11-09T05:06:02Z",
+   "author": "Claude",
+   "message": "Onyx 2.5 (in progress): the full English dictionary and better translation",
+   "tips": []
+  },
+  {
+   "sha": "2c2c68caf2c614eff64d2dd6052fb6ee0c1e1100",
+   "date": "2026-11-07T03:01:33Z",
+   "author": "Claude",
+   "message": "Onyx 2.1: the internet with permission, and short writing",
+   "tips": [
+    "onyx-2.1"
+   ]
+  },
+  {
+   "sha": "36d9dcbe0582669ea5a94f4ae283a8c705485a64",
+   "date": "2026-11-06T16:28:26Z",
+   "author": "Claude",
+   "message": "Onyx 2: 14,390-word dictionary, Spanish and French, open-weights model",
+   "tips": [
+    "onyx-2.0"
+   ]
+  },
+  {
+   "sha": "f79114467123d84ff33e84914bc3ceb019eb2a4b",
+   "date": "2026-10-24T01:02:55Z",
+   "author": "Claude",
+   "message": "Onyx 1.3: 3,000-word dictionary, follow-ups and reply settings",
+   "tips": [
+    "onyx-1.3"
+   ]
+  },
+  {
+   "sha": "793caa5f741f1b9653ea1b03944a623220f66755",
+   "date": "2026-10-24T00:37:46Z",
+   "author": "Claude",
+   "message": "Onyx 1.3: a dictionary five times bigger, and replies built from it",
+   "tips": []
+  },
+  {
+   "sha": "c38e6c93896f21af47fb27aa3996adf68dfd0159",
+   "date": "2026-10-24T00:05:01Z",
+   "author": "Claude",
+   "message": "Onyx 1.2: more math, a mini dictionary, sentences, more small talk",
+   "tips": [
+    "onyx-1.2"
+   ]
+  },
+  {
+   "sha": "3634086b1ce3f588984ee4a6c0f7a84ffcb8429d",
+   "date": "2026-10-22T20:40:57-05:00",
+   "author": "gkson",
+   "message": "Onyx 1.1: math of its own, word tricks, a bigger vocabulary",
+   "tips": [
+    "onyx-1.1"
+   ]
+  },
+  {
+   "sha": "33431eecdd9856bb678ce5bb19f4f578d62be827",
+   "date": "2026-10-22T20:23:23-05:00",
+   "author": "gkson",
+   "message": "Onyx 1: Omni Agent's local engine, on its own",
+   "tips": [
+    "onyx-1.0"
+   ]
+  }
+ ],
+ "pulls": [
+  {
+   "number": 2,
+   "title": "Themes: Standard, Liquid glass and Black chrome, chosen in Settings",
+   "state": "merged",
+   "draft": false,
+   "author": "gkson-lab",
+   "head": "themes",
+   "base": "main",
+   "sha": "983f895ee4efe884491c305f192482a55b41aece",
+   "created": "2026-11-22T22:14:45Z",
+   "updated": "2026-11-22T22:16:01Z",
+   "closed": "2026-11-22T22:16:01Z",
+   "merged": "2026-11-22T22:16:01Z",
+   "url": "https://github.com/gkson-lab/onyx/pull/2"
+  }
+ ]
+}

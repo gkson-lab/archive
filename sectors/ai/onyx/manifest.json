@@ -4,15 +4,22 @@
  "sector": "ai",
  "summary": "my own open source ai. this shelf has onyx 3 installed: a planner, two small neural networks and a pile of dictionaries, all running in the page.",
  "source": "https://github.com/gkson-lab/onyx",
+ "repo": "gkson-lab/onyx",
  "kind": "demo",
  "first": "2026-10-22",
  "last": "2026-11-22",
  "commits": 64,
+ "pulls": {
+  "open": 0,
+  "total": 1
+ },
+ "signature": "a363867484962ae6fe423d05e46408f65ab81857",
  "versions": [
   {
    "id": "demo",
    "branch": "main",
    "head": "a7613d2",
+   "sha": "a7613d29a2a0feb0b9f6a090a5dcd1a8a89d764c",
    "date": "2026-11-22",
    "message": "uses claude to merge over items from figma to finsih development",
    "commits": 60,
@@ -380,5 +387,15 @@
    ]
   }
  ],
- "entry": "demo/index.html"
+ "entry": "demo/index.html",
+ "demo_paths": [
+  "index.html",
+  "src",
+  "host",
+  "brand",
+  "LICENSE",
+  "LICENSE-CMUDICT",
+  "LICENSE-WORDNET",
+  "licenses"
+ ]
 }

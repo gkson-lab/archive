@@ -18,7 +18,7 @@
   },
   {
    "sha": "80db398a97f0ca036628625cbc402a551f852143",
-   "date": "2026-11-23T00:43:01+00:00",
+   "date": "2026-11-23T00:43:01Z",
    "author": "gkson",
    "message": "add merged PRs badge to profile",
    "tips": []
@@ -32,7 +32,7 @@
   },
   {
    "sha": "1718b7be8c90af6b4c915ba607d6923af4361f17",
-   "date": "2026-11-22T19:23:45+00:00",
+   "date": "2026-11-22T19:23:45Z",
    "author": "gkson",
    "message": "chrome look: liquid metal everywhere, color only as an oil-slick rim",
    "tips": []
@@ -81,14 +81,14 @@
   },
   {
    "sha": "4258c116660ba2a5260e8b7df9109e8b7901900a",
-   "date": "2026-11-22T15:54:03+00:00",
+   "date": "2026-11-22T15:54:03Z",
    "author": "gkson",
    "message": "form the site around gk-labs",
    "tips": []
   },
   {
    "sha": "4756871d50de81e2c0bca50bab42986bb0507505",
-   "date": "2026-11-22T15:49:11+00:00",
+   "date": "2026-11-22T15:49:11Z",
    "author": "gkson",
    "message": "put the site in the readme, chiller intro line",
    "tips": []
@@ -102,21 +102,21 @@
   },
   {
    "sha": "2c8c32e57bbcba8c8a9f236975c3aa458e31342e",
-   "date": "2026-11-22T15:30:12+00:00",
+   "date": "2026-11-22T15:30:12Z",
    "author": "gkson",
    "message": "shaders, liquid glass and chromatic themes",
    "tips": []
   },
   {
    "sha": "eb6839203296257d903915e208a74a294dbf6a31",
-   "date": "2026-11-22T15:09:21+00:00",
+   "date": "2026-11-22T15:09:21Z",
    "author": "gkson",
    "message": "add about me site for github pages",
    "tips": []
   },
   {
    "sha": "c084c5224a41cd1e9e814211a99f02eab9a3f835",
-   "date": "2026-11-15T02:22:24+00:00",
+   "date": "2026-11-15T02:22:24Z",
    "author": "Claude",
    "message": "Add Zephyr: real-time 3D wind tunnel simulator",
    "tips": [
@@ -152,5 +152,66 @@
    "tips": []
   }
  ],
- "pulls": []
+ "pulls": [
+  {
+   "number": 5,
+   "title": "Claude/happy mendel 7xev5b",
+   "state": "merged",
+   "draft": false,
+   "author": "gkson-lab",
+   "head": "claude/happy-mendel-7xev5b",
+   "base": "main",
+   "sha": "1c20d68f939466132990060200d4715fd838b3cc",
+   "created": "2026-11-23T00:46:31Z",
+   "updated": "2026-11-23T00:49:59Z",
+   "closed": "2026-11-23T00:49:55Z",
+   "merged": "2026-11-23T00:49:55Z",
+   "url": "https://github.com/gkson-lab/gkson-lab/pull/5"
+  },
+  {
+   "number": 4,
+   "title": "gk-labs site + readme banner",
+   "state": "merged",
+   "draft": false,
+   "author": "gkson-lab",
+   "head": "claude/happy-mendel-7xev5b",
+   "base": "main",
+   "sha": "4258c116660ba2a5260e8b7df9109e8b7901900a",
+   "created": "2026-11-22T15:55:23Z",
+   "updated": "2026-11-22T15:59:56Z",
+   "closed": "2026-11-22T15:59:51Z",
+   "merged": "2026-11-22T15:59:51Z",
+   "url": "https://github.com/gkson-lab/gkson-lab/pull/4"
+  },
+  {
+   "number": 3,
+   "title": "add about me site for github pages",
+   "state": "merged",
+   "draft": false,
+   "author": "gkson-lab",
+   "head": "claude/happy-mendel-7xev5b",
+   "base": "main",
+   "sha": "2c8c32e57bbcba8c8a9f236975c3aa458e31342e",
+   "created": "2026-11-22T15:45:50Z",
+   "updated": "2026-11-22T15:46:33Z",
+   "closed": "2026-11-22T15:46:27Z",
+   "merged": "2026-11-22T15:46:27Z",
+   "url": "https://github.com/gkson-lab/gkson-lab/pull/3"
+  },
+  {
+   "number": 2,
+   "title": "Add Zephyr: real-time 3D wind tunnel simulator",
+   "state": "closed",
+   "draft": false,
+   "author": "gkson-lab",
+   "head": "claude/exciting-shannon-b4yeu2",
+   "base": "main",
+   "sha": "c084c5224a41cd1e9e814211a99f02eab9a3f835",
+   "created": "2026-11-15T02:39:24Z",
+   "updated": "2026-11-15T02:41:26Z",
+   "closed": "2026-11-15T02:41:26Z",
+   "merged": null,
+   "url": "https://github.com/gkson-lab/gkson-lab/pull/2"
+  }
+ ]
 }

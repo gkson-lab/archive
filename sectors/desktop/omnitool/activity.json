@@ -1,0 +1,79 @@
+{
+ "commits": [
+  {
+   "sha": "23f887a329fb8a21f705722f85720e2597b2a624",
+   "date": "2026-10-22T20:40:46-05:00",
+   "author": "gkson",
+   "message": "OmniTool 1.2: Onyx does math and knows many more words",
+   "tips": [
+    "main"
+   ]
+  },
+  {
+   "sha": "ff3f342f98086373d6360984b701820a6b04ba09",
+   "date": "2026-10-22T20:24:20-05:00",
+   "author": "gkson",
+   "message": "Merge remote-tracking branch 'origin/main'",
+   "tips": []
+  },
+  {
+   "sha": "349f5240b389791f099a47a98fbfb26c1e62e9b4",
+   "date": "2026-10-22T20:24:07-05:00",
+   "author": "gkson",
+   "message": "OmniTool 1.1: Omni Agent - Onyx, and motion with a purpose",
+   "tips": []
+  },
+  {
+   "sha": "cb970deabc1addf1e31813d9452b0112114bf768",
+   "date": "2026-10-22T19:44:38-05:00",
+   "author": "gkson",
+   "message": "Merge pull request #1 from gkson-lab/claude/labscode-omnitool-issue-jevfzc",
+   "tips": []
+  },
+  {
+   "sha": "32a7c24a19480c46d291c17f4c4a5656aebda63e",
+   "date": "2026-10-23T00:40:01Z",
+   "author": "Claude",
+   "message": "Replace the Linux Claude Code build that labscode-beta-9 ships on Windows",
+   "tips": []
+  },
+  {
+   "sha": "d1b8017d5cb56a76fc509cf8222d6384f9a7a0b9",
+   "date": "2026-10-22T19:20:22-05:00",
+   "author": "gkson",
+   "message": "Revise README to include project details",
+   "tips": []
+  },
+  {
+   "sha": "7ac9f3361cc4dad5f0e8ae7e5986213c07e0eb51",
+   "date": "2026-10-22T19:18:35-05:00",
+   "author": "gkson",
+   "message": "README: lay the architecture diagram out top to bottom so it fits the column",
+   "tips": []
+  },
+  {
+   "sha": "95174cbfb877ceb0dea5dc1e912a109a69ad7884",
+   "date": "2026-10-22T19:17:36-05:00",
+   "author": "gkson",
+   "message": "OmniTool 1.0: 150 tools in a Windows desktop app and a web page",
+   "tips": []
+  }
+ ],
+ "pulls": [
+  {
+   "number": 1,
+   "title": "Replace the Linux Claude Code build that labscode-beta-9 ships on Win…",
+   "state": "merged",
+   "draft": false,
+   "author": "gkson-lab",
+   "head": "claude/labscode-omnitool-issue-jevfzc",
+   "base": "main",
+   "sha": "32a7c24a19480c46d291c17f4c4a5656aebda63e",
+   "created": "2026-10-23T00:44:04Z",
+   "updated": "2026-10-23T00:44:43Z",
+   "closed": "2026-10-23T00:44:38Z",
+   "merged": "2026-10-23T00:44:38Z",
+   "url": "https://github.com/gkson-lab/omnitool/pull/1"
+  }
+ ]
+}

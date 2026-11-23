@@ -1,0 +1,372 @@
+{
+ "commits": [
+  {
+   "sha": "45376254fdab5690e998caaffc85544e03b8f5b1",
+   "date": "2026-10-19T15:52:32-05:00",
+   "author": "gkson",
+   "message": "Revert \"Show the odometer rollover instantly instead of racing the digits\"",
+   "tips": [
+    "main"
+   ]
+  },
+  {
+   "sha": "f98b3985c197e5f35b32b5bfb4672e8cedd2d642",
+   "date": "2026-10-19T12:59:06-05:00",
+   "author": "gkson",
+   "message": "Show the odometer rollover instantly instead of racing the digits",
+   "tips": []
+  },
+  {
+   "sha": "268354c53cc9fbc329773d82a16ad08a8f2a1c8f",
+   "date": "2026-10-18T21:26:03-05:00",
+   "author": "gkson",
+   "message": "Replace main with gklabs Device Manager 1.1 (redesign)",
+   "tips": []
+  },
+  {
+   "sha": "44c5ca55d03e12e39e4d75d9c3b83d70da013060",
+   "date": "2026-10-18T21:25:11-05:00",
+   "author": "gkson",
+   "message": "Sync package-lock.json version to 1.2.0",
+   "tips": [
+    "expansion-pack/distribution"
+   ]
+  },
+  {
+   "sha": "347fc13a9d35a8223e2519239b5b0b668f82a3b4",
+   "date": "2026-10-18T21:22:22-05:00",
+   "author": "gkson",
+   "message": "Merge branch 'gkcc-2' into expansion-pack/macos",
+   "tips": [
+    "expansion-pack/macos"
+   ]
+  },
+  {
+   "sha": "ea69bbf02ade25178ba8990ec94077531217903e",
+   "date": "2026-10-18T21:22:16-05:00",
+   "author": "gkson",
+   "message": "Merge branch 'gkcc-2' into expansion-pack/custom-layout",
+   "tips": [
+    "expansion-pack/custom-layout"
+   ]
+  },
+  {
+   "sha": "2bc548dde9a3009f8a1bab436c92396c8ffea243",
+   "date": "2026-10-18T21:22:16-05:00",
+   "author": "gkson",
+   "message": "Merge branch 'gkcc-2' into expansion-pack/multi-pc",
+   "tips": [
+    "expansion-pack/multi-pc"
+   ]
+  },
+  {
+   "sha": "ee55639185296c7be317a5a8d2620d7d0634640d",
+   "date": "2026-10-18T21:22:16-05:00",
+   "author": "gkson",
+   "message": "Merge branch 'gkcc-2' into expansion-pack/distribution",
+   "tips": []
+  },
+  {
+   "sha": "56181bada68cbe72ce71ce372b2a9f4f809b0379",
+   "date": "2026-10-18T21:22:15-05:00",
+   "author": "gkson",
+   "message": "Merge branch 'gkcc-2' into expansion-pack/always-on",
+   "tips": [
+    "expansion-pack/always-on"
+   ]
+  },
+  {
+   "sha": "855e03146ba5c05f57d96ea27eded5c465792a1b",
+   "date": "2026-10-18T21:22:15-05:00",
+   "author": "gkson",
+   "message": "Merge branch 'gkcc-2' into expansion-pack/history",
+   "tips": [
+    "expansion-pack/history"
+   ]
+  },
+  {
+   "sha": "41fb100d13b515a8d6fb5aac56a51aa2d2d0f4b7",
+   "date": "2026-10-18T21:22:15-05:00",
+   "author": "gkson",
+   "message": "Merge branch 'gkcc-2' into expansion-pack/process-explorer",
+   "tips": [
+    "expansion-pack/process-explorer"
+   ]
+  },
+  {
+   "sha": "116fd801d99b34722972e8f63be0b767b718b7c2",
+   "date": "2026-10-18T21:22:15-05:00",
+   "author": "gkson",
+   "message": "README for each version (Windows, Linux, macOS); make the Linux scripts executable",
+   "tips": []
+  },
+  {
+   "sha": "2633e58a5b6e0b42c4ba6043804242d1238369a4",
+   "date": "2026-10-18T21:21:37-05:00",
+   "author": "gkson",
+   "message": "Expansion pack: macOS",
+   "tips": []
+  },
+  {
+   "sha": "c02cd9465ab133e4f315b7d28f69b6953f9ba4d1",
+   "date": "2026-10-18T21:16:59-05:00",
+   "author": "gkson",
+   "message": "Expansion pack: Custom layout",
+   "tips": []
+  },
+  {
+   "sha": "d30d9003650ad59ebd0edf5b28ec6517380047e4",
+   "date": "2026-10-18T21:14:52-05:00",
+   "author": "gkson",
+   "message": "Merge branch 'gkcc-2' into expansion-pack/multi-pc",
+   "tips": []
+  },
+  {
+   "sha": "7f7417502759775c8444aee96aca4c92fc539cac",
+   "date": "2026-10-18T21:14:52-05:00",
+   "author": "gkson",
+   "message": "Merge branch 'gkcc-2' into expansion-pack/distribution",
+   "tips": []
+  },
+  {
+   "sha": "35f0b1c0ebd7daae9b03bbb4d9fef1fa69e9f736",
+   "date": "2026-10-18T21:14:52-05:00",
+   "author": "gkson",
+   "message": "Merge branch 'gkcc-2' into expansion-pack/always-on",
+   "tips": []
+  },
+  {
+   "sha": "6ee2d43c0fa24140f473ed519be6382ae2b92859",
+   "date": "2026-10-18T21:14:51-05:00",
+   "author": "gkson",
+   "message": "Merge branch 'gkcc-2' into expansion-pack/history",
+   "tips": []
+  },
+  {
+   "sha": "ff8ae9157197c436b574c8a3e3228897b64a49c1",
+   "date": "2026-10-18T21:14:51-05:00",
+   "author": "gkson",
+   "message": "Merge branch 'gkcc-2' into expansion-pack/process-explorer",
+   "tips": []
+  },
+  {
+   "sha": "e1ce1310f4e6547cf1476111b905ead9df9d63e5",
+   "date": "2026-10-18T21:14:51-05:00",
+   "author": "gkson",
+   "message": "Fit the odometer on narrow windows without a scrollbar",
+   "tips": []
+  },
+  {
+   "sha": "da619fe36435bbf0677d32b2d845a71e0a024930",
+   "date": "2026-10-18T21:14:14-05:00",
+   "author": "gkson",
+   "message": "Expansion pack: Distribution",
+   "tips": []
+  },
+  {
+   "sha": "9ba971232811db9ca0a49894cd6f5ae23f6c194b",
+   "date": "2026-10-18T21:08:14-05:00",
+   "author": "gkson",
+   "message": "Expansion pack: Multi-PC",
+   "tips": []
+  },
+  {
+   "sha": "5786a2e58761295db40c7ea5383ee7df81b74c79",
+   "date": "2026-10-18T21:04:06-05:00",
+   "author": "gkson",
+   "message": "Expansion pack: Always on",
+   "tips": []
+  },
+  {
+   "sha": "ccc5db5910bb8465278e41f27dba4097ac97b9cc",
+   "date": "2026-10-18T20:59:43-05:00",
+   "author": "gkson",
+   "message": "Expansion pack: Process explorer",
+   "tips": []
+  },
+  {
+   "sha": "8452c6d6161b9bafa315f40a432f1d29290a2ffb",
+   "date": "2026-10-18T20:55:43-05:00",
+   "author": "gkson",
+   "message": "Expansion pack: History",
+   "tips": []
+  },
+  {
+   "sha": "492df236d52525eb67a1b4f839ca3fb48d5b54ba",
+   "date": "2026-10-18T20:51:24-05:00",
+   "author": "gkson",
+   "message": "Rename to gklabs Device Manager, add five achievements, per-system READMEs",
+   "tips": []
+  },
+  {
+   "sha": "eeb3f439cb738d6a5cd6643839068be7b046424b",
+   "date": "2026-10-18T20:41:29-05:00",
+   "author": "gkson",
+   "message": "Redesign the interface in the gklabs language",
+   "tips": []
+  },
+  {
+   "sha": "bee4856133d950d9fa011a3f5acbdb698051f736",
+   "date": "2026-10-18T20:37:49-05:00",
+   "author": "gkson",
+   "message": "Revise branching note in README",
+   "tips": []
+  },
+  {
+   "sha": "83fe54d12f8cd7135fdeb31c753910094248fe88",
+   "date": "2026-10-18T20:33:09-05:00",
+   "author": "gkson",
+   "message": "final merge with main branch for macos",
+   "tips": []
+  },
+  {
+   "sha": "ec45ea9c9a071524a98f19faffcb833f04a0de09",
+   "date": "2026-10-18T20:32:18-05:00",
+   "author": "gkson",
+   "message": "final merge request for macOS",
+   "tips": [
+    "mac-gkcc"
+   ]
+  },
+  {
+   "sha": "dc5a21dc72dba717b0402f4b07860b16f23e1aac",
+   "date": "2026-10-18T20:25:32-05:00",
+   "author": "gkson",
+   "message": "GK Control Center 1.1.0 with Linux port",
+   "tips": []
+  },
+  {
+   "sha": "16d3704c669cd3c630bbfc9fe5f46e0c67ea61dc",
+   "date": "2026-10-18T19:47:30-05:00",
+   "author": "gkson",
+   "message": "merging both linux and windows into a duo branch.",
+   "tips": []
+  },
+  {
+   "sha": "38b3b919f0bf05959a8ccaba1af865fb946668f1",
+   "date": "2026-10-18T19:45:32-05:00",
+   "author": "gkson",
+   "message": "Merge branch 'main' into linux-gkcc",
+   "tips": [
+    "linux-gkcc"
+   ]
+  },
+  {
+   "sha": "d5411272b92a448b27cab5145bbd3de3529a2d94",
+   "date": "2026-10-17T14:04:48-05:00",
+   "author": "gkson",
+   "message": "added support for mac / macOS users on apple silicon",
+   "tips": []
+  },
+  {
+   "sha": "c321a8b81656ad66888d563c5080d7c38459c45e",
+   "date": "2026-10-17T09:21:27-05:00",
+   "author": "gkson",
+   "message": "Fix formatting of Linux version note in README",
+   "tips": []
+  },
+  {
+   "sha": "4a85c8407eed7671322311f7f3c1ed94ec96b1a3",
+   "date": "2026-10-17T09:21:15-05:00",
+   "author": "gkson",
+   "message": "Reformat warning message in README",
+   "tips": []
+  },
+  {
+   "sha": "d8a9e36008744ca43de74119b8765d168f114bac",
+   "date": "2026-10-17T09:20:43-05:00",
+   "author": "gkson",
+   "message": "Update warning message for OS compatibility",
+   "tips": []
+  },
+  {
+   "sha": "fe3a3b5ace0ce3410f8902624e992db8a5934830",
+   "date": "2026-10-17T09:15:55-05:00",
+   "author": "gkson",
+   "message": "added the linux version of this, large change!",
+   "tips": []
+  },
+  {
+   "sha": "2c4db9cbf71726e08b67e5d4d3a9c1e1bbebe7b4",
+   "date": "2026-10-17T07:26:42-05:00",
+   "author": "gkson",
+   "message": "released v1.04 change",
+   "tips": []
+  },
+  {
+   "sha": "83d3f0e94c6f98da0b6fabb7dfc44b33f9418fb1",
+   "date": "2026-10-17T07:24:59-05:00",
+   "author": "gkson",
+   "message": "deleting project dir to input / shelve new version",
+   "tips": []
+  },
+  {
+   "sha": "412e4a7653f87d32ee388f42918c56f4000ec494",
+   "date": "2026-10-16T22:16:34-05:00",
+   "author": "gkson",
+   "message": "critically updated the readme",
+   "tips": []
+  },
+  {
+   "sha": "b8734f2fbf156afa258978a62002627ee9766cc6",
+   "date": "2026-10-16T22:15:02-05:00",
+   "author": "gkson",
+   "message": "added readme outside of folder",
+   "tips": []
+  },
+  {
+   "sha": "1e408fe88b6d995f04e11e7457c520450ccc3a1b",
+   "date": "2026-10-16T22:13:32-05:00",
+   "author": "gkson",
+   "message": "started repo, added all critical files",
+   "tips": []
+  }
+ ],
+ "pulls": [
+  {
+   "number": 3,
+   "title": "mac mergeing with main",
+   "state": "merged",
+   "draft": false,
+   "author": "gkson-lab",
+   "head": "mac-gkcc",
+   "base": "main",
+   "sha": "ec45ea9c9a071524a98f19faffcb833f04a0de09",
+   "created": "2026-10-19T01:32:54Z",
+   "updated": "2026-10-19T01:33:12Z",
+   "closed": "2026-10-19T01:33:10Z",
+   "merged": "2026-10-19T01:33:10Z",
+   "url": "https://github.com/gkson-lab/gk-control-center/pull/3"
+  },
+  {
+   "number": 2,
+   "title": "merging mac0S with the other 2 compatible versions",
+   "state": "merged",
+   "draft": false,
+   "author": "gkson-lab",
+   "head": "main",
+   "base": "mac-gkcc",
+   "sha": "16d3704c669cd3c630bbfc9fe5f46e0c67ea61dc",
+   "created": "2026-10-19T01:31:56Z",
+   "updated": "2026-10-19T01:32:19Z",
+   "closed": "2026-10-19T01:32:19Z",
+   "merged": "2026-10-19T01:32:19Z",
+   "url": "https://github.com/gkson-lab/gk-control-center/pull/2"
+  },
+  {
+   "number": 1,
+   "title": "merging linux control center to main area",
+   "state": "merged",
+   "draft": false,
+   "author": "gkson-lab",
+   "head": "linux-gkcc",
+   "base": "main",
+   "sha": "38b3b919f0bf05959a8ccaba1af865fb946668f1",
+   "created": "2026-10-19T00:44:02Z",
+   "updated": "2026-10-19T00:47:30Z",
+   "closed": "2026-10-19T00:47:30Z",
+   "merged": "2026-10-19T00:47:30Z",
+   "url": "https://github.com/gkson-lab/gk-control-center/pull/1"
+  }
+ ]
+}
