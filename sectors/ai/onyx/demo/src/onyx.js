@@ -1,0 +1,2847 @@
+// Onyx 3: Omni Agent's local engine. A mind (onyx-mind.js) reads each message, plans it as one step or several, hands
+// each step to the skill that fits, and checks the result, leaving a trace of its thinking with every reply. The
+// skills: two intent models that vote (a TF-IDF phrase matcher and a small neural network with open weights); a
+// 14,000-word everyday dictionary it reasons with, all of WordNet behind it, and dictionaries for 31 languages;
+// conversation in English, Spanish and French, with translation; a memory of the whole conversation; writing and code
+// composed from a prompt; documents, quizzes, units and dates; a second network that predicts what people will say; a
+// glossary, a tool finder and OmniTool's offline commands. Runs on this device, with no model download. The engine
+// has no network code: it goes online only through a host's internet port (host/net.js is one), and only when the
+// person's internet setting allows it.
+(function () {
+	'use strict';
+
+	/* ---------- Text ---------- */
+
+	const CONTRACTIONS = [
+		[/\bwhat's\b|\bwhats\b/g, 'what is'], [/\bi'm\b|\bim\b/g, 'i am'], [/\bcan't\b|\bcant\b/g, 'can not'], [/\bwon't\b/g, 'will not'],
+		[/n't\b/g, ' not'], [/'re\b/g, ' are'], [/'ve\b/g, ' have'], [/'ll\b/g, ' will'], [/'d\b/g, ' would'], [/\b(it|that|there|how|who|where|when)'s\b/g, '$1 is'],
+		[/\blet's\b/g, 'let us'], [/\bu\b/g, 'you'], [/\bur\b/g, 'your'], [/\br\b/g, 'are'], [/\bpls\b|\bplz\b/g, 'please'], [/\bthx\b|\bthnx\b/g, 'thanks'],
+		[/\bwanna\b/g, 'want to'], [/\bgonna\b/g, 'going to'], [/\bgotta\b/g, 'got to'], [/\bhru\b/g, 'how are you'], [/\bwyd\b/g, 'what are you doing'],
+		[/\bidk\b/g, 'i do not know'], [/\bomg\b/g, 'oh'], [/\bya\b/g, 'you'], [/\bcuz\b|\bcos\b/g, 'because'],
+		[/\bchat ?gpt\b/g, 'chatgpt'], [/\bgoodnight\b|\bgood nite\b|\bnite\b/g, 'good night'], [/\bback up\b/g, 'backup'], [/\bgoodbye\b/g, 'good bye'], [/\bthank u\b/g, 'thank you'],
+	];
+	const STOP = new Set(['a', 'an', 'the', 'um', 'uh', 'so', 'just', 'really', 'very', 'please', 'well', 'quite', 'actually', 'kind', 'of', 'to', 'be', 'me', 'my', 'and']);
+
+	// The same message is normalized several times per reply; the last few results are kept.
+	const normalized = new Map();
+	function normalize(raw) {
+		const key = String(raw);
+		const hit = normalized.get(key);
+		if (hit !== undefined) return hit;
+		const out = normalizeText(key);
+		if (normalized.size > 256) normalized.clear();
+		normalized.set(key, out);
+		return out;
+	}
+
+	function normalizeText(raw) {
+		// Accents go (so "qué" and "que" match), then English contractions, then French elisions ("j'ai" -> "j ai").
+		let t = String(raw).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[’‘`]/g, "'").replace(/[“”«»]/g, '"');
+		// "Onyx" as a form of address carries no meaning; elsewhere ("what is onyx") it means me.
+		t = t.replace(/^(\W*(?:hey|hi|hello|ok|okay|yo)?\W*)onyx\b[\s,!:.]*/, '$1').replace(/[\s,]+onyx\W*$/, '').replace(/\bonyx\b/g, 'you');
+		for (const [re, rep] of CONTRACTIONS) t = t.replace(re, rep);
+		t = t.replace(/\b(j|l|m|t|s|d|n|c|qu)'(?=[a-z])/g, '$1 ');
+		return t.replace(/'/g, '').replace(/[^a-z0-9%+\-*/^.=\s]/g, ' ').replace(/\s+/g, ' ').trim();
+	}
+
+	function stem(w) {
+		if (w.length > 5 && w.endsWith('ing')) return w.slice(0, -3);
+		if (w.length > 4 && w.endsWith('ed')) return w.slice(0, -2);
+		if (w.length > 4 && w.endsWith('ly')) return w.slice(0, -2);
+		if (w.length > 3 && w.endsWith('s') && !w.endsWith('ss')) return w.slice(0, -1);
+		return w;
+	}
+
+	const words = (text) => normalize(text).replace(/[^a-z0-9\s]/g, ' ').split(' ').filter(Boolean);
+	const tokens = (text) => words(text).filter((w) => !STOP.has(w)).map(stem);
+
+	/* ---------- Intent model ---------- */
+
+	// One phrase model per language, built on first use. `post` is an inverted index: feature -> the examples that have
+	// it, so scoring a message only touches the examples that share a word with it.
+	const models = {};
+	let model = null;
+	const intentsFor = (lang) => (lang === 'en' ? Omni.onyxData.INTENTS : (Omni.onyxLanguages && Omni.onyxLanguages.LANGS[lang] && Omni.onyxLanguages.LANGS[lang].intents) || []);
+	/** Builds TF-IDF vectors (words and word pairs) for every example phrase of every intent in a language. */
+	function build(lang = 'en') {
+		const docs = [];
+		for (const intent of intentsFor(lang)) for (const ex of intent.examples) docs.push({ id: intent.id, feats: features(tokens(ex)) });
+		const df = new Map();
+		docs.forEach((d) => new Set(d.feats).forEach((f) => df.set(f, (df.get(f) || 0) + 1)));
+		const idf = new Map([...df].map(([f, n]) => [f, Math.log((docs.length + 1) / (n + 1)) + 1]));
+		docs.forEach((d) => (d.vec = vector(d.feats, idf)));
+		const vocab = new Map();
+		docs.forEach((d) => d.feats.filter((f) => !f.includes('_')).forEach((f) => vocab.set(f, (vocab.get(f) || 0) + 1)));
+		const post = new Map();
+		docs.forEach((d, i) => d.vec.forEach((x, f) => (post.get(f) || post.set(f, []).get(f)).push(i, x)));
+		const ids = new Set(docs.map((d) => d.id));
+		models[lang] = { docs, idf, vocab, post, ids, maxIdf: Math.max(...idf.values()), fixed: new Map() };
+		if (lang === 'en') model = models.en;
+		return models[lang];
+	}
+	const modelFor = (lang = 'en') => models[lang] || build(lang);
+
+	function features(toks) {
+		const out = [...toks];
+		for (let i = 0; i < toks.length - 1; i++) out.push(toks[i] + '_' + toks[i + 1]);
+		return out;
+	}
+
+	function vector(feats, idf) {
+		const v = new Map();
+		feats.forEach((f) => v.set(f, (v.get(f) || 0) + (idf.get(f) || 0)));
+		const norm = Math.hypot(...v.values()) || 1;
+		v.forEach((x, f) => v.set(f, x / norm));
+		return v;
+	}
+
+	function distance(a, b) {
+		if (Math.abs(a.length - b.length) > 2) return 3;
+		const d = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)]);
+		for (let j = 1; j <= b.length; j++) d[0][j] = j;
+		for (let i = 1; i <= a.length; i++) {
+			for (let j = 1; j <= b.length; j++) {
+				d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+				if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
+			}
+		}
+		return d[a.length][b.length];
+	}
+
+	/** Maps a misspelled word to the closest word Onyx knows ("helo" to "hello"), if one is close enough. Cached. */
+	function correct(tok, lang = 'en') {
+		const m = modelFor(lang);
+		if (m.vocab.has(tok) || tok.length < 4 || /\d/.test(tok)) return tok;
+		if (m.fixed.has(tok)) return m.fixed.get(tok);
+		const fixed = lang === 'en' && Omni.onyxDictionary && Omni.onyxDictionary.lookup(tok) ? tok : nearest(tok, m);
+		if (m.fixed.size > 5000) m.fixed.clear();
+		m.fixed.set(tok, fixed);
+		return fixed;
+	}
+
+	function nearest(tok, m) {
+		const limit = tok.length >= 7 ? 2 : 1;
+		let best = tok;
+		let bestD = limit + 1;
+		let bestN = 0;
+		for (const [w, n] of m.vocab) {
+			const dd = distance(tok, w);
+			const better = dd < bestD || (dd === bestD && (w.endsWith(tok.slice(-1)) && !best.endsWith(tok.slice(-1)) || (w.endsWith(tok.slice(-1)) === best.endsWith(tok.slice(-1)) && n > bestN)));
+			if (better) {
+				best = w;
+				bestD = dd;
+				bestN = n;
+			}
+		}
+		return bestD <= limit ? best : tok;
+	}
+
+	// How much the neural model's vote counts against the phrase matcher's. Tuned on the held-out phrasings in test.js.
+	const NET_WEIGHT = 0.35;
+
+	/**
+	 * Scores every intent for a message in a language; returns them best first as { id, score }. The phrase matcher's
+	 * cosine score (scaled by how much of the message the match explains) is blended with the neural model's
+	 * probability, when its weights are loaded.
+	 */
+	function classify(text, lang = 'en') {
+		const m = modelFor(lang);
+		const toks = tokens(text).map((t) => correct(t, lang));
+		if (!toks.length) return [];
+		const v = vector(features(toks), m.idf);
+		const weight = (t) => m.idf.get(t) || m.maxIdf;
+		const total = toks.reduce((n, t) => n + weight(t), 0);
+		// Dot products straight from the inverted index (postings are [example, value] pairs), plus how much of the
+		// message each example explains, counting each distinct word once.
+		const dot = new Map();
+		const covered = new Map();
+		const seen = new Set();
+		v.forEach((x, f) => {
+			const list = m.post.get(f);
+			if (!list) return;
+			const w = !f.includes('_') && !seen.has(f) ? (seen.add(f), toks.filter((t) => t === f).length * weight(f)) : 0;
+			for (let j = 0; j < list.length; j += 2) {
+				const i = list[j];
+				dot.set(i, (dot.get(i) || 0) + x * list[j + 1]);
+				if (w) covered.set(i, (covered.get(i) || 0) + w);
+			}
+		});
+		const best = new Map();
+		// In example order, so ties go to the intent listed first, as they always have.
+		for (const i of [...dot.keys()].sort((x, y) => x - y)) {
+			const s = dot.get(i) * Math.sqrt((covered.get(i) || 0) / total);
+			if (s > (best.get(m.docs[i].id) || 0)) best.set(m.docs[i].id, s);
+		}
+		// `tfidf` keeps the phrase matcher's own score: replies built from what someone said are weighed against it, as
+		// they were tuned to be. `score` is the vote of both models.
+		const tfidf = new Map(best);
+		const net = Omni.onyxModel && Omni.onyxModel.predict(normalize(text), m.ids);
+		if (net) {
+			for (const id of m.ids) {
+				const p = net[id] || 0;
+				const t = tfidf.get(id) || 0;
+				if (p || t) best.set(id, (1 - NET_WEIGHT) * t + NET_WEIGHT * p * (t ? 1 : 0.85));
+			}
+		}
+		return [...best].map(([id, score]) => ({ id, score, tfidf: tfidf.get(id) || 0 })).sort((a, b) => b.score - a.score);
+	}
+
+	/* ---------- Tool finder ---------- */
+
+	let toolIndex = null;
+	/** Finds the tools a sentence like "I need to pretty print some JSON" is about, by weighted word overlap. */
+	function findTools(text) {
+		if (!toolIndex) {
+			const df = new Map();
+			const entries = Omni.tools.map((t) => {
+				const name = new Set(tokens(t.name));
+				const keys = new Set(t.keywords.flatMap(tokens));
+				const desc = new Set(tokens(t.description || ''));
+				new Set([...name, ...keys, ...desc]).forEach((w) => df.set(w, (df.get(w) || 0) + 1));
+				return { t, name, keys, desc };
+			});
+			toolIndex = { entries, idf: (w) => Math.log((entries.length + 1) / ((df.get(w) || 0) + 1)) };
+		}
+		const IGNORE = new Set(['need', 'want', 'how', 'can', 'you', 'i', 'do', 'some', 'help', 'tool', 'for', 'with', 'this', 'that', 'there', 'thing', 'something', 'make', 'get', 'use', 'like', 'would', 'should', 'could', 'have', 'got', 'in', 'on', 'at', 'what', 'which', 'way', 'way']);
+		const q = [...new Set(tokens(text))].filter((w) => !IGNORE.has(w) && w.length > 1);
+		if (!q.length) return [];
+		return toolIndex.entries
+			.map((e) => {
+				let s = 0;
+				let hits = 0;
+				for (const w of q) {
+					const weight = toolIndex.idf(w);
+					if (e.name.has(w)) s += weight * 2;
+					else if (e.keys.has(w)) s += weight * 1.6;
+					else if (e.desc.has(w)) s += weight * 0.8;
+					else continue;
+					hits++;
+				}
+				return { tool: e.t, score: s, hits };
+			})
+			.filter((r) => r.score >= 2.4 && r.hits >= Math.min(2, q.length))
+			.sort((a, b) => b.score - a.score || a.tool.no - b.tool.no)
+			.slice(0, 3);
+	}
+
+	/* ---------- Memory and conversation ---------- */
+
+	const MEMORY_KEY = 'onyx.memory';
+	const memory = () => Object.assign({ name: null, facts: [], met: null }, Omni.store.get(MEMORY_KEY, {}));
+	const saveMemory = (m) => Omni.store.set(MEMORY_KEY, m);
+
+	/* ---------- Settings ---------- */
+
+	// How Onyx answers what people tell it. People change these by asking ("be brief", "stop asking questions"); a
+	// host can use Omni.onyx.settings. Stored next to the memory, on this device only.
+	const SETTINGS_KEY = 'onyx.settings';
+	const DEFAULTS = { tone: 'warm', questions: true, tips: true, useName: true, reader: true, internet: 'ask' };
+	const TONES = ['warm', 'brief', 'playful'];
+	// Going online: ask first (the default), allowed without asking, or never.
+	const INTERNET = ['ask', 'on', 'off'];
+	const settings = () => Object.assign({}, DEFAULTS, Omni.store.get(SETTINGS_KEY, {}));
+	function setSetting(key, value) {
+		if (!(key in DEFAULTS) || (key === 'tone' ? !TONES.includes(value) : key === 'internet' ? !INTERNET.includes(value) : typeof value !== 'boolean')) return false;
+		Omni.store.set(SETTINGS_KEY, Object.assign(settings(), { [key]: value }));
+		return true;
+	}
+
+	// [what people say, the setting it changes, what Onyx says back]. Matched against normalized text.
+	const SETTING_COMMANDS = [
+		[/\b(?:be|talk|reply|answer|keep (?:it|replies|answers))\s+(?:more\s+)?(?:brief|short|shorter|concise)\b|\bshorter (?:replies|answers)\b/, ['tone', 'brief'], 'I\'ll keep my replies short.'],
+		[/\b(?:be|talk|reply)\s+(?:more\s+)?(?:playful|fun|silly)\b/, ['tone', 'playful'], 'I\'ll be a bit more playful.'],
+		[/\b(?:be|talk|reply)\s+(?:more\s+)?(?:warm|normal|yourself)\b|\b(?:normal|default|warm) tone\b/, ['tone', 'warm'], 'Back to my usual self.'],
+		[/\b(?:stop|do not|dont|no more|quit)\s+ask(?:ing)?\s+(?:me\s+)?(?:so many\s+)?(?:questions|follow ups?)\b/, ['questions', false], 'I\'ll stop asking follow-up questions.'],
+		[/\b(?:you can|feel free to|start|go ahead and)\s+ask(?:ing)?\s+(?:me\s+)?(?:questions|follow ups?)\b/, ['questions', true], 'Okay, I\'ll ask follow-up questions again.'],
+		[/\b(?:no|stop(?: giving)?|do not give|dont give|turn off|without)\s+(?:me\s+)?(?:the\s+)?tips\b|\btips off\b/, ['tips', false], 'No more tips.'],
+		[/\b(?:turn on|start giving|bring back)\s+(?:the\s+)?tips\b|\btips on\b/, ['tips', true], 'Tips are back on.'],
+		[/\b(?:do not|dont|stop|quit)\s+(?:use|using|say|saying)\s+my name\b/, ['useName', false], 'I\'ll stop using your name.'],
+		[/\b(?:use|say) my name\b/, ['useName', true], 'I\'ll use your name again.'],
+		[/\b(?:turn off|disable|stop|no)\s+(?:dynamic|smart|personal)\s+(?:replies|responses|answers)\b/, ['reader', false], 'I\'ll stick to my fixed replies.'],
+		[/\b(?:turn on|enable|start)\s+(?:dynamic|smart|personal)\s+(?:replies|responses|answers)\b/, ['reader', true], 'I\'ll reply to what you tell me again.'],
+		[/\b(?:stay|go|work|remain|be) offline\b|\b(?:turn off|disable|no more|stop using(?: the)?|don ?t use(?: the)?|do not use(?: the)?|never use(?: the)?)\s+(?:the\s+)?(?:internet|web|online lookups?|lookups?)\b|\binternet off\b|\bno internet\b/, ['internet', 'off'], 'I\'ll stay offline and won\'t offer to look things up.'],
+		[/\bask (?:me )?(?:first|before (?:going online|using the internet|looking (?:things|anything|it) up|you look (?:things|anything|it) up))\b/, ['internet', 'ask'], 'I\'ll ask before every lookup.'],
+		[/\b(?:you (?:can|may)|feel free to|go ahead and|i allow you to|you have (?:my )?permission to)\s+(?:go online|use the internet|look (?:things|stuff|anything) up(?: online)?|search (?:the web|online|the internet))\b|\b(?:turn on|enable|allow)\s+(?:the\s+)?(?:internet|web|online)(?: access| lookups?| search)?\b|\binternet on\b|^go online$/, ['internet', 'on'], 'Okay, I\'ll look things up online when it helps, without asking each time.'],
+	];
+
+	function describeSettings() {
+		const s = settings();
+		const onOff = (v) => (v ? 'on' : 'off');
+		return [
+			'Here\'s how I reply to what you tell me:',
+			'',
+			`- **Tone**: ${s.tone} (say ${s.tone === 'warm' ? '"be brief" or "be playful"' : s.tone === 'brief' ? '"be playful" or "be warm"' : '"be brief" or "be warm"'})`,
+			`- **Follow-up questions**: ${onOff(s.questions)} (${s.questions ? '"stop asking questions"' : '"you can ask questions"'})`,
+			`- **Tips**: ${onOff(s.tips)} (${s.tips ? '"no tips"' : '"tips on"'})`,
+			`- **Using your name**: ${onOff(s.useName)} (${s.useName ? '"don\'t use my name"' : '"use my name"'})`,
+			`- **Replies built from what you say**: ${onOff(s.reader)} (${s.reader ? '"turn off dynamic replies"' : '"turn on dynamic replies"'})`,
+			`- **Going online**: ${{ ask: 'ask first', on: 'allowed', off: 'never' }[s.internet]} (${s.internet === 'on' ? '"ask first" or "stay offline"' : s.internet === 'off' ? '"you can go online" or "ask first"' : '"you can go online" or "stay offline"'})${netReady() ? '' : '. This copy of Onyx has no internet connection.'}`,
+			'',
+			'Say "reset settings" to go back to the defaults.',
+		].join('\n');
+	}
+
+	/** A reply to a settings request ("be brief", "settings"), or null if the message isn't one. */
+	function settingsCommand(norm) {
+		if (/^(?:show |open |my |your |onyx )?settings$|^what are (?:my|your) settings$|^(?:how do i )?change (?:your |the |my )?settings$/.test(norm)) return answer(describeSettings());
+		if (/^reset (?:my |your |the )?settings$/.test(norm)) {
+			Omni.store.remove(SETTINGS_KEY);
+			return answer('Settings are back to the defaults: a warm tone, follow-up questions, tips, your name, replies built from what you say, and asking before going online.');
+		}
+		for (const [re, [key, value], said] of SETTING_COMMANDS) if (re.test(norm) && setSetting(key, value)) return answer(`${said} Say "settings" to see or change the rest.`);
+		return null;
+	}
+
+	/** "How did the exam go?" with follow-up questions off becomes "I hope the exam went well." */
+	function asStatement(q) {
+		let m;
+		if ((m = q.match(/^How did (.+?) (?:go|turn out)\?$/))) return `I hope ${m[1]} went well.`;
+		if ((m = q.match(/^How was (.+?)\?/))) return `I hope ${m[1]} was good.`;
+		if (/^How's it going\?$/.test(q)) return 'I hope it\'s going well.';
+		if (/talk about it\?$/.test(q)) return 'I\'m here if you want to talk about it.';
+		return 'Thanks for telling me.';
+	}
+
+	/** Applies the settings to a reply Onyx built from what someone said: questions, length and tone. */
+	function shape(r) {
+		const s = settings();
+		let parts = (r.text.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [r.text]).map((x) => x.trim()).filter(Boolean);
+		if (!s.questions) {
+			const kept = parts.filter((x) => !x.endsWith('?'));
+			parts = kept.length ? kept : [asStatement(parts[parts.length - 1])];
+		}
+		if (s.tone === 'brief') parts = parts.slice(0, 1);
+		let text = parts.join(' ');
+		// Playful only where it fits: never on bad news.
+		if (s.tone === 'playful' && !/sorry|oh no|ouch|heavy|no fun|sounds hard|normal\./i.test(text)) text = pick('playful', ['Ooh! ', 'Yay! ', 'Love it! ', 'Nice! ']) + text;
+		return Object.assign({}, r, { text });
+	}
+
+	// The conversation so far: what Onyx asked, what it offered, and (new in Onyx 2) what the person has told it, the
+	// words talked about, the names of their pets and people, and the language they're writing in.
+	const fresh = () => ({ lastAnswer: null, pending: null, expect: null, lastIntent: null, lastReply: '', lastKind: null, lastCommand: null, why: null, recent: {}, bags: {}, misses: 0, sentence: { word: null, n: 0, said: [] }, notes: [], topics: [], about: {}, names: {}, lang: 'en', switched: false, subject: null });
+	let convo = fresh();
+
+	const part = () => {
+		const h = new Date().getHours();
+		return h < 5 ? 'night' : h < 12 ? 'morning' : h < 18 ? 'afternoon' : 'evening';
+	};
+
+	/** Picks a variant, avoiding the ones used most recently under the same key. */
+	function pick(key, list) {
+		const recent = convo.recent[key] || [];
+		const options = list.filter((x) => !recent.includes(x));
+		const choice = (options.length ? options : list)[Math.floor(Math.random() * (options.length || list.length))];
+		convo.recent[key] = [choice, ...recent].slice(0, Math.max(1, Math.floor(list.length / 2)));
+		return choice;
+	}
+
+	/** Deals from a shuffled bag, so every joke (or tip, or fact) comes up once before any repeats. */
+	function draw(key, list) {
+		if (!convo.bags[key] || !convo.bags[key].length) convo.bags[key] = Omni.random.shuffle(Omni.random.source(), list.map((_, i) => i));
+		convo.lastKind = key;
+		return list[convo.bags[key].pop()];
+	}
+
+	const fill = (text, mem) => String(text).replace(/\{name\}/g, mem.name && settings().useName ? `, ${mem.name}` : '');
+
+	const YES = /^(y|yes|yeah|yep|yup|sure|ok|okay|please|yes please|go ahead|do it|please do|definitely|absolutely|of course|sounds good|why not|alright|sure thing|go for it)\b[\s!.]*$/i;
+	const NO = /^(n|no|nope|nah|no thanks|no thank you|not now|maybe later|never mind|nevermind|cancel|stop|don't|dont)\b[\s!.]*$/i;
+	const ALWAYS = /^(?:always|yes,? always|always allow|allow always|don'?t ask again|do not ask again|you can always|siempre|s[ií],? siempre|toujours|oui,? toujours)\b/i;
+	const CRISIS = /\b(kill myself|killing myself|suicid|end my life|want to die|wanna die|don'?t want to live|hurt myself|self[- ]harm)\b/i;
+	// Languages Onyx doesn't speak (Spanish and French it does).
+	const FOREIGN = /^(hallo|guten (?:tag|morgen)|ciao|buongiorno|grazie|ol[aá]|obrigad[oa]|konnichiwa|arigato|namaste|privet|danke|hej|tack)\b|[Ѐ-ӿ֐-ۿऀ-ॿ぀-ヿ一-鿿가-힯]/i;
+	const NOT_NAMES = new Set(['fine', 'good', 'ok', 'okay', 'tired', 'sad', 'happy', 'bored', 'here', 'back', 'done', 'sorry', 'busy', 'great', 'well', 'not', 'just', 'so', 'very', 'ready', 'hungry', 'stressed', 'angry', 'confused', 'lost', 'new', 'onyx', 'a', 'an', 'the', 'no', 'yes', 'cool', 'hi', 'hello', 'hey', 'yo', 'hiya', 'what', 'why', 'who', 'how', 'help', 'thanks', 'thank', 'nothing', 'none', 'nope', 'nah', 'idk', 'whatever', 'later', 'bye', 'test', 'nobody', 'me', 'you', 'i', 'my', 'is', 'are', 'can', 'do', 'tell', 'lol', 'haha', 'sure', 'maybe', 'please', "i'm", 'im', 'i', 'its', "it's"]);
+
+	/** A name from "my name is Sam", "call me Sam", "I'm Sam" (capitalized), or a bare answer to "what should I call you?". */
+	function nameFrom(raw, expecting) {
+		const clean = (n) => n && n.replace(/[^A-Za-z'\- ]/g, '').trim().split(/\s+/).slice(0, 2).map((w) => w[0].toUpperCase() + w.slice(1)).join(' ');
+		let m = raw.match(/\b(?:my name is|my name's|call me|i go by|you can call me|i am called|i'm called|name's)\s+([A-Za-z][A-Za-z'-]{0,30}(?:\s+[A-Za-z][A-Za-z'-]{0,30})?)/i);
+		if (m && !NOT_NAMES.has(m[1].toLowerCase().split(' ')[0])) return clean(m[1]);
+		m = raw.replace(/[’‘]/g, "'").match(/^(?:hi,?\s+|hello,?\s+|hey,?\s+)?(?:[Ii] am|[Ii]'m|[Ii]m)\s+([A-Z][a-z'-]{1,30})\s*[.!]?$/);
+		if (m && !NOT_NAMES.has(m[1].toLowerCase())) return clean(m[1]);
+		if (expecting && !/onyx/i.test(raw)) {
+			m = raw.trim().match(/^(?:it's\s+|its\s+|just\s+)?([A-Za-z][A-Za-z'-]{0,30}(?:\s+[A-Za-z][A-Za-z'-]{0,30})?)[.!]?$/);
+			if (m && !NOT_NAMES.has(m[1].toLowerCase().split(' ')[0])) return clean(m[1]);
+		}
+		return null;
+	}
+
+	/** "twelve times 7", "15% of 80", "5 plus 3" become something the scientific calculator reads. */
+	function wordsToMath(text) {
+		let t = ' ' + text.toLowerCase().replace(/\?+\s*$/, '') + ' ';
+		if (!/\d/.test(t)) return null;
+		t = t.replace(/^\s*(what is|whats|what's|calculate|compute|how much is|solve|work out|evaluate)\s+/, ' ');
+		t = t.replace(/(\d+(?:\.\d+)?)\s*(?:%|percent)\s+of\s+(\d+(?:\.\d+)?)/g, '($1/100*$2)');
+		t = t.replace(/\bplus\b/g, '+').replace(/\bminus\b/g, '-').replace(/\b(times|multiplied by|x)\b/g, '*').replace(/\b(divided by|over)\b/g, '/');
+		t = t.replace(/\bsquared\b/g, '^2').replace(/\bcubed\b/g, '^3').replace(/\bto the power of\b/g, '^').replace(/\bsquare root of\b/g, 'sqrt');
+		t = t.trim();
+		return /^[-+*/^().\d\s]+$|^sqrt[\s(]*[\d.]+\)?$/.test(t) && /[-+*/^]|sqrt/.test(t) ? t : null;
+	}
+
+	/** Small things Onyx does with words: count letters or words, reverse, spell, change case, numbers in words. */
+	function wordTrick(text) {
+		const q = (s) => s.trim().replace(/^["'“]|["'”.?!]$/g, '').trim();
+		let m;
+		if ((m = text.match(/^how many (?:letters|characters|chars) (?:are )?(?:in|does) (.+?)(?: have)?\??$/i))) {
+			const w = q(m[1]);
+			const letters = (w.match(/\p{L}/gu) || []).length;
+			return `"${w}" has ${letters} letter${letters === 1 ? '' : 's'}${letters !== w.length ? ` (${w.length} characters with spaces and symbols)` : ''}.`;
+		}
+		if ((m = text.match(/^how many (?:times (?:does|is) )?(?:the letter )?["']?(\p{L})["']? (?:appear )?(?:are )?in (.+?)\??$/iu)) && !/^(times|words?)$/i.test(m[1])) {
+			const n = (q(m[2]).toLowerCase().match(new RegExp(m[1].toLowerCase(), 'g')) || []).length;
+			return `"${m[1]}" appears ${n} time${n === 1 ? '' : 's'} in "${q(m[2])}".`;
+		}
+		if ((m = text.match(/^(?:count|how many) (?:the )?words (?:are )?in (.+)$/i))) {
+			const n = q(m[1]).split(/\s+/).filter(Boolean).length;
+			return `That's ${n} word${n === 1 ? '' : 's'}.`;
+		}
+		if ((m = text.match(/^(?:reverse|say|spell|write) (.+?) backwards?$/i)) || (m = text.match(/^reverse (.+)$/i))) return `${[...q(m[1])].reverse().join('')}`;
+		if ((m = text.match(/^(?:how do you )?spell (?:out )?(.+?)\??$/i)) && !/\d/.test(m[1])) return [...q(m[1]).toUpperCase()].filter((c) => c.trim()).join('-');
+		if ((m = text.match(/^(?:uppercase|upper case|capitali[sz]e|make uppercase) (.+)$/i))) return q(m[1]).toUpperCase();
+		if ((m = text.match(/^(?:lowercase|lower case|make lowercase) (.+)$/i))) return q(m[1]).toLowerCase();
+		if ((m = text.match(/^(?:title case) (.+)$/i))) return q(m[1]).toLowerCase().replace(/\b\p{L}/gu, (c) => c.toUpperCase());
+		if ((m = text.match(/^(?:write|say|spell|how do you (?:write|say)) (-?[\d,]+) (?:in|as) words\??$/i)) || (m = text.match(/^(-?[\d,]+) in words\??$/i))) {
+			const words = Omni.onyxMath && Omni.onyxMath.numberToWords(Number(m[1].replace(/,/g, '')));
+			return words ? `${m[1]} is "${words}".` : 'That number is too big for me to write out.';
+		}
+		if ((m = text.match(/^is (.+?) a palindrome\??$/i))) {
+			const w = q(m[1]).toLowerCase().replace(/[^\p{L}\d]/gu, '');
+			return w === [...w].reverse().join('') ? `Yes, "${q(m[1])}" reads the same backwards.` : `No, "${q(m[1])}" backwards is "${[...q(m[1])].reverse().join('')}".`;
+		}
+		return null;
+	}
+
+	/** Questions about a word that aren't its definition: other words for it, its opposite, its part of speech, a sentence with it. */
+	function wordQuery(text) {
+		const d = Omni.onyxDictionary;
+		if (!d) return null;
+		const t = text.trim().replace(/[?!.]+$/, '');
+		const unknown = (w) => `"${w.replace(/^["'“]|["'”]$/g, '')}" isn't in my dictionary. I know ${d.size} everyday words and can't look up new ones.`;
+		let m;
+		if ((m = t.match(/^(?:what(?:'s| is|s| are)? )?(?:an?(?:nother)? |some |the )?(?:synonyms?|other words?|another word|different word) (?:for|of|to|like) (.+)$/i))) return answer(d.related(m[1]) || unknown(m[1]));
+		if ((m = t.match(/^(?:what(?:'s| is|s| are)? )?(?:an? |some |the )?(?:opposite|antonyms?) (?:of|for|to) (.+)$/i))) return answer(d.related(m[1], true) || unknown(m[1]));
+		if ((m = t.match(/^(?:what|which) (?:part of speech|kind of word|type of word|word class) is (.+)$/i)) || (m = t.match(/^is (.+?) an? (?:noun|verb|adjective|adverb)$/i))) return answer(d.partOfSpeech(m[1]) || unknown(m[1]));
+		const withWord = t.match(/^(?:can you |could you |please )?(?:use|put) (?:the word )?(.+?) in (?:a|another) sentence(?: please)?$/i) || t.match(/^(?:can you |could you |please )?(?:make|write|give me|create|form|build|say|generate|tell me)(?: me)? (?:a |another |one )?(?:new )?sentence (?:with|using|about|containing|that uses|that has|for) (?:the word )?(.+)$/i);
+		if (withWord) {
+			const named = /^(it|that|that word|this word|this)$/i.test(withWord[1]) ? convo.sentence.word : withWord[1];
+			if (!named) return answer('Which word? Try "use happy in a sentence".');
+			const s = d.sentence(named);
+			if (s.missing) return answer(unknown(s.missing));
+			convo.sentence = { word: s.word, n: 1, said: [s.text] };
+			convo.lastKind = 'sentence';
+			return answer(s.text);
+		}
+		if (/^(?:can you |could you |please )?(?:make|write|give me|create|form|build|say|generate|tell me|make up)(?: me)? (?:a |another |one |some )?(?:random |new |made up )?sentences?(?: please)?$|^say something random$/i.test(t)) {
+			const same = /\banother\b/i.test(t) && convo.lastKind === 'sentence' ? convo.sentence.word : null;
+			return answer((/^(can|could) you\b/i.test(t) ? 'Sure. ' : '') + nextSentence(same));
+		}
+		return null;
+	}
+
+	/** Another sentence: for the last word asked about, or a random one. Skips the ones it has just said. */
+	function nextSentence(word) {
+		const prev = convo.sentence.word === word ? convo.sentence : { n: 0, said: [] };
+		const make = () => Omni.onyxDictionary.sentence(word, word ? prev.n : 1);
+		// A word has only a few templates, so once they're all used, settle for not repeating the last one.
+		let s = make();
+		for (let i = 0; i < 12 && prev.said.includes(s.text) && (i < 8 || s.text === prev.said[0]); i++) s = make();
+		convo.sentence = { word, n: prev.n + 1, said: [s.text, ...prev.said].slice(0, 6) };
+		convo.lastKind = 'sentence';
+		return s.only ? `That's the only sentence I have for **${word}**: ${s.text}` : s.text;
+	}
+
+	/* ---------- Reading what people tell me ---------- */
+
+	/*
+	 * When no intent fits, Onyx reads a message with the dictionary: a feeling ("I'm nervous"), an event ("an exam
+	 * tomorrow"), an activity, a pet, food, a place or a person, plus negation, tense and whose it is ("my sister's
+	 * wedding"). The reply is built from those parts. Only dictionary words are echoed back, never the raw message.
+	 */
+	const LIGHT = new Set('i me my mine we us our you your he him his she her they them their it its a an the this that these those is am are was were be been being have has had do does did will would can could should may might must to of in on at by for with about from as and or but so if then than just really very too also not no yes oh well get got go going gone went want wanted need needed feel feeling felt like liked love loved hate think thought know knew make made take took give gave put see saw say said tell told come came look use try keep let ask still now today ok okay'.split(' '));
+	const NEG = new Set(['not', 'never', 'no', 'hardly', 'dont', 'didnt', 'isnt', 'wasnt', 'arent', 'cant', 'wont', 'havent', 'aint', 'nothing']);
+	const TIMES = [
+		[/\btomorrow\b/, ' tomorrow', 'future'], [/\btonight\b/, ' tonight', 'future'], [/\bthis weekend\b/, ' this weekend', 'future'],
+		[/\bnext (week|weekend|month|year)\b/, ' next $1', 'future'], [/\blater\b/, ' later', 'future'], [/\bsoon\b/, ' soon', 'future'],
+		[/\bon (monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/, (d) => ` on ${d[0].toUpperCase()}${d.slice(1)}`, null],
+		[/\btoday\b/, ' today', 'now'], [/\bthis (morning|afternoon|evening)\b/, ' this $1', null],
+		[/\byesterday\b/, ' yesterday', 'past'], [/\blast (night|week|weekend|month|year)\b/, ' last $1', 'past'], [/\b\w+ ago\b/, '', 'past'],
+	];
+	// Verbs whose result can be asked about: "I baked a cake" -> "How did the cake turn out?"
+	const MAKING = new Set(['bake', 'cook', 'make', 'build', 'paint', 'draw', 'knit', 'sew', 'design', 'write', 'grow', 'fix', 'repair', 'decorate', 'sketch', 'invent']);
+	// Verbs too general to reply to on their own ("I keep thinking about it").
+	const VAGUE = new Set(['think', 'know', 'believe', 'hope', 'wish', 'want', 'need', 'feel', 'like', 'love', 'hate', 'say', 'tell', 'ask', 'see', 'look', 'get', 'give', 'take', 'put', 'come', 'go', 'make', 'use', 'try', 'keep', 'show', 'understand', 'decide', 'agree', 'remember', 'wait', 'stay', 'start', 'stop', 'begin', 'finish', 'change', 'move', 'have', 'eat', 'drink']);
+	const ILL = new Set(['headache', 'cold', 'flu', 'fever', 'pain']);
+	// "I'm cold" is a feeling, though "cold" usually describes a place or the weather.
+	const BODILY = { cold: 'An extra layer or a warm drink might help.', hot: 'Some cold water and a bit of shade might help.', warm: 'Some cold water might help.', freezing: 'An extra layer or a warm drink might help.' };
+	const PAST = /\b(was|were|had|did|went|got|made|took|saw|came|ate|drank|left|yesterday)\b/;
+
+	const upper = (s) => s[0].toUpperCase() + s.slice(1);
+	// Short forms that are written in capitals.
+	const SHOUT = { tv: 'TV', usa: 'USA', us: 'US', nyc: 'NYC', cv: 'CV', pjs: 'PJs', bbq: 'BBQ', ok: 'OK' };
+	// "the beach", but "Japan" and "Christmas".
+	const the = (e) => (/^[A-Z]/.test(e.w) ? e.w : `the ${e.w}`);
+
+	/** What a word is, as a clause: "a cat is a small, furry animal...", "to run is to move quickly...". */
+	function describe(e, d) {
+		const def = e.def;
+		if (e.pos === 'noun') return /^(an?|the) /.test(def) ? `${e.mass || e.kind === 'time' ? e.w : d.a(e.w)} is ${def}` : `"${e.w}" means ${def}`;
+		if (e.pos === 'verb') return `to ${e.w} is ${def}`;
+		return `"${e.w}" means ${def}`;
+	}
+
+	function read(raw, mem) {
+		const d = Omni.onyxDictionary;
+		if (!d) return null;
+		const t = normalize(raw).replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+		const ws = t.split(' ');
+		if (ws.length > 30) return null;
+		const hits = [];
+		// The hand-written core carries the hints replies are built from; of the generated part, only nouns of a safe
+		// kind (an animal, a food, a body part, a person) take part, so a rare WordNet sense never shapes a reply.
+		const usable = (senses) => (senses || []).filter((x) => !x.e.src || (x.e.pos === 'noun' && (['animal', 'food', 'body', 'person'].includes(x.e.kind) || (x.e.kind === 'place' && /^[A-Z]/.test(x.e.w)))));
+		for (let i = 0; i < ws.length; i++) {
+			// Two-word entries ("ice cream"), but not "an apple": lookup drops a leading article.
+			const pair = i + 1 < ws.length && !LIGHT.has(ws[i]) && usable(d.lookup(`${ws[i]} ${ws[i + 1]}`));
+			const one = !LIGHT.has(ws[i]) && usable(d.lookup(ws[i]));
+			if (pair && pair.length) {
+				hits.push({ i, word: `${ws[i]} ${ws[i + 1]}`, senses: pair });
+				i++;
+			} else if (one && one.length) hits.push({ i, word: ws[i], senses: one });
+		}
+		/** The first word with a sense that passes `test(entry, hit)`, as { i, word, e, label, senses }. */
+		const find = (test, from = 0) => {
+			for (const h of hits) {
+				if (h.i < from) continue;
+				const s = h.senses.find((x) => test(x.e, h));
+				if (s) return { i: h.i, word: h.word, e: s.e, label: s.label, senses: h.senses };
+			}
+			return null;
+		};
+		const negated = (h) => ws.slice(Math.max(0, h.i - 3), h.i).some((w) => NEG.has(w));
+		/** A noun as the person said it, with their determiner and adjectives: "a good book", "your favorite show". */
+		const phrase = (h, fallback = 'the') => {
+			const e = h.senses.find((x) => x.e.pos === 'noun').e;
+			const word = /^[A-Z]/.test(e.w) ? e.w : SHOUT[h.word] || h.word;
+			for (let j = h.i - 1; j >= Math.max(0, h.i - 3); j--) {
+				const owner = hits.find((x) => x.i === j && x.senses.some((y) => y.e.rel && y.label === 'plural'));
+				if (owner && ws[j - 1] === 'my') return `your ${owner.senses[0].e.w}'s ${ws.slice(j + 1, h.i).concat(word).join(' ')}`;
+				if (/^(a|an|the|my|our|this|that|some|his|her|their)$/.test(ws[j])) return [{ my: 'your', our: 'your' }[ws[j]] || ws[j], ...ws.slice(j + 1, h.i), word].join(' ');
+				if (!(hits.find((x) => x.i === j) || { senses: [] }).senses.some((x) => x.e.pos === 'adjective')) break;
+			}
+			return /^[A-Z]/.test(e.w) || e.mass || h.label === 'plural' || !fallback ? word : `${fallback} ${word}`;
+		};
+		const mine = (h) => h && ws[h.i - 1] === 'my';
+		const self = /\b(i|me|my|we|our|us)\b/.test(t);
+		// Whether the person did it themselves: "I called" is, "my mom called" isn't.
+		const doer = /\b(i|we)\b/.test(t);
+		const [, when = '', tense = null] = TIMES.map(([re, say, tn]) => {
+			const m = t.match(re);
+			return m && [m, typeof say === 'function' ? say(m[1]) : say.replace('$1', m[1] || ''), tn];
+		}).find(Boolean) || [];
+		const past = tense === 'past' || PAST.test(t) || hits.some((h) => h.senses.every((x) => x.label === 'past tense'));
+		const future = tense === 'future' || /\b(will|going to|gonna|plan to|planning to|about to)\b/.test(t);
+		const must = /\b(have to|has to|need to|got to|must)\b/.test(t);
+		const prefs = settings();
+		const name = mem.name && prefs.useName ? `, ${mem.name}` : '';
+		const say = (key, list) => answer(pick(key, list));
+		const hint = (tip) => (tip && prefs.tips ? ` ${tip}` : '');
+
+		// "Do you like cats?" I have no likes of my own, but I can say what the word means.
+		const asked = t.match(/^(?:do|did) you (?:like|love|enjoy|hate) (.+)$|^what do you think (?:of|about) (.+)$/);
+		if (asked) {
+			const h = find((e) => e.pos === 'noun' || e.pos === 'verb', ws.indexOf(asked[1] ? 'you' : 'think') + 2);
+			return h ? { strong: true, sure: true, reply: answer(`I don't have likes or dislikes of my own, but in my dictionary, ${describe(h.e, d)}.`) } : null;
+		}
+		if (/^(who|what|when|where|why|how|which|is|are|does|do|did|can|could|will|would)\b/.test(t)) return null;
+
+		const bodily = (e, h) => e.w in BODILY && /\b(am|feel|feeling|felt)( so| really| very| a bit| kind of)?$/.test(ws.slice(0, h.i).join(' '));
+		const feelHit = find((e, h) => e.pos === 'adjective' && (e.use === 'feel' || bodily(e, h)));
+		// "Lost" in "I lost my keys" is a verb, not a feeling: a feeling word followed by "my" or "the" is an action.
+		const acting = feelHit && feelHit.senses.some((x) => x.e.pos === 'verb') && /^(my|the|a|an|his|her|our|their)$/.test(ws[feelHit.i + 1] || '');
+		const describing = feelHit && hits.some((h) => h.i < feelHit.i && feelHit.i - h.i <= 4 && h.senses.some((x) => x.e.pos === 'noun' && !['person', 'animal', 'time'].includes(x.e.kind)) && /\b(is|are|was|were)\b/.test(ws.slice(h.i, feelHit.i).join(' ')));
+		const feel = acting || describing ? null : feelHit;
+		const ill = find((e) => (e.kind === 'body' && /\b(hurts?|hurting|aches?|aching|sore|broke|broken|injured|sprained)\b/.test(t)) || (e.pos === 'noun' && ILL.has(e.w) && /\b(have|has|got|caught|getting)\b/.test(t)));
+		const event = find((e) => e.kind === 'event');
+		const owner = event && hits.find((h) => h.i === event.i - 1 && h.senses.some((x) => x.e.rel && x.label === 'plural'));
+		const np = event && (owner ? `your ${owner.senses[0].e.w}'s ${event.e.w}` : mine(event) ? `your ${event.e.w}` : the(event.e));
+
+		// "Not hungry" says nothing worth answering; "not happy" does.
+		if (feel && !(feel.e.mood === '0' && negated(feel))) {
+			const w = feel.e.w;
+			const not = negated(feel);
+			const mood = not ? { '+': '-', '-': '+', '--': '+' }[feel.e.mood] : feel.e.mood || '0';
+			const tip = feel.e.tip || BODILY[w];
+			// Whose feeling: "my dog is sick" is about the dog, not the person typing.
+			const subject = hits.find((h) => h.i < feel.i && feel.i - h.i <= 4 && mine(h) && h.senses.some((x) => ['person', 'animal'].includes(x.e.kind)));
+			if (subject) {
+				const who = `your ${subject.senses.find((x) => ['person', 'animal'].includes(x.e.kind)).e.w}`;
+				const is = past ? 'was' : 'is';
+				const about = `${who} ${is} ${not ? 'not ' : ''}${w}`;
+				if (mood === '+') return { strong: true, note: about, reply: answer(`That's lovely to hear about ${who}.`) };
+				if (mood === '-' || mood === '--') return { strong: true, note: about, reply: say('dyn-other', [`I'm sorry ${who} ${is} ${not ? 'not ' : ''}${w}. I hope things get better soon.`, `Oh no, I'm sorry ${who} ${is} ${not ? 'not ' : ''}${w}. Is there anything that would help?`]) };
+			} else if (self) {
+				const feeling = `${not ? 'not ' : ''}feeling ${w}`;
+				const told = `you're ${feeling}`;
+				if (event && event.e.event !== 'sorry' && !past) {
+					const ahead = { key: event.e.w, np, when, past: false };
+					if (mood === '-') return { strong: true, note: `you're ${feeling} about ${np}${when}`, about: ahead, reply: answer(`Feeling ${w} before ${np} is completely normal. Good luck${when}${name}!${hint(tip)}`) };
+					if (mood === '+') return { strong: true, note: `you're ${feeling} about ${np}${when}`, about: ahead, reply: answer(`I love that you're ${feeling} about ${np}${when}!`) };
+				}
+				if (mood === '--') return { strong: true, note: told, reply: answer(`I'm really sorry you're ${feeling}${name}. That's a heavy thing to carry. If it's been going on for a while, talking to someone you trust, or a doctor, can really help, and I'm here to listen too.`) };
+				if (mood === '-') return { strong: true, note: told, reply: answer(pick('dyn-bad', [`I'm sorry you're ${feeling}${name}. Do you want to talk about it?`, `Feeling ${not ? 'anything but ' : ''}${w} is no fun. What's going on?`, `That sounds hard. What's making you feel ${not ? 'that way' : w}?`]) + (!not ? hint(tip) : '')) };
+				if (mood === '+') return { strong: true, note: told, reply: not ? answer(`Good, I'm glad you're not feeling ${w}.`) : say('dyn-good', [`Glad you're feeling ${w}${name}! What's behind it?`, `That's good to hear. What's got you feeling ${w}?`, `Love that. Feeling ${w} is the best.`]) };
+				if (mood === '0') return { strong: true, note: told, reply: answer(`Sounds like you're ${feeling}.${hint(tip) || ' What\'s going on?'}`) };
+			}
+		}
+
+		// Losing someone: the most important thing to get right, so it comes first.
+		const someone = hits.find((h) => mine(h) && h.senses.some((x) => ['person', 'animal'].includes(x.e.kind)));
+		if (someone && /\b(died|passed away|passed|lost)\b/.test(t)) {
+			const who = someone.senses.find((x) => ['person', 'animal'].includes(x.e.kind)).e.w;
+			return { strong: true, note: `your ${who} passed away`, reply: answer(`I'm so sorry about your ${who}${name}. That's a huge loss. Take all the time you need, and I'm here if you want to talk.`) };
+		}
+		const starting = doer && t.match(/\b(?:start|starting|started|begin|beginning) (?:my |a |the )?(new )?(job|school|college|university|class|course|role)\b/);
+		if (starting) {
+			const np2 = `${starting[1] ? 'the new ' : ''}${starting[2]}`;
+			if (past && !future) return { strong: true, note: `you started ${np2}`, topic: { kind: 'went', np: 'the first day' }, reply: answer(`How was the first day at the ${starting[2]}?`) };
+			return { strong: true, note: `you're starting ${np2}${when}`, about: { key: starting[2], np: np2, when, past: false }, topic: { kind: 'ahead', np: np2 }, reply: answer(`Good luck with ${np2}${when}${name}! First days can be a lot, but you've got this.`) };
+		}
+		if (doer && /\b(?:moving|move|moved)\b/.test(t) && !/\bmove (?:it|that|this|the)\b/.test(t)) {
+			if (past && !future) return { strong: true, note: 'you moved house', topic: { kind: 'went', np: 'the move' }, reply: answer(`A new place! How are you settling in?`) };
+			return { strong: true, note: `you're moving${when}`, about: { key: 'move', np: 'your move', when, past: false }, reply: answer(`Moving is a big change. Good luck with the move${when}${name}!`) };
+		}
+		if (/\b(?:so |completely )?done with (?:today|this day|this week|everything|it all)\b|\bwhat a (?:day|week)\b|\b(?:long|rough|tough|bad|hard) (?:day|week)\b/.test(t)) {
+			return { strong: true, reply: answer(`Sounds like it's been a long one${name}. Do you want to talk about it, or would a joke help?`) };
+		}
+
+		// Something of theirs went wrong: "my phone died", "my flight got cancelled".
+		const broken = find((e) => e.pos === 'verb' && (e.mood === '-' || e.mood === '--'));
+		const owned = broken && hits.find((h) => mine(h) && h.i < broken.i && h.senses.some((x) => x.e.pos === 'noun' && !['person', 'animal', 'body'].includes(x.e.kind)));
+		if (owned) return { strong: true, reply: answer(`Oh no, sorry about your ${owned.word}${name}. That's really annoying.`) };
+		if (event && broken && broken.i > event.i) return { strong: true, reply: answer(`Oh no, sorry about ${np}${name}. That's disappointing.`) };
+
+		// Someone close in the hospital.
+		if (someone && hits.some((h) => h.senses.some((x) => x.e.w === 'hospital'))) {
+			return { strong: true, reply: answer(`I'm sorry your ${someone.senses.find((x) => ['person', 'animal'].includes(x.e.kind)).e.w} is in the hospital${name}. I hope they get good care and feel better soon.`) };
+		}
+
+		if (ill && self && !negated(ill)) {
+			if (ill.e.kind === 'body') return { strong: true, note: `your ${ill.e.w} ${ill.label === 'plural' ? 'hurt' : 'hurts'}`, reply: answer(`Ouch, sorry your ${ill.e.w} ${ill.label === 'plural' ? 'hurt' : 'hurts'}${name}. Rest it if you can, and see a doctor if it doesn't get better.`) };
+			return { strong: true, note: `you have ${d.a(ill.e.w)}`, reply: answer(`Sorry to hear about the ${ill.e.w}${name}. Rest, plenty of water, and a doctor if it gets worse or doesn't go away.`) };
+		}
+
+		if (event && event.e.event !== 'sorry' && /\b(?:is|are) (?:finally |all )?(?:over|done|finished)\b/.test(t)) {
+			const many = event.label === 'plural';
+			const these = mine(event) ? `your ${event.word}` : `the ${event.word}`;
+			return { strong: true, topic: { kind: 'went', np: these }, reply: answer(`${upper(these)} ${many ? 'are' : 'is'} over? That must be a relief${name}! How did ${many ? 'they' : 'it'} go?`) };
+		}
+
+		if (event && !negated(event)) {
+			const kind = event.e.event;
+			const about = { key: event.e.w, np, when, past: !!past };
+			const told = { note: kind === 'news' ? `you got ${np}` : when ? `${np} ${past ? 'was' : 'is'}${when}` : past ? `you had ${np}` : `you have ${np} coming up`, about };
+			// "The concert was amazing" already says how it went.
+			const rated = past && hits.find((h) => h.i > event.i && h.i - event.i <= 4 && h.senses.some((x) => x.e.pos === 'adjective' && x.e.mood && x.e.mood !== '0'));
+			if (rated && kind !== 'sorry') {
+				const a = rated.senses.find((x) => x.e.pos === 'adjective').e;
+				const good = negated(rated) ? a.mood !== '+' : a.mood === '+';
+				return { strong: true, note: `${np} was ${negated(rated) ? 'not ' : ''}${a.w}`, about, reply: answer(good ? `Glad ${np} was ${a.w}${name}! What was the best part?` : `Sorry ${np} was ${negated(rated) ? 'not ' : ''}${a.w}${name}. Do you want to talk about it?`) };
+			}
+			if (kind === 'sorry') return { ...told, strong: true, reply: answer(`I'm so sorry. ${upper(d.forms.plural(event.e))} are hard. I'm here if you want to talk.`) };
+			if (kind === 'news') return { ...told, strong: true, topic: { kind: 'ahead', np }, reply: answer(`Congratulations on ${np}${name}! That's great news.`) };
+			if (event.e.w === 'birthday' && mine(event) && !past) return { strong: true, reply: answer(tense === 'now' ? `Happy birthday${name}! I hope it's a great one.` : `Happy early birthday${name}! Any plans?`) };
+			if (past) return { ...told, strong: true, topic: { kind: 'went', np }, reply: say('dyn-event-past', kind === 'luck' ? [`How did ${np} go?`, `How was ${np}? I hope it went well.`] : [`How was ${np}?`, `Sounds lovely. How was ${np}?`]) };
+			const lead = upper(np) + when;
+			if (kind === 'luck') return { ...told, strong: true, topic: { kind: 'ahead', np }, reply: say('dyn-luck', [`Good luck with ${np}${when}${name}! How are you feeling about it?`, `${lead}? You've got this. Good luck!`]) };
+			return { ...told, strong: true, topic: { kind: 'ahead', np }, reply: say('dyn-joy', [`${lead}? That sounds fun!`, `Ooh, ${np}${when}. I hope it's a great one.`]) };
+		}
+
+		const verdict = find((e, h) => e.pos === 'adjective' && e.mood && e.mood !== '0' && (e.use !== 'feel' || describing) && /\b(?:is|was|were|are|been|s|felt|looks|looked|seems|seemed)( so| really| very| pretty| super| kind of| quite)?$/.test(ws.slice(0, h.i).join(' ')));
+		if (verdict) {
+			const subject = [...hits].reverse().find((h) => h.i < verdict.i && h.senses.some((x) => x.e.pos === 'noun' && x.e.kind !== 'time'));
+			const day = ws.slice(0, verdict.i).find((w) => ['today', 'tonight', 'yesterday', 'it', 'that', 'this'].includes(w));
+			const was = /\b(?:was|were|been|felt|looked|seemed)\b/.test(ws.slice(0, verdict.i).join(' '));
+			let what = null;
+			if (subject) what = phrase(subject);
+			else if (day === 'today' || day === 'tonight' || day === 'yesterday') what = day;
+			if (what) {
+				const many = subject && subject.senses.some((x) => x.label === 'plural');
+				const be = was ? (many ? 'were' : 'was') : many ? 'are' : 'is';
+				const w = verdict.e.w;
+				const sure = subject && subject.senses.some((x) => x.e.w === 'weather');
+				if (verdict.e.mood === '+') return { strong: true, sure, reply: answer(`Glad ${what} ${be} ${w}${name}!`) };
+				return { strong: true, sure, reply: answer(`Sorry ${what} ${be} ${w}${name}. Do you want to talk about it?`) };
+			}
+		}
+
+		// Missing someone or somewhere.
+		const missed = /\bmiss(?:ing|ed)?\b/.test(t) && hits.find((h) => (mine(h) || h.word === 'home') && h.senses.some((x) => x.e.rel || ['person', 'animal', 'place'].includes(x.e.kind)));
+		if (missed) {
+			const who = missed.word === 'home' ? 'home' : `your ${missed.word}`;
+			return { strong: true, note: `you miss ${who}`, reply: answer(`Missing ${who} is hard${name}.${missed.word === 'home' ? ' A call to someone there can help.' : ' Maybe send them a message, or give them a call?'}`) };
+		}
+
+		// Finishing something: "I just finished my homework".
+		const finishing = doer && t.match(/\b(?:finished|done with|completed|handed in|submitted|turned in)\b/);
+		const finished = finishing && find((e) => e.pos === 'noun' && ['idea', 'event', 'thing', 'media'].includes(e.kind), ws.indexOf(finishing[0].split(' ')[0]) + 1);
+		if (finished) return { strong: false, reply: answer(`Nice work finishing ${mine(finished) ? 'your' : 'the'} ${finished.word}${name}! Time for a break.`) };
+
+		const fresh = doer && t.match(/\b(?:got|bought|have|found|started) (?:a|my|our) new (\w+)/);
+		const gotten = fresh && find((e) => e.pos === 'noun' && !e.mass, ws.indexOf('new') + 1);
+		if (gotten && gotten.e.kind !== 'animal') {
+			const w = gotten.label === 'spelling' ? gotten.word : gotten.e.w;
+			return { strong: false, note: `you got a new ${w}`, reply: answer(['job', 'house', 'home', 'apartment', 'car', 'career'].includes(w) ? `Congratulations on the new ${w}${name}! How does it feel?` : `Ooh, a new ${w}! Enjoy it.`) };
+		}
+		if (doer && /\bgot the (job|part|place)\b/.test(t)) return { strong: true, reply: answer(`Congratulations${name}! That's great news.`) };
+
+		// "I adopted a kitten" is about the kitten.
+		const pet = self && /\b(got|adopted|adopt|adopting|getting|bought|rescued)\b/.test(t) && find((e) => e.kind === 'animal' && !e.nogen);
+		if (pet && !mine(pet)) return { strong: false, note: `you got ${d.a(pet.e.w)}`, about: { key: pet.e.w, np: `your new ${pet.e.w}` }, topic: { kind: 'name', np: `your new ${pet.e.w}` }, reply: answer(`${upper(d.a(pet.e.w))}! What's its name?`) };
+
+		const verb = find((e) => e.pos === 'verb' && !VAGUE.has(e.w));
+		const thing = verb && find((x) => x.pos === 'noun' && ['food', 'thing', 'furniture', 'media'].includes(x.kind), verb.i + 1);
+		// Eating something is about the food, which the food reply below handles; making it is about the making.
+		if (verb && !negated(verb) && (doer || must) && !(thing && thing.e.kind === 'food' && !MAKING.has(verb.e.w))) {
+			const e = verb.e;
+			const ing = d.forms.ing(e);
+			const theirs = hits.find((h) => h.i > verb.i && h.i - verb.i <= 3 && mine(h));
+			const done = past || verb.label === 'past tense';
+			if (e.mood === '-' && (done || verb.label === '-ing form' || !future)) {
+				return { strong: false, reply: answer(theirs ? `Oh no, sorry to hear about your ${theirs.word}. I hope it gets sorted out soon.` : 'Oh no, sorry to hear that. I hope it gets better from here.') };
+			}
+			if (must) {
+				// "I have to deal with my landlord": good luck dealing with your landlord.
+				const obj = hits.find((h) => h.i > verb.i && h.i - verb.i <= 4 && h.senses.some((x) => x.e.pos === 'noun' && x.e.kind !== 'time'));
+				if (obj) return { strong: false, note: `you have to ${e.w} ${phrase(obj).replace(/^your /, 'your ')}${when}`, reply: say('dyn-must-it', [`Good luck ${ing} ${phrase(obj)}${when}. You've got this.`, `Hope ${ing} ${phrase(obj)}${when} goes quickly${name}.`]) };
+				if (e.w.includes(' ')) return { strong: false, reply: answer(`Good luck with that${when}. You've got this.`) };
+				return { strong: false, reply: say('dyn-must', [`Good luck with the ${ing}. You've got this.`, `Hope the ${ing} goes quickly.`]) };
+			}
+			if (done) return { strong: false, topic: thing && MAKING.has(e.w) ? { kind: 'went', np: `the ${thing.e.w}`, verb: 'turned out' } : { kind: 'went', np: 'it' }, reply: thing && MAKING.has(e.w) ? answer(`How did the ${thing.e.w} turn out?`) : say('dyn-did', [`${upper(ing)}, nice. How did it go?`, `Sounds good. How was the ${ing}?`]) };
+			if (future) return { strong: false, reply: answer((thing ? `${upper(thing.e.mass ? thing.e.w : d.a(thing.e.w))}? ` : '') + pick('dyn-will', [`${upper(ing)} sounds like a good plan.`, `Enjoy the ${ing}${when}!`])) };
+			if (verb.label === '-ing form') {
+				const what = find((x) => x.pos === 'noun' && !['person', 'time'].includes(x.kind), verb.i + 1);
+				if (what && what.i - verb.i <= 3) {
+					const it = phrase(what, null);
+					if (e.w === 'play' && what.e.mass) return { strong: false, reply: answer(`Have fun playing ${it}${name}!`) };
+					return { strong: false, reply: say('dyn-doing-it', [`${upper(ing)} ${it}, nice. Enjoy!`, `Ooh, ${ing} ${it}. How's it going?`]) };
+				}
+				return { strong: false, reply: say('dyn-doing', [`${upper(ing)}, nice. How's it going?`, `Ooh, ${ing}. Enjoy it!`]) };
+			}
+		}
+
+		// The weather outside.
+		if (/\b(?:it is|its|it s) (?:raining|pouring|drizzling)\b|\braining (?:here|outside)\b/.test(t)) return { strong: false, reply: answer(`Stay dry out there${name}!`) };
+		if (/\b(?:it is|its|it s) snowing\b|\bsnowing (?:here|outside)\b/.test(t)) return { strong: false, reply: answer(`Snow! Stay warm${name}.`) };
+
+		const animal = find((e) => e.kind === 'animal' && !e.nogen);
+		if (animal && self) {
+			const w = animal.e.w;
+			if (mine(animal)) return { strong: false, note: `you have ${d.a(w)}`, about: { key: w, np: `your ${w}` }, topic: { kind: 'name', np: `your ${w}` }, reply: answer(`What's your ${w}'s name?`) };
+			if (/\b(got|new|adopted|adopt|getting)\b/.test(t)) return { strong: false, note: `you got a new ${w}`, about: { key: w, np: `your new ${w}` }, topic: { kind: 'name', np: `your new ${w}` }, reply: answer(`${upper(d.a(w))}! What's its name?`) };
+			if (/\b(love|like|adore)\b/.test(t)) return { strong: false, reply: answer(`${upper(d.forms.plural(animal.e))} are wonderful. In my dictionary, ${describe(animal.e, d)}.`) };
+		}
+
+		const food = find((e) => e.kind === 'food' && !e.nogen);
+		if (food && self && /\b(eat|eating|ate|having|had|have|made|making|cooking|cooked|baking|baked|love|like|for (breakfast|lunch|dinner))\b/.test(t)) {
+			const many = food.label === 'plural';
+			const dish = food.e.mass ? food.e.w : many ? d.forms.plural(food.e) : /^(a|an)$/.test(ws[food.i - 1]) ? d.a(food.e.w) : food.e.w;
+			if (/\b(love|like)\b/.test(t)) return { strong: false, reply: answer(`${upper(dish)}? Good choice.`) };
+			if (past) return { strong: false, topic: { kind: 'went', np: 'it' }, reply: answer(`Mm, ${dish}. Was it good?`) };
+			return { strong: false, reply: say('dyn-food', [`${upper(dish)} ${many ? 'sound' : 'sounds'} good right now.`, `Mm, ${dish}. Enjoy!`]) };
+		}
+
+		const place = find((e) => e.kind === 'place' && !e.mass);
+		if (place && doer && (/\b(at|in|to|on|visiting|visit|went|going|heading|back)\b/.test(t) || place.e.w === 'home')) {
+			const w = place.e.w;
+			if (w === 'home') return { strong: false, reply: answer(past ? 'Nice to be home.' : future ? 'Enjoy being home.' : `Welcome home${name}.`) };
+			const there = the(place.e);
+			if (past) return { strong: false, note: `you went to ${there}${when}`, topic: { kind: 'went', np: there }, reply: answer(`How was ${there}?`) };
+			if (future) return { strong: false, note: `you're going to ${there}${when}`, about: { key: w, np: `your trip to ${there}`, when, past: false }, reply: answer(`Enjoy ${there}${when}!`) };
+			return { strong: false, reply: say('dyn-place', [`${upper(there)} sounds nice. What are you up to there?`, `Ooh, ${there}. Enjoy it!`]) };
+		}
+
+		// Seeing the dentist or the doctor: an appointment, not a place.
+		const visit = doer && /\b(going to|go to|went to|seeing|see|saw|visit|visiting|visited|appointment)\b/.test(t) && find((e) => e.kind === 'person' && !e.rel && /^(dentist|doctor|vet|hairdresser|barber|optician|therapist|counselor|surgeon|specialist|lawyer|accountant|nurse|physician|psychologist|psychiatrist)$/.test(e.w));
+		if (visit) {
+			const w = visit.e.w;
+			if (past && !future) return { strong: true, note: `you went to the ${w}${when}`, topic: { kind: 'went', np: `the visit to the ${w}` }, reply: answer(`How did it go at the ${w}?`) };
+			return { strong: true, note: `you're going to the ${w}${when}`, about: { key: w, np: `your ${w} appointment`, when, past: false }, reply: answer(`Good luck at the ${w}${when}${name}! I hope it's quick and easy.`) };
+		}
+
+		const person = find((e) => e.rel);
+		if (person && mine(person)) return { strong: false, reply: answer(`Tell me more about your ${person.e.w}.`) };
+
+		// A word worth talking about, like "serendipity": offer to define it.
+		const notable = ws.length <= 12 && find((e) => e.pos === 'noun' && ['idea', 'media'].includes(e.kind) && e.w.length >= 6 && !ILL.has(e.w) && !/^[A-Z]/.test(e.w));
+		if (notable) return { strong: false, reply: answer(`You mentioned **${notable.e.w}**.`, { offer: { kind: 'define', word: notable.e.w, ask: 'Want me to define it?' } }) };
+		return null;
+	}
+
+	/** Whether a short answer is good news, bad news or neither, from the moods of its words; null if it has none. */
+	function sentiment(ws) {
+		const d = Omni.onyxDictionary;
+		const text = ws.join(' ');
+		if (/\bnot (?:too |that |so )?bad\b/.test(text) || /\b(?:passed|won|nailed|aced|smashed)\b/.test(text)) return '+';
+		if (/\b(?:failed|bombed|flunked|blew it)\b/.test(text)) return '-';
+		let score = 0;
+		let seen = false;
+		ws.forEach((w, i) => {
+			const mood = ((d && d.lookup(w)) || []).map((x) => x.e.mood).find(Boolean);
+			if (!mood) return;
+			seen = true;
+			const v = { '+': 1, '-': -1, '--': -2, 0: 0 }[mood];
+			score += ws.slice(Math.max(0, i - 2), i).some((x) => NEG.has(x)) ? -v : v;
+		});
+		return !seen ? null : score > 0 ? '+' : score < 0 ? '-' : '0';
+	}
+
+	/**
+	 * The answer to a question Onyx just asked about what someone told it: "How did the exam go?" "Pretty well!"
+	 * gets a reply about the exam. `topic` is { kind: 'went' | 'ahead' | 'name', np }; null when the answer doesn't fit.
+	 */
+	function followUp(raw, topic, mem) {
+		const t = normalize(raw).replace(/[^a-z0-9\s'-]/g, ' ').replace(/\s+/g, ' ').trim();
+		const ws = t.split(' ');
+		if (ws.length > 12) return null;
+		const prefs = settings();
+		const name = mem.name && prefs.useName ? `, ${mem.name}` : '';
+		const np = topic.np;
+		const went = topic.verb || 'went';
+		// A message that brings up something new ("my dog is sick") is news, not an answer.
+		const fresh = ws.some((w) => !np.includes(w) && !['day', 'one', 'bit', 'lot', 'time'].includes(w) && (Omni.onyxDictionary.lookup(w) || []).some((x) => x.e.pos === 'noun' && x.e.kind !== 'time'));
+		if (fresh && topic.kind !== 'name') return null;
+		if (topic.kind === 'name') {
+			const m = raw.trim().match(/^(?:(?:her|his|its|their) name is |it'?s |(?:she|he|it|they)(?:'s| is| are) called |(?:we )?call(?:ed)? (?:her |him |it |them )?)?([A-Z][a-z'-]+(?: [A-Z][a-z'-]+)?)[.!]*$/);
+			if (!m || NOT_NAMES.has(m[1].toLowerCase())) return null;
+			const animal = np.split(' ').pop();
+			convo.names[Omni.onyxDictionary ? Omni.onyxDictionary.baseNoun(animal) : animal] = m[1];
+			note(`${np} is called ${m[1]}`);
+			return answer(`${m[1]} is a great name for ${np}!`);
+		}
+		const mood = sentiment(ws);
+		if (mood === null) return null;
+		if (topic.kind === 'ahead') {
+			const feel = ws.map((w) => (Omni.onyxDictionary.lookup(w) || []).find((x) => x.e.use === 'feel')).find(Boolean);
+			if (mood === '+') return answer(`Love that. I hope ${np} goes brilliantly${name}!`);
+			if (mood === '-' || mood === '--') return answer(`That makes sense.${feel && feel.e.tip && prefs.tips ? ' ' + feel.e.tip : ' Take it one step at a time.'} Good luck with ${np}${name}!`);
+			return answer(`Fair enough. Good luck with ${np}!`);
+		}
+		if (mood === '+') return answer(np === 'it' ? `Glad it ${went} well${name}!` : pick('went-good', [`Glad ${np} ${went} well${name}!`, `That's great to hear about ${np}.`]));
+		if (mood === '-' || mood === '--') return answer(`Sorry ${np} didn't ${went === 'went' ? 'go' : 'turn out'} the way you hoped${name}. Do you want to talk about it?`);
+		return answer(`Fair enough. Thanks for telling me how ${np} ${went}.`);
+	}
+
+	/* ---------- The whole conversation ---------- */
+
+	/*
+	 * Onyx 2 keeps what people tell it during a conversation (in the words it would repeat them: "your exam is
+	 * tomorrow"), the things they're about (so "when is my exam?" works later), the names of their pets, and the words
+	 * talked about. It's kept for this conversation only, in memory; "remember that..." is what saves to the device.
+	 */
+	function note(text, about) {
+		if (text && !convo.notes.includes(text)) convo.notes.push(text);
+		if (convo.notes.length > 24) convo.notes.shift();
+		if (about && about.key) convo.about[about.key] = about;
+	}
+	function mention(word) {
+		if (!word || convo.topics.includes(word)) return;
+		convo.topics.push(word);
+		if (convo.topics.length > 30) convo.topics.shift();
+	}
+
+	/** The name of someone's dog, cat or sister, if they said it: "puppy" also finds the dog, and the other way round. */
+	function nameOf(word) {
+		const d = Omni.onyxDictionary;
+		const w = d ? d.baseNoun(word) : word;
+		if (convo.names[w]) return convo.names[w];
+		const related = (a, b) => d && ((d.isA(a, b) || {}).yes || (d.isA(b, a) || {}).yes);
+		for (const [k, v] of Object.entries(convo.names)) if (related(k, w) || (['puppy', 'dog'].includes(k) && ['puppy', 'dog'].includes(w)) || (['kitten', 'cat'].includes(k) && ['kitten', 'cat'].includes(w))) return v;
+		const fact = memory().facts.map((f) => f.text.match(new RegExp(`your ${w}(?:'s name)? is (?:called |named )?([A-Z][a-z]+)`, 'i'))).find(Boolean);
+		return fact ? fact[1] : null;
+	}
+
+	/** Questions about what the person said earlier: "what's my dog's name?", "when is my exam?", "how am I feeling?". */
+	function recallQuery(norm) {
+		let m;
+		if ((m = norm.match(/^(?:what is|whats|what was|do you know|do you remember) (?:my|our) ([a-z]+?)s? name$|^what (?:is|was) (?:my|our) ([a-z]+) called$|^what did i (?:call|name) (?:my|our) ([a-z]+)$/))) {
+			const w = m[1] || m[2] || m[3];
+			if (['my', 'your', 'you'].includes(w)) return null;
+			const n = nameOf(w);
+			return n ? answer(`${n}! You told me earlier.`) : answer(`You haven't told me your ${w}'s name yet. What is it?`, { topic: { kind: 'name', np: `your ${w}` } });
+		}
+		if ((m = norm.match(/^when (?:is|was|are|were) (?:my|our|the) ([a-z ]+?)$/))) {
+			const d = Omni.onyxDictionary;
+			const key = d ? d.baseNoun(m[1]) : m[1];
+			const about = convo.about[key] || Object.values(convo.about).find((a) => a.np.endsWith(m[1]));
+			if (about && about.when) return answer(`You said ${about.np} ${about.past ? 'was' : 'is'}${about.when}.`);
+			if (about) return answer(`You mentioned ${about.np}, but not when it is.`);
+			return null;
+		}
+		if (/^how (?:am i|was i) (?:feeling|doing)$|^how do i feel$/.test(norm)) {
+			const feel = [...convo.notes].reverse().find((n) => /^you(?:'re| are) (?:not )?feeling/.test(n));
+			return feel ? answer(`Last you said, ${feel}.`) : null;
+		}
+		if ((m = norm.match(/^what did i (?:say|tell you) about (?:my |the )?([a-z ]+)$/))) {
+			const hits = convo.notes.filter((n) => n.includes(m[1]));
+			return answer(hits.length ? `You said ${hits.join('; ')}.` : `You haven't told me anything about ${m[1]} yet.`);
+		}
+		return null;
+	}
+
+	/* ---------- Thinking with the dictionary ---------- */
+
+	let familiarWords = null;
+	/** The nearest kind of thing a noun is that people say every day: a whale is a cetacean, but "a mammal" reads better. */
+	function familiar(e) {
+		const d = Omni.onyxDictionary;
+		if (!familiarWords) familiarWords = new Set(d.CORE.map((x) => x.w.toLowerCase()));
+		return (e.isa || []).find((k) => familiarWords.has(k.toLowerCase())) || (e.isa || [])[0];
+	}
+	/** The kind of thing to name when saying what something isn't: an everyday word close by, else the closest one I know. */
+	function nearestKind(e) {
+		const d = Omni.onyxDictionary;
+		familiar(e);
+		const close = (e.isa || []).slice(0, 3).find((k) => familiarWords.has(k.toLowerCase()));
+		return close || (e.isa || []).find((k) => (d.lookup(k) || []).some((x) => x.e.pos === 'noun')) || familiar(e);
+	}
+	const listOf = (words) => (words.length > 1 ? `${words.slice(0, -1).join(', ')} and ${words[words.length - 1]}` : words[0] || '');
+	const cap = (s) => s[0].toUpperCase() + s.slice(1);
+
+	/**
+	 * Questions answered by reasoning over the dictionary, not by fixed replies: what kind of thing something is, how two
+	 * things differ, what something is part of, rhymes, syllables, pronunciation, anagrams. Null when it isn't one.
+	 */
+	function think(body) {
+		const d = Omni.onyxDictionary;
+		if (!d || !d.isA) return null;
+		const t = String(body).toLowerCase().trim().replace(/[’]/g, "'").replace(/[?!.]+$/, '').trim();
+		const it = (w) => (/^(it|that|this|they|them|those|these)$/.test(w) && convo.subject ? convo.subject : w);
+		const bare = (w) => it(w.replace(/^(?:an?|the|some)\s+/, '').trim());
+		const an = (w) => (/^[A-Z]/.test(w) ? w : d.a(w));
+		// Everyday words first, then the full dictionary ("narwhal", "Timbuktu").
+		const all = (w) => (d.lookupAll ? d.lookupAll(w) : d.lookup(w));
+		const many = (w) => {
+			const e = (all(w) || []).find((x) => x.e.pos === 'noun' && x.e.w.toLowerCase() === w.toLowerCase());
+			return e ? d.forms.plural(e.e) : /s$/.test(w) ? w : w + 's';
+		};
+		const noun = (w, field) => (all(w) || []).map((x) => x.e).find((e) => e.pos === 'noun' && (!field || (e[field] && e[field].length)));
+		const subject = (e) => {
+			convo.subject = e.w;
+			mention(e.w);
+			return e;
+		};
+		let m;
+
+		// Is a whale a mammal? Are tomatoes fruit? Is a bat a kind of bird?
+		if ((m = t.match(/^(?:is|are) (?:an? |the )?([a-z' -]+?) (?:an?|some) (?:kind of |type of |sort of )?([a-z' -]+)$/)) || (m = t.match(/^(?:is|are) (?:an? |the )?([a-z' -]+?) (?:a )?(?:kinds?|types?|sorts?) of ([a-z' -]+)$/)) || (m = t.match(/^are ([a-z]+) ([a-z]+)$/))) {
+			const [x, y] = [bare(m[1]), bare(m[2])];
+			const r = d.isA(x, y);
+			if (r && r.e) {
+				subject(r.e);
+				const Y = d.baseNoun(y);
+				if (r.yes) return answer(`Yes. ${cap(an(r.e.w))} is ${an(Y)}${r.path.length > 2 ? `: ${r.path.join(' → ')}` : ''}.`);
+				if (noun(Y)) return answer(`No. In my dictionary, ${an(r.e.w)} is a kind of ${nearestKind(r.e)}, not ${an(Y)}.`);
+			}
+		}
+
+		// What kind of animal is a salmon? What is a violin a kind of?
+		if ((m = t.match(/^what (?:kind|type|sort) of (?:[a-z]+ )?(?:is|are) (?:an? |the )?([a-z' -]+)$/)) || (m = t.match(/^what (?:is|are) (?:an? |the )?([a-z' -]+?) an? (?:kind|type|sort) of$/))) {
+			const e = noun(bare(m[1]), 'isa');
+			if (e) {
+				subject(e);
+				return answer(`${cap(an(e.w))} is a kind of **${familiar(e)}**. All the way up: ${[e.w, ...e.isa.slice(0, 6)].join(' → ')}.`);
+			}
+		}
+
+		// Name some mammals. Give me examples of fish. What kinds of trees are there?
+		if ((m = t.match(/^(?:name|list|give me|what are)(?: me)? (?:some|a few|\d+|several|examples of|kinds of|types of|all the) (?:examples of |kinds of |types of )?([a-z' -]+?)(?: you know| are there)?$/)) || (m = t.match(/^what (?:kinds|types|sorts) of ([a-z' -]+?) are there$/)) || (m = t.match(/^examples of ([a-z' -]+)$/))) {
+			const y = bare(m[1]);
+			if (!/^(jokes?|tips?|facts?|sentences?|words?|examples?|things?|ideas?|commands?|tools?|shortcuts?|games?|questions?|rhymes?|synonyms?)$/.test(y)) {
+				const k = d.kinds(y, 10);
+				if (k.total) {
+					mention(d.baseNoun(y));
+					return answer(`Some ${many(d.baseNoun(y))} I know: ${listOf(k.words)}${k.total > k.words.length ? `, and ${k.total - k.words.length} more` : ''}.`);
+				}
+			}
+		}
+
+		// The difference between two things, and what they have in common.
+		if ((m = t.match(/^what(?:'s| is|s)? (?:the )?difference between (?:an? |the )?([a-z' -]+?) and (?:an? |the )?([a-z' -]+)$/)) || (m = t.match(/^how (?:is|are) (?:an? |the )?([a-z' -]+?) different from (?:an? |the )?([a-z' -]+)$/))) {
+			const [a, b] = [bare(m[1]), bare(m[2])];
+			const ha = (all(a) || [])[0];
+			const hb = (all(b) || [])[0];
+			if (ha && hb) {
+				const c = d.common(a, b);
+				const both = c && c.shared ? `\n\nBoth are ${many(c.shared)}${c.a.isa[0] !== c.shared ? `, but ${an(c.a.w)} is ${an(c.a.isa[0])}` : ''}${c.b.isa[0] !== c.shared ? `${c.a.isa[0] !== c.shared ? ' and' : ', but'} ${an(c.b.w)} is ${an(c.b.isa[0])}` : ''}.` : '';
+				subject(hb.e);
+				return answer(`**${ha.e.w}**: ${ha.e.def}.\n**${hb.e.w}**: ${hb.e.def}.${both}`);
+			}
+		}
+		if ((m = t.match(/^what do (?:an? |the )?([a-z' -]+?) and (?:an? |the )?([a-z' -]+?) have in common$/))) {
+			const c = d.common(bare(m[1]), bare(m[2]));
+			if (c && c.shared) return answer(`Both are ${many(c.shared)}${c.shared !== familiar(c.a) && familiar(c.a) === familiar(c.b) ? `, and both are ${many(familiar(c.a))}` : ''}.`);
+			if (c) return answer(`Not much, in my dictionary: ${an(c.a.w)} is a kind of ${familiar(c.a)}, and ${an(c.b.w)} is a kind of ${familiar(c.b)}.`);
+		}
+
+		// Parts of things, and what things are part of: "what are the parts of a flower", "where is Paris".
+		if ((m = t.match(/^what (?:are )?(?:the )?parts of (?:an? |the )?([a-z' -]+)$|^what parts does (?:an? |the )?([a-z' -]+?) have$/))) {
+			const e = noun(bare(m[1] || m[2]), 'has');
+			if (e) return answer(`The parts of ${an(subject(e).w)} include ${listOf(e.has.slice(0, 8))}.`);
+		}
+		if ((m = t.match(/^what (?:is|are) (?:an? |the )?([a-z' -]+?) (?:a )?part of$|^where is ([a-z' -]+)$|^what (?:country|state|continent|region) is ([a-z' -]+?) in$/))) {
+			const e = noun(bare(m[1] || m[2] || m[3]), 'partof');
+			if (e && (m[1] || /^[A-Z]/.test(e.w))) {
+				subject(e);
+				return answer(/^[A-Z]/.test(e.w) ? `${e.w} is in ${listOf(e.partof)}: ${e.def}.` : `${cap(an(e.w))} is part of ${listOf(e.partof.map((x) => an(x)))}.`);
+			}
+		}
+
+		// How words sound: rhymes, syllables and pronunciation.
+		if ((m = t.match(/^(?:what |which )?(?:words? )?(?:that )?rhymes? with ([a-z'-]+)$|^(?:give me |find |list |tell me )?(?:some |a )?(?:words? )?(?:that )?rhymes? (?:for|with) ([a-z'-]+)$|^rhymes? for ([a-z'-]+)$/))) {
+			const w = it(m[1] || m[2] || m[3]);
+			const r = d.rhymes(w, 12);
+			if (r) return answer(r.words.length ? `Words that rhyme with **${r.w}**: ${r.words.join(', ')}${r.total > r.words.length ? `, and ${r.total - r.words.length} more` : ''}.` : `Nothing in my dictionary rhymes with **${r.w}**. Some words are like that: orange, silver and month too.`);
+			return answer(`I don't know how **${w}** is pronounced, so I can't find rhymes for it.`);
+		}
+		if ((m = t.match(/^how many syllables (?:are )?(?:in|does) (?:the word )?([a-z'-]+)(?: have)?$|^(?:count the )?syllables (?:in|of) ([a-z'-]+)$/))) {
+			const sy = d.syllables(it(m[1] || m[2]));
+			return answer(`**${sy.w}** has ${sy.n} syllable${sy.n === 1 ? '' : 's'}${sy.ipa ? ` (/${sy.ipa}/)` : ''}.`);
+		}
+		if ((m = t.match(/^how (?:do (?:you|i|we)|to|should i|would you) (?:pronounce|say) (?:the word )?([a-z' -]+)$|^pronounce ([a-z' -]+)$|^(?:what is |whats )?(?:the )?pronunciation (?:of|for) ([a-z' -]+)$|^how is ([a-z' -]+?) pronounced$/))) {
+			const w = it(m[1] || m[2] || m[3] || m[4]);
+			const sy = d.syllables(w);
+			if (sy.ipa) return answer(`**${sy.w}** is pronounced /${sy.ipa}/, with ${sy.n} syllable${sy.n === 1 ? '' : 's'}. The mark ˈ comes before the stressed one.`);
+			return answer(all(w) ? `I know **${w}**, but I don't have its pronunciation. My guess is ${sy.n} syllable${sy.n === 1 ? '' : 's'}.` : `**${w}** isn't in my dictionary, so I don't know how it's said.`);
+		}
+
+		// Every sense of a word: "all meanings of set".
+		if ((m = t.match(/^(?:what are |give me |list |show me )?(?:all|every)(?: of)? (?:the )?(?:meanings|senses|definitions) of (?:the word )?([a-z' -]+)$/))) {
+			const w = it(m[1]);
+			if (all(w)) {
+				convo.subject = w;
+				return answer(d.meanings(w));
+			}
+		}
+
+		// Words by their letters.
+		if ((m = t.match(/^(?:give me |list |show me |tell me |what are |find )?(?:some |any )?words (?:that )?(start|starting|begin|beginning|end|ending) (?:with|in) ([a-z]+)$/))) {
+			const end = /^end/.test(m[1]);
+			const r = d.affix(m[2], end, 12);
+			return answer(r.words.length ? `Words that ${end ? 'end' : 'start'} with **${m[2]}**: ${r.words.join(', ')}${r.total > 12 ? `, and ${r.total - 12} more` : ''}.` : `I don't know any words that ${end ? 'end' : 'start'} with **${m[2]}**.`);
+		}
+		if ((m = t.match(/^(?:what (?:is|are) |give me |find |any )?(?:an? |the )?anagrams? (?:of|for) ([a-z]+)$|^unscramble ([a-z]+)$/))) {
+			const w = m[1] || m[2];
+			const list = d.anagrams(w);
+			return answer(list.length ? `Anagrams of **${w}**: ${list.slice(0, 10).join(', ')}.` : `I can't make another word from the letters of **${w}**.`);
+		}
+		if (/^(?:what is |whats )?(?:the |your |today s |todays )?word of the day$|^(?:teach me|give me|tell me|show me) (?:a )?(?:new |random |cool |good |interesting )?word$|^(?:a )?random word$/.test(t)) {
+			const pool = d.WORDS.filter((e) => e.src && /[.!?]$/.test(e.ex) && !/^[A-Z]/.test(e.w));
+			const e = /day/.test(t) ? d.wordOfTheDay() : pool[Math.floor(Math.random() * pool.length)];
+			subject(e);
+			return answer(`${/day/.test(t) ? 'Today\'s word' : 'Here\'s one'}: ${d.define(e.w)}`);
+		}
+		return null;
+	}
+
+	/**
+	 * What the full dictionary says about the subject of a question ("who was Einstein?", "tell me about Timbuktu"):
+	 * { text, e }, or null when it isn't a person, place or thing the dictionary has.
+	 */
+	function fromDictionary(body) {
+		const d = Omni.onyxDictionary;
+		if (!d || !d.full) return null;
+		const m = String(body).trim().replace(/[?!.]+$/, '').match(/^(?:who|what) (?:is|was|were|are) (?:an? |the )?(.+)$|^tell me (?:more )?about (?:an? |the )?(.+)$/i);
+		if (!m) return null;
+		const topic = (m[1] || m[2]).trim();
+		const who = /^who\b/i.test(body.trim());
+		const e = ((d.lookupAll(topic) || []).map((x) => x.e)).find((x) => x.pos === 'noun' && x.w.toLowerCase() === topic.toLowerCase() && (!who || x.instance || x.kind === 'person'));
+		if (!e) return null;
+		convo.subject = e.w;
+		mention(e.w);
+		const kind = e.isa && e.isa.length ? ` (${e.instance ? '' : 'a kind of '}${e.isa[0]})` : '';
+		// WordNet was finished in 2006: say so, since people and places change.
+		return { e, text: `From my dictionary (written in 2006): **${e.w}**${kind}: ${e.def}.` };
+	}
+
+	/* ---------- Spanish and French ---------- */
+
+	const ABBR = { noun: 'n', verb: 'v', adjective: 'adj', adverb: 'adv', conjunction: 'conj', preposition: 'prep', exclamation: 'excl', pronoun: 'pron', determiner: 'det', number: 'num', 'auxiliary verb': 'aux' };
+	const EN_NAMES = { en: 'English', es: 'Spanish', fr: 'French' };
+	const enWord = (key) => key.replace(/\.[a-z]+$/, '');
+
+	/** The word list's keys for an English word, through the dictionary: "dogs" -> ['dog'], "book" -> ['book.n', 'book.v']. */
+	function englishKeys(word) {
+		const L = Omni.onyxLanguages;
+		const keys = [];
+		for (const { e } of (Omni.onyxDictionary && Omni.onyxDictionary.lookup(word)) || []) {
+			const k = [`${e.w}.${ABBR[e.pos]}`, e.w].find((x) => L.TABLE.has(x));
+			if (k && !keys.includes(k)) keys.push(k);
+		}
+		return keys;
+	}
+
+	const NOTES = {
+		en: { rough: (u) => `(Word by word, so the grammar may be off${u.length ? `. I don't know: ${u.join(', ')}` : ''}.)`, guessed: '(Some genders are my best guess.)', list: '(From the Open Multilingual Wordnet: less sure than my everyday words.)', via: (x) => `(Through English: "${x}".)` },
+		es: { rough: (u) => `(Palabra por palabra, así que la gramática puede fallar${u.length ? `. No conozco: ${u.join(', ')}` : ''}.)`, guessed: '(Algunos géneros son una suposición.)', list: '(Del Open Multilingual Wordnet: menos seguro que mis palabras cotidianas.)', via: (x) => `(Pasando por el inglés: «${x}».)` },
+		fr: { rough: (u) => `(Mot à mot, donc la grammaire peut être fausse${u.length ? `. Je ne connais pas : ${u.join(', ')}` : ''}.)`, guessed: '(Certains genres sont une supposition.)', list: '(De l\'Open Multilingual Wordnet : moins sûr que mes mots courants.)', via: (x) => `(En passant par l'anglais : « ${x} ».)` },
+	};
+
+	/** What Onyx can translate, in a sentence. */
+	function translationReach() {
+		const L = Omni.onyxLanguages;
+		const c = Omni.onyxTranslate && Omni.onyxTranslate.coverage();
+		const hand = L.size.toLocaleString('en-US');
+		if (!c || !c.es || !c.fr) return `I know Spanish and French for ${hand} everyday English words.`;
+		return `I know Spanish for ${c.es.words.toLocaleString('en-US')} English words and French for ${c.fr.words.toLocaleString('en-US')} (${hand} of them written for me), and I can translate simple sentences.`;
+	}
+
+	/** A whole phrase or sentence: "how do you say 'where is the station' in French", "what does 'tengo hambre' mean". */
+	function translatePhrase(q, text, replyLang) {
+		const L = Omni.onyxLanguages;
+		const T = Omni.onyxTranslate;
+		const P = replyLang === 'en' ? null : L.LANGS[replyLang];
+		const names = P ? P.names : EN_NAMES;
+		const notes = NOTES[replyLang] || NOTES.en;
+		const detected = L.detect(text);
+		// Which language the phrase is in: as asked, as it looks, or whichever reads it best.
+		const froms = q.from ? [q.from] : detected && detected !== q.to ? [detected] : q.to === 'en' ? ['es', 'fr'] : q.to ? ['en', 'es', 'fr'].filter((x) => x !== q.to) : ['en', 'es', 'fr'];
+		const score = (r) => (!r ? -99 : (r.how === 'phrasebook' ? 3 : r.how === 'grammar' ? 2 : 0) - r.unknown.length);
+		let best = null;
+		for (const from of froms) {
+			const tos = q.to && q.to !== from ? [q.to] : from === 'en' ? (replyLang === 'fr' ? ['fr', 'es'] : ['es', 'fr']) : [replyLang !== from ? replyLang : 'en'];
+			const results = tos.map((to) => [to, T.text(text, from, to)]).filter(([, r]) => r);
+			const s = results.length ? Math.min(...results.map(([, r]) => score(r))) : -99;
+			if (!best || s > best.s) best = { from, results, s };
+		}
+		if (!best || !best.results.length) return answer(P ? P.unknownWord(text) : `I can't translate "${text}".`);
+		const said = best.results.map(([to, r]) => [names[to], r.text]);
+		const all = best.results.map(([, r]) => r);
+		const extra = [];
+		if (all.some((r) => r.how === 'words')) extra.push(notes.rough([...new Set(all.flatMap((r) => r.unknown))]));
+		if (all.some((r) => r.guessed)) extra.push(notes.guessed);
+		if (all.some((r) => r.via) && best.from !== 'en') extra.push(notes.via(all.find((r) => r.via).via));
+		convo.lastKind = 'translation';
+		const body = replyLang === 'es' ? said.map(([l, x]) => `«${text}» en ${l}: **${x}**`).join('\n') : replyLang === 'fr' ? said.map(([l, x]) => `« ${text} » en ${l} : **${x}**`).join('\n') : `"${text}" in ${said.map(([l, x]) => `${l}: **${x}**`).join('\nIn ')}`;
+		return answer(`${body}${extra.length ? '\n' + extra.join(' ') : ''}`);
+	}
+
+	/** A word from the large lists (src/translations), when the hand-written one doesn't have it. */
+	function listWord(word, replyLang, q) {
+		const L = Omni.onyxLanguages;
+		const T = Omni.onyxTranslate;
+		const d = Omni.onyxDictionary;
+		if (!T) return null;
+		const P = replyLang === 'en' ? null : L.LANGS[replyLang];
+		const names = P ? P.names : EN_NAMES;
+		const notes = NOTES[replyLang] || NOTES.en;
+		const article = (lang, t) => (t.gender && t.pos === 'noun' && !/\s/.test(t.word) ? (lang === 'es' ? (t.gender === 'f' ? 'la ' : 'el ') : /^[aeiouyhéèêàâîôû]/i.test(t.word) ? "l'" : t.gender === 'f' ? 'la ' : 'le ') : '');
+		const english = d && (d.lookupAll ? d.lookupAll(word) : d.lookup(word));
+		const fromForeign = (lang) => T.toEnglish(word, lang);
+		const tryEnglish = english && q.to !== 'en' && !(q.lang && q.lang !== 'en' && (fromForeign(q.lang) || {}).en);
+		if (tryEnglish) {
+			const tos = q.to ? [q.to] : replyLang === 'fr' ? ['fr', 'es'] : ['es', 'fr'];
+			const list = [];
+			let guessed = false;
+			for (const lang of tos) {
+				const t = T.word(word, 'en', lang);
+				if (!t) continue;
+				if (t.guessed) guessed = true;
+				list.push([names[lang], `${article(lang, t)}${t.word}${t.alts && t.alts.length ? ` (${t.alts.slice(0, 2).join(', ')})` : ''}`]);
+			}
+			if (list.length) {
+				convo.subject = english[0].e.w;
+				return answer(`${P ? P.translated(word, list) : `**${word}** in ${list.map(([l, x]) => `${l}: **${x}**`).join('. In ')}.`}\n${notes.list}${guessed ? ' ' + notes.guessed : ''}`);
+			}
+		}
+		for (const lang of q.from ? [q.from] : [q.lang && q.lang !== 'en' ? q.lang : 'es', 'es', 'fr']) {
+			if (lang === 'en') continue;
+			const e = fromForeign(lang);
+			if (!e) continue;
+			const to = q.to && q.to !== lang ? q.to : 'en';
+			if (to !== 'en') {
+				const t = T.toForeign(e.en[0], to);
+				if (!t) continue;
+				return answer(`${P ? P.translated(word, [[names[to], t.word]]) : `**${word}** (${EN_NAMES[lang]}) in ${EN_NAMES[to]}: **${t.word}**.`}\n${notes.list}`);
+			}
+			const hit = d && (d.lookupAll ? d.lookupAll(e.en[0]) : d.lookup(e.en[0]));
+			const def = hit && hit[0].e.def;
+			convo.subject = e.en[0];
+			return answer(`${P ? P.meaning(word, e.en.join(', '), def) : `**${word}** (${EN_NAMES[lang]}) is **${e.en.join('**, **')}** in English${def ? `: ${def}` : ''}.`}\n${notes.list}`);
+		}
+		return null;
+	}
+
+	/** Any translation request: the languages Onyx has grammar for (English, Spanish, French), or any of its dictionaries. */
+	async function translateAny(q, replyLang) {
+		const T = Omni.onyxTranslate;
+		const G = Omni.onyxTongues;
+		if (!T || !G || ![q.to, q.from].some((c) => c && !['en', 'es', 'fr'].includes(c))) return trace('skill', 'translation, from my hand-written Spanish and French first'), translateReply(q, replyLang);
+		const word = q.word.replace(/^["'«“¿¡]+|["'»”?!.]+$/g, '').trim();
+		const d = Omni.onyxDictionary;
+		const name = (c) => G.nameOf(c, replyLang);
+		for (const c of [q.to, q.from]) if (c && !(await T.need(c))) return answer(`I know of ${G.nameOf(c)}, but its dictionary isn't loaded in this copy of me.`);
+		let from = q.from || null;
+		let to = q.to || null;
+		if (!from) {
+			// "Cane in Italian" could be the English cane or the Italian dog: an English word is English. A word in a
+			// Spanish or French question is Spanish or French first ("¿cómo se dice perro en italiano?").
+			const english = d && word.split(/\s+/).every((w) => (d.lookupAll ? d.lookupAll(w) : d.lookup(w)));
+			if (q.lang && q.lang !== 'en' && q.lang !== to && T.toEnglish(word, q.lang)) from = q.lang;
+			else from = !english && to && to !== 'en' && T.toEnglish(word, to) ? to : 'en';
+			if (from === to) to = 'en';
+		}
+		if (!to) to = replyLang !== from ? replyLang : 'en';
+		if (from === to) return answer(`That's already ${G.nameOf(to)}.`);
+		const source = [from, to].map((c) => T.sourceOf(c)).filter(Boolean)[0];
+		const note = replyLang === 'es' ? `(De ${source}: hecho automáticamente, así que menos seguro que mis palabras escritas a mano.)` : replyLang === 'fr' ? `(D'après ${source} : construit automatiquement, donc moins sûr que mes mots écrits à la main.)` : `(From ${source}: built automatically, so less sure than my hand-written words.)`;
+		const inLang = (c) => (replyLang === 'es' ? `en ${name(c)}` : replyLang === 'fr' ? `en ${name(c)}` : `in ${name(c)}`);
+		convo.lastKind = 'translation';
+		trace('skill', `translation, ${G.nameOf(from)} to ${G.nameOf(to)}`);
+		// A phrase: one of the ten basics, or word by word.
+		if (/\s/.test(word) && !(from === 'en' ? T.toForeign(word, to) : T.toEnglish(word, from))) {
+			const r = T.text(word, from, to);
+			if (!r || r.unknown.length === word.split(/\s+/).length) return answer(`I can't translate "${word}" ${inLang(to)}.`);
+			convo.output = r.text;
+			convo.outputLang = to;
+			const rough = r.how === 'words' ? '\n' + (NOTES[replyLang] || NOTES.en).rough(r.unknown) + ' ' + note : '';
+			if (r.how === 'words') trace('rough', 'translated word by word, so the grammar is rough');
+			return answer(`"${word}" ${inLang(to)}: **${r.text}**${rough}`);
+		}
+		const w = T.word(word, from, to);
+		if (w) trace(w.src === 'hand' ? 'exact' : 'rough', w.src === 'hand' ? 'the word is in my hand-written dictionary' : `the word comes from ${source}, a dictionary built automatically, so it is less sure`);
+		if (!w) return answer(replyLang === 'es' ? `No encuentro «${word}» en mi diccionario de ${name(from === 'en' ? to : from)}.` : replyLang === 'fr' ? `Je ne trouve pas « ${word} » dans mon dictionnaire de ${name(from === 'en' ? to : from)}.` : `"${word}" isn't in my ${G.nameOf(from === 'en' ? to : from)} dictionary.`);
+		if (to === 'en') {
+			const hit = d && (d.lookupAll ? d.lookupAll(w.en[0]) : d.lookup(w.en[0]));
+			convo.subject = w.en[0];
+			convo.output = w.en[0];
+			return answer(`**${word}** (${name(from)}) ${replyLang === 'es' ? 'es' : replyLang === 'fr' ? 'se dit' : 'is'} **${w.en.join('**, **')}** ${inLang('en')}${hit && replyLang === 'en' ? `: ${hit[0].e.def}` : ''}.${w.src === 'hand' ? '' : '\n' + note}`);
+		}
+		convo.output = w.word;
+		convo.outputLang = to;
+		const also = w.alts && w.alts.length ? ` (${replyLang === 'es' ? 'también' : replyLang === 'fr' ? 'aussi' : 'also'} ${w.alts.slice(0, 2).join(', ')})` : '';
+		return answer(`**${word}** ${inLang(to)}: **${w.word}**${also}.${w.src === 'hand' ? '' : '\n' + note}`);
+	}
+
+	/** A reply to "how do you say dog in Spanish", "¿qué significa feliz?" or "que veut dire chien", in `replyLang`. */
+	function translateReply(q, replyLang) {
+		const L = Omni.onyxLanguages;
+		const d = Omni.onyxDictionary;
+		const P = replyLang === 'en' ? null : L.LANGS[replyLang];
+		const names = P ? P.names : EN_NAMES;
+		const word = q.word.replace(/^["'«“¿¡]+|["'»”?!.]+$/g, '').trim();
+		// A phrase or a sentence, not one word (or one entry, like "ice cream"): the translator.
+		if (Omni.onyxTranslate && /\s/.test(word) && !L.TABLE.has(word.toLowerCase()) && !L.findForeign('es', word).length && !L.findForeign('fr', word).length && !(d && d.lookup(word))) return translatePhrase(q, word, replyLang);
+		const en = englishKeys(word);
+		const found = { es: L.findForeign('es', word), fr: L.findForeign('fr', word) };
+		// Not in the hand-written list: the large lists.
+		if (!en.length && !found.es.length && !found.fr.length) {
+			const listed = listWord(word, replyLang, q);
+			if (listed) return listed;
+		}
+		if (q.to && q.to !== 'en' && !en.length && !found.es.length && !found.fr.length) return answer(P ? P.unknownWord(word) : `"${word}" isn't a word I can translate.`);
+		let from = q.from;
+		if (!from) {
+			// A word in a Spanish or French question is read as Spanish or French first: "comment dit-on chat" is the cat.
+			if (q.lang && q.lang !== 'en' && found[q.lang].length && q.to !== q.lang) from = q.lang;
+			else if (q.to && q.to !== 'en' && en.length) from = 'en';
+			else if (P && found[replyLang].length && q.to !== replyLang) from = replyLang;
+			else if (q.to === 'en') from = found.es.length ? 'es' : found.fr.length ? 'fr' : null;
+			else if (en.length) from = 'en';
+			else from = found.es.length ? 'es' : found.fr.length ? 'fr' : null;
+		}
+		if (!from) return answer(P ? P.unknownWord(word) : `"${word}" isn't a word I can translate. ${translationReach()}`);
+		if (from === 'en') {
+			convo.subject = d.lookup(word)[0].e.w;
+			const to = q.to && q.to !== 'en' ? [q.to] : replyLang === 'fr' ? ['fr', 'es'] : ['es', 'fr'];
+			const list = [];
+			for (const lang of to) {
+				const said = [...new Set(en.map((k) => L.TABLE.get(k)[lang]).filter(Boolean))].map(L.show);
+				if (said.length) list.push([names[lang], said.join(' / ')]);
+			}
+			if (!list.length) return listWord(word, replyLang, q) || answer(P ? P.noTranslation(word, names[to[0]]) : `I don't have the ${EN_NAMES[to[0]]} for **${word}** yet. ${translationReach()}`);
+			return answer(P ? P.translated(word, list) : `**${word}** in ${list.map(([l, x]) => `${l}: **${x}**`).join('. In ')}.`);
+		}
+		// From Spanish or French: into English, with what it means, or into the other one.
+		const keys = found[from];
+		const to = q.to || (P && replyLang !== from ? replyLang : 'en');
+		if (to === 'en') {
+			const words = [...new Set(keys.map(enWord))].slice(0, 3);
+			const hit = d && d.lookup(words[0]);
+			const def = hit && hit[0].e.def;
+			convo.subject = words[0];
+			return answer(P ? P.meaning(word, words.join(', '), def) : `**${word}** (${EN_NAMES[from]}) is **${words.join('**, **')}** in English${def ? `: ${def}` : ''}.`);
+		}
+		const said = [...new Set(keys.map((k) => L.TABLE.get(k)[to]).filter(Boolean))].map(L.show);
+		if (!said.length) return answer(P ? P.noTranslation(word, names[to]) : `I don't know the ${EN_NAMES[to]} for **${word}**.`);
+		return answer(P ? P.translated(word, [[names[to], said.join(' / ')]]) : `**${word}** in ${EN_NAMES[to]}: **${said.join(' / ')}**.`);
+	}
+
+	/** The language to answer in: the message's own, or the conversation's when the message could be any ("ok", "Sam"). */
+	function languageOf(text, naming) {
+		const L = Omni.onyxLanguages;
+		if (!L) return 'en';
+		const t = text.trim();
+		// A name given when Onyx asked for one ("Luna") is a name, whatever it means in Spanish.
+		if (naming && /^[A-ZÀ-Ý][a-zà-ÿ'-]+(?: [A-ZÀ-Ý][a-zà-ÿ'-]+)?[.!]?$/.test(t)) return convo.lang || 'en';
+		for (const [re, lang] of L.SWITCH) {
+			if (re.test(t)) {
+				convo.lang = lang;
+				convo.switched = true;
+				return lang;
+			}
+		}
+		if (/^(?:can you |could you |please )?(?:speak|talk|reply|answer|switch to|respond)(?: to me)?(?: in)? english\b|^(?:habla(?:me)?|responde(?:me)?|contesta(?:me)?|cambia a)(?: en)? ingl[eé]s\b|^(?:parle(?:-moi)?|r[ée]ponds(?:-moi)?|passe)(?: en)? anglais\b/i.test(t) && convo.lang !== 'en') {
+			convo.lang = 'en';
+			convo.switched = true;
+			return 'en';
+		}
+		const found = L.detect(t);
+		if (found) convo.lang = found;
+		return found || convo.lang || 'en';
+	}
+
+	/** Answers a message in Spanish or French: crisis, names, translation, feelings, math, then small talk. */
+	async function foreign(lang, text, mem, expect, pending) {
+		const L = Omni.onyxLanguages;
+		const P = L.LANGS[lang];
+		const name = mem.name && settings().useName ? `, ${mem.name}` : '';
+		if (CRISIS.test(text) || L.CRISIS[lang].test(text)) return answer(P.crisis);
+		if (pending && pending.kind === 'online') {
+			if (ALWAYS.test(text)) {
+				setSetting('internet', 'on');
+				return accept(pending);
+			}
+			if (/^(?:s[ií]|claro|vale|venga|dale|por favor|b[uú]scalo|oui|ouais|d'accord|bien s[uû]r|vas-y|allez|cherche|int[eé]ntalo|otra vez|de nuevo|r[ée]essaie|encore)\b/i.test(text.trim())) return accept(pending);
+			if (/^(?:no|non|nah|ahora no|pas maintenant|laisse tomber|d[ée]j[aà] pas)\b/i.test(text.trim())) return answer(netWords(lang).declined);
+		}
+		// Permission to go online, in Spanish or French.
+		if (/^(?:puedes (?:usar|buscar en) internet|usa internet|permito internet)|^(?:tu peux (?:aller sur|utiliser) internet|utilise internet)/i.test(text.trim())) {
+			setSetting('internet', 'on');
+			return answer(lang === 'es' ? 'De acuerdo: buscaré en internet cuando ayude, sin preguntar cada vez.' : 'D\'accord : je chercherai sur internet quand ça aide, sans demander à chaque fois.');
+		}
+		if (/^(?:no uses internet|sin internet|qu[eé]date sin conexi[oó]n)|^(?:n'utilise pas internet|reste hors ligne|sans internet)/i.test(text.trim())) {
+			setSetting('internet', 'off');
+			return answer(lang === 'es' ? 'De acuerdo, me quedo sin conexión.' : 'D\'accord, je reste hors ligne.');
+		}
+		if (convo.switched) {
+			convo.switched = false;
+			return answer(lang === 'es' ? '¡Claro! Desde ahora te respondo en español. Escribe **ayuda** para ver lo que sé hacer.' : 'Bien sûr ! Je te réponds en français maintenant. Écris **aide** pour voir ce que je sais faire.');
+		}
+		const who = L.nameFrom(lang, text) || (expect === 'name' && /^[A-ZÀ-Ý][a-zà-ÿ'-]{1,30}[.!]?$/.test(text.trim()) ? text.trim().replace(/[.!]$/, '') : null);
+		if (who) {
+			saveMemory(Object.assign(mem, { name: who, met: mem.met || new Date().toISOString() }));
+			return answer(P.named(who));
+		}
+		const q = L.translateQuery(text);
+		if (q) return translateAny(q, lang);
+		const wanted = lookupRequest(text);
+		if (wanted && wanted.kind === 'again' && netReady()) return answer(netWords(lang).whatTopic);
+		if (wanted && wanted.kind !== 'again') {
+			const r = await lookOnline(Object.assign(wanted, { lang }));
+			if (r) return r;
+			return answer(netReady() ? netWords(lang).off : lang === 'es' ? 'Desde aquí no puedo conectarme a internet.' : 'Je ne peux pas aller sur internet d\'ici.');
+		}
+		const felt = L.feeling(lang, text);
+		if (felt) {
+			const d = Omni.onyxDictionary;
+			const e = felt.keys.map((k) => ((d && d.lookup(enWord(k))) || []).map((x) => x.e).find((x) => x.mood)).find(Boolean);
+			note(`you're ${felt.not ? 'not ' : ''}feeling ${enWord(felt.keys[0])}`);
+			if (felt.not) return answer(P.feel.not(felt.word, name));
+			return answer(P.feel[(e && e.mood) || '0'](felt.word, name));
+		}
+		const sum = Omni.onyxMath && L.mathToEnglish(lang, text) && Omni.onyxMath.answer(L.mathToEnglish(lang, text), convo.lastAnswer);
+		if (sum) {
+			if (sum.value != null) convo.lastAnswer = sum.value;
+			return answer(sum.text);
+		}
+		const ranked = classify(text, lang);
+		const top = ranked[0] || { score: 0 };
+		if (top.score >= 0.45 || (top.score >= 0.32 && top.score - ((ranked[1] && ranked[1].score) || 0) >= 0.12)) {
+			const intent = P.intents.find((i) => i.id === top.id);
+			if (intent.id === 'weather' && netReady() && settings().internet !== 'off') {
+				const place = placeOf(text) || convo.place;
+				if (!place) return answer(netWords(lang).whichCity);
+				const r = await lookOnline({ kind: 'weather', place, query: place, lang });
+				if (r) return r;
+			}
+			// "¿Qué noticias hay?", "quelles sont les nouvelles ?": the news, online, with permission.
+			if (intent.id === 'limits' && /\b(?:noticias|nouvelles|actualit[eé]s?|titulares)\b/i.test(text)) {
+				const r = await lookOnline({ kind: 'news', query: 'news', lang });
+				if (r) return r;
+			}
+			const r = typeof intent.reply === 'function' ? intent.reply({ mem, draw, pick, lang }) : pick(`${lang}-${intent.id}`, intent.reply);
+			if (intent.switchTo) convo.lang = intent.switchTo;
+			return answer(fill(r, mem), { intent: intent.id, expect: intent.id === 'name_get' && !mem.name ? 'name' : null });
+		}
+		// One word on its own: say what it is in English.
+		if (text.trim().split(/\s+/).length <= 2 && L.findForeign(lang, text).length) return translateReply({ word: text }, lang);
+		const asking = /\?\s*$|^\s*¿/.test(text) || /^(?:qu[eé]|c[oó]mo|cu[aá]ndo|d[oó]nde|por qu[eé]|qui[eé]n|cu[aá]l|quel|quelle|comment|pourquoi|o[uù]|quand|qui|combien)\b/i.test(text.trim());
+		if (asking) {
+			const question = text.trim().replace(/^[¿¡]+|[?!.]+$/g, '');
+			const topic = question.replace(/^(?:qu[eé]|qui[eé]n(?:es)?|cu[aá]ndo|d[oó]nde|c[oó]mo|qui|quoi|quand|o[uù]|comment)\s+(?:es|era|fue|son|est|[ée]tait|sont|est-ce que|est-ce qui|a|ha)?\s*/i, '').replace(/^(?:el|la|los|las|le|les|l')\s*/i, '');
+			const r = await lookOnline({ kind: 'search', query: question, topic, lang }, { lead: P.dunno[0].split('.')[0] + '.' });
+			if (r) return r;
+		}
+		return answer(pick(`${lang}-miss`, asking ? P.dunno : P.miss), { miss: true });
+	}
+
+	/* ---------- Several things in one message ---------- */
+
+	/** A message's sentences: "Hi! I'm Sam. I have an exam tomorrow." */
+	const sentencesOf = (text) => text.split(/(?<=[.!?])\s+(?=[A-Za-zÀ-ÿ¿¡"'])/).map((x) => x.trim().replace(/^(?:and also|oh and|and|also|plus|btw|by the way|oh|so)[,\s]+(?=\S)/i, '')).filter((x) => x.length > 1);
+
+	/**
+	 * Answers each sentence of a message and joins the answers, when at least two of them have a real answer. A greeting
+	 * in front of other answers shrinks to "Hi, Sam!", and only the last offer is kept. Null to answer it as one message.
+	 */
+	async function several(parts) {
+		const saved = { pending: convo.pending, expect: convo.expect, topic: convo.topic };
+		const known = memory().name;
+		const answered = [];
+		for (const part of parts) {
+			const r = await decideOne(part);
+			if (r && r.command) {
+				Object.assign(convo, saved);
+				return null;
+			}
+			if (r && r.text && !r.miss) answered.push({ part, r });
+		}
+		if (answered.length < 2) {
+			Object.assign(convo, saved);
+			return null;
+		}
+		const mem = memory();
+		const texts = answered.map(({ part, r }) => {
+			if (r.intent !== 'greet') return r.text;
+			const hi = (part.match(/^(hi|hello|hey|heya|hiya|yo|howdy|good (?:morning|afternoon|evening)|hola|buenas|buenos d[ií]as|bonjour|salut|coucou)/i) || ['Hi'])[0];
+			return `${hi[0].toUpperCase()}${hi.slice(1).toLowerCase()}${known && mem.name ? `, ${mem.name}` : ''}!`;
+		});
+		const last = answered[answered.length - 1].r;
+		const offer = [...answered].reverse().map(({ r }) => r.offer).find(Boolean);
+		return Object.assign({}, last, { text: texts.join(texts.some((x) => x.includes('\n')) ? '\n\n' : ' '), offer: offer || undefined, several: answered.length });
+	}
+
+	/* ---------- The internet, with permission ---------- */
+
+	/*
+	 * Onyx goes online only through a host's internet port, Omni.net = { enabled: true, ask(request) }, and only with
+	 * the person's permission. host/net.js is a port that talks to Wikipedia, Open-Meteo and the Free Dictionary API;
+	 * host.js ships without one. A request is { kind, query, topic?, place?, lang } (kind: 'search', 'research',
+	 * 'weather', 'news' or 'define'), and ask resolves to { data } (see host/net.js), { text } (shown as it is) or null.
+	 *
+	 * The "internet" setting decides: "ask" (the default) offers each lookup and waits for a yes, "on" looks things up
+	 * without asking, "off" never goes online. Any failure, a slow answer or an empty one falls back to what Onyx would
+	 * have said offline.
+	 */
+	const NET_KINDS = ['weather', 'news', 'search', 'research', 'define'];
+	const NET_TIMEOUT = 25000;
+	const netReady = () => !!(Omni.net && Omni.net.enabled === true && typeof Omni.net.ask === 'function');
+	const sourceOf = (kind) => (Omni.net && Omni.net.sources && Omni.net.sources[kind]) || 'the internet';
+
+	/** The host's answer to a request, once the person has agreed: { text } or { data }, or null. */
+	async function fetchOnline(request) {
+		let timer;
+		try {
+			const r = await Promise.race([Omni.net.ask(request), new Promise((done) => (timer = setTimeout(done, NET_TIMEOUT, null)))]);
+			if (r && typeof r.text === 'string' && r.text.trim()) return r;
+			return r && r.data && typeof r.data === 'object' ? r : null;
+		} catch {
+			return null;
+		} finally {
+			clearTimeout(timer);
+		}
+	}
+
+	// What Onyx says, in the person's language, when it asks to go online, when it can't, and around what it found.
+	const NET_WORDS = {
+		en: {
+			offer: (what, q, src) => `I can ${what} online: I'd send "${q}" to ${src}.`,
+			offerNews: (src) => `I can get today's headlines from ${src}'s "In the news" page.`,
+			offerMore: (q, src) => `For more, I can look it up online: I'd send "${q}" to ${src}.`,
+			ask: 'Want me to? (yes, no, or "always" so I stop asking)',
+			failed: (src) => `I couldn't reach ${src} just now (no connection, or it's busy).`,
+			retry: 'Want me to try again?',
+			off: 'I\'m set to stay offline, so I can\'t look that up. Say "you can go online" to let me.',
+			declined: 'Okay, I\'ll stay offline for that.',
+			source: 'Source', research: 'Research', key: 'Key points', related: 'Related', more: 'Say "tell me more" for the key points, or "write a poem about it".',
+			partial: '(Wikipedia didn\'t send the whole article just now, so this is from its summary.)',
+			moreDone: (url) => `That's the gist. The full article is at ${url}`,
+			notFoundPlace: (p) => `I couldn't find a place called "${p}". Try a nearby city.`,
+			notFoundWord: (w) => `I couldn't find "${w}" online either.`,
+			nothing: (q) => `I looked on Wikipedia, but found nothing on "${q}". Try fewer or different words.`,
+			whichCity: 'Which city? Say something like "weather in Paris".',
+			whatTopic: 'What should I look up? Say something like "look up Ada Lovelace".',
+			today: 'Today', tomorrow: 'Tomorrow', feels: 'feels like', humidity: 'humidity', wind: 'wind', rain: 'chance of rain', news: 'In the news',
+		},
+		es: {
+			offer: (what, q, src) => `Puedo ${what} en internet: enviaría «${q}» a ${src}.`,
+			offerNews: (src) => `Puedo ver los titulares de hoy en la página «In the news» de ${src} (en inglés).`,
+			ask: '¿Quieres? (sí, no, o «siempre» para no volver a preguntar)',
+			failed: (src) => `No he podido conectar con ${src} ahora mismo.`,
+			retry: '¿Lo intento otra vez?',
+			off: 'Estoy configurado para no usar internet. Di «puedes usar internet» para permitírmelo.',
+			declined: 'De acuerdo, sin internet.',
+			source: 'Fuente', research: 'Investigación', key: 'Puntos clave', related: 'Relacionado', more: 'Di «cuéntame más» para los puntos clave.',
+			partial: '(Wikipedia no ha enviado el artículo completo, así que esto viene de su resumen.)',
+			moreDone: (url) => `Eso es lo esencial. El artículo completo está en ${url}`,
+			notFoundPlace: (p) => `No encuentro ningún lugar llamado «${p}».`,
+			notFoundWord: (w) => `Tampoco encuentro «${w}» en internet.`,
+			nothing: (q) => `He buscado en Wikipedia, pero no hay nada sobre «${q}».`,
+			whichCity: '¿En qué ciudad? Por ejemplo: «tiempo en Madrid».',
+			whatTopic: '¿Qué busco? Por ejemplo: «busca Frida Kahlo».',
+			today: 'Hoy', tomorrow: 'Mañana', feels: 'sensación de', humidity: 'humedad', wind: 'viento', rain: 'probabilidad de lluvia', news: 'Noticias',
+		},
+		fr: {
+			offer: (what, q, src) => `Je peux ${what} sur internet : j'enverrais « ${q} » à ${src}.`,
+			offerNews: (src) => `Je peux voir les titres du jour sur la page « In the news » de ${src} (en anglais).`,
+			ask: 'Tu veux ? (oui, non, ou « toujours » pour ne plus demander)',
+			failed: (src) => `Je n'arrive pas à joindre ${src} pour l'instant.`,
+			retry: 'Je réessaie ?',
+			off: 'Je suis réglé pour rester hors ligne. Dis « tu peux aller sur internet » pour me le permettre.',
+			declined: 'D\'accord, je reste hors ligne.',
+			source: 'Source', research: 'Recherche', key: 'Points clés', related: 'Voir aussi', more: 'Dis « dis-m\'en plus » pour les points clés.',
+			partial: '(Wikipédia n\'a pas envoyé tout l\'article, donc ceci vient de son résumé.)',
+			moreDone: (url) => `C'est l'essentiel. L'article complet est sur ${url}`,
+			notFoundPlace: (p) => `Je ne trouve aucun lieu appelé « ${p} ».`,
+			notFoundWord: (w) => `Je ne trouve pas « ${w} » sur internet non plus.`,
+			nothing: (q) => `J'ai cherché sur Wikipédia, mais rien sur « ${q} ».`,
+			whichCity: 'Quelle ville ? Par exemple : « météo à Lyon ».',
+			whatTopic: 'Je cherche quoi ? Par exemple : « cherche Marie Curie ».',
+			today: 'Aujourd\'hui', tomorrow: 'Demain', feels: 'ressenti', humidity: 'humidité', wind: 'vent', rain: 'risque de pluie', news: 'Actualités',
+		},
+	};
+	const netWords = (lang) => NET_WORDS[lang] || NET_WORDS.en;
+	const WHAT = {
+		en: { weather: (r) => `check the weather in ${r.place}`, news: () => 'get today\'s headlines', define: (r) => `look up "${r.query}"`, search: () => 'look that up', research: (r) => `research ${r.topic || 'that'}` },
+		es: { weather: (r) => `consultar el tiempo en ${r.place}`, news: () => 'ver las noticias de hoy', define: (r) => `buscar «${r.query}»`, search: () => 'buscarlo', research: (r) => `investigar ${r.topic || 'eso'}` },
+		fr: { weather: (r) => `consulter la météo à ${r.place}`, news: () => 'voir les actualités du jour', define: (r) => `chercher « ${r.query} »`, search: () => 'le chercher', research: (r) => `faire des recherches sur ${r.topic || 'ça'}` },
+	};
+
+	/**
+	 * Goes online for a request if the person allows it, and returns the reply; null to answer offline instead. With
+	 * the setting on "ask", it returns an offer to look it up (after `lead`, what Onyx knows without it); `granted`
+	 * means they already said yes to this one.
+	 */
+	async function lookOnline(request, { granted = false, lead = '', more = false } = {}) {
+		if (!netReady() || !NET_KINDS.includes(request.kind)) return null;
+		const lang = request.lang || 'en';
+		const mode = settings().internet;
+		if (mode === 'off') return trace('offline', 'the internet switch is off, so I stayed on this device'), null;
+		if (mode !== 'on' && !granted) {
+			trace('offline', `this needs ${sourceOf(request.kind)}; the switch is on "ask first", so I asked`);
+			const what = (WHAT[lang] || WHAT.en)[request.kind](request);
+			const q = request.kind === 'weather' ? request.place : request.query;
+			const said = request.kind === 'news' ? netWords(lang).offerNews(sourceOf('news')) : more && netWords(lang).offerMore ? netWords(lang).offerMore(q, sourceOf(request.kind)) : netWords(lang).offer(what, q, sourceOf(request.kind));
+			return answer(`${lead ? lead + ' ' : ''}${said}`, { offer: { kind: 'online', request, ask: netWords(lang).ask } });
+		}
+		trace('online', `asked ${sourceOf(request.kind)}${request.query ? ` for "${request.query}"` : ''}`);
+		const r = await fetchOnline(request);
+		if (!r) trace('failed', `${sourceOf(request.kind)} didn't answer`);
+		// A failed lookup offers to try again, so "try again", "yes" or "tell me more" goes straight back online.
+		// After a dictionary answer, a failed lookup still leaves that answer in place.
+		if (!r) return answer(`${more && lead ? lead + '\n\n' : ''}${netWords(lang).failed(sourceOf(request.kind))}`, { miss: !more, offer: { kind: 'online', request, ask: netWords(lang).retry, retry: true } });
+		if (typeof r.text === 'string') return answer(r.text.trim());
+		// "Write an essay about black holes": the article that came back becomes the essay.
+		if (request.compose && r.data && r.data.kind === 'article' && r.data.found !== false) return showPiece(Omni.onyxCompose.fromArticle(request.compose, r.data), request.compose) || showOnline(r.data, request);
+		return showOnline(r.data, request);
+	}
+
+	/* What Onyx found, as a reply. */
+
+	const WMO = {
+		en: { 0: 'clear sky', 1: 'mainly clear', 2: 'partly cloudy', 3: 'overcast', 45: 'fog', 48: 'freezing fog', 51: 'light drizzle', 53: 'drizzle', 55: 'heavy drizzle', 56: 'freezing drizzle', 57: 'freezing drizzle', 61: 'light rain', 63: 'rain', 65: 'heavy rain', 66: 'freezing rain', 67: 'freezing rain', 71: 'light snow', 73: 'snow', 75: 'heavy snow', 77: 'snow grains', 80: 'light showers', 81: 'showers', 82: 'heavy showers', 85: 'snow showers', 86: 'heavy snow showers', 95: 'thunderstorms', 96: 'thunderstorms with hail', 99: 'thunderstorms with hail' },
+		es: { 0: 'despejado', 1: 'casi despejado', 2: 'parcialmente nublado', 3: 'cubierto', 45: 'niebla', 48: 'niebla helada', 51: 'llovizna débil', 53: 'llovizna', 55: 'llovizna intensa', 56: 'llovizna helada', 57: 'llovizna helada', 61: 'lluvia débil', 63: 'lluvia', 65: 'lluvia intensa', 66: 'lluvia helada', 67: 'lluvia helada', 71: 'nevada débil', 73: 'nieve', 75: 'nevada intensa', 77: 'granos de nieve', 80: 'chubascos débiles', 81: 'chubascos', 82: 'chubascos fuertes', 85: 'chubascos de nieve', 86: 'chubascos de nieve fuertes', 95: 'tormentas', 96: 'tormentas con granizo', 99: 'tormentas con granizo' },
+		fr: { 0: 'ciel dégagé', 1: 'plutôt dégagé', 2: 'partiellement nuageux', 3: 'couvert', 45: 'brouillard', 48: 'brouillard givrant', 51: 'bruine légère', 53: 'bruine', 55: 'forte bruine', 56: 'bruine verglaçante', 57: 'bruine verglaçante', 61: 'pluie faible', 63: 'pluie', 65: 'forte pluie', 66: 'pluie verglaçante', 67: 'pluie verglaçante', 71: 'neige faible', 73: 'neige', 75: 'forte neige', 77: 'grains de neige', 80: 'averses faibles', 81: 'averses', 82: 'fortes averses', 85: 'averses de neige', 86: 'fortes averses de neige', 95: 'orages', 96: 'orages avec grêle', 99: 'orages avec grêle' },
+	};
+	const DAY_NAMES = { en: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'], es: ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'], fr: ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'] };
+
+	function showOnline(data, request) {
+		const lang = request.lang || 'en';
+		if (data.kind === 'article') return showArticle(data, request.kind === 'research', lang);
+		if (data.kind === 'weather') return showWeather(data, lang);
+		if (data.kind === 'news') return showNews(data, lang);
+		if (data.kind === 'definition') return showDefinition(data, lang);
+		return null;
+	}
+
+	const leading = (text, n) => {
+		const W = Omni.onyxWrite;
+		const list = W ? W.sentencesOf(text) : String(text).split(/(?<=[.!?])\s+/);
+		return list.slice(0, n).join(' ') || String(text).slice(0, 400);
+	};
+
+	/** A quick answer (the article's first sentences) or a research brief (summary, key points, related, source). */
+	function showArticle(d, brief, lang) {
+		const w = netWords(lang);
+		if (d.found === false) return answer(w.nothing(d.query));
+		const summary = leading(d.extract, brief ? 3 : 2);
+		const points = brief && d.text && Omni.onyxWrite ? Omni.onyxWrite.summarize(d.text, 5, Omni.onyxWrite.sentencesOf(d.extract)) : [];
+		convo.research = { title: d.title, url: d.url, lang, extract: d.extract, text: d.text || null, related: d.related || [], shown: [...points] };
+		convo.subject = d.title;
+		convo.lastKind = 'research';
+		mention(d.title);
+		const desc = d.description ? ` (${d.description})` : '';
+		const source = `${w.source}: Wikipedia, ${d.url}`;
+		if (!brief) return answer(`**${d.title}**${desc}\n${summary}\n\n${source}\n${w.more}`);
+		const parts = [`**${w.research}: ${d.title}**${desc}`, summary];
+		if (points.length) parts.push(`**${w.key}**\n${points.map((p) => `- ${p}`).join('\n')}`);
+		else parts.push(w.partial);
+		if (d.related && d.related.length) parts.push(`**${w.related}:** ${d.related.join(', ')}`);
+		parts.push(source);
+		return answer(parts.join('\n\n'));
+	}
+
+	/** "Tell me more" after a lookup: the next key points of the article, fetching it if only the summary came. */
+	async function moreResearch() {
+		const r = convo.research;
+		const w = netWords(r.lang);
+		if (!r.text && netReady() && settings().internet !== 'off') {
+			// The person already agreed to look this topic up; the full article is the same lookup.
+			const full = await fetchOnline({ kind: 'research', query: r.title, topic: r.title, lang: r.lang });
+			if (full && full.data && full.data.text) r.text = full.data.text;
+		}
+		const next = r.text && Omni.onyxWrite ? Omni.onyxWrite.summarize(r.text, 4, [...Omni.onyxWrite.sentencesOf(r.extract), ...r.shown]) : [];
+		convo.lastKind = 'research';
+		if (!next.length) return answer(w.moreDone(r.url));
+		r.shown.push(...next);
+		return answer(`**${r.title}**\n${next.map((p) => `- ${p}`).join('\n')}\n\n${w.source}: Wikipedia, ${r.url}`);
+	}
+
+	function showWeather(d, lang) {
+		const w = netWords(lang);
+		if (!d.found) return answer(w.notFoundPlace(d.place));
+		convo.place = d.place.name;
+		const desc = (code) => (WMO[lang] || WMO.en)[code] || '';
+		const c = d.current;
+		const f = (x) => Math.round((x * 9) / 5 + 32);
+		const where = [d.place.name, d.place.region, d.place.country].filter((x, i, a) => x && a.indexOf(x) === i).join(', ');
+		const lines = [`**${where}**: ${Math.round(c.temperature_2m)}°C (${f(c.temperature_2m)}°F), ${desc(c.weather_code)}. ${cap(w.feels)} ${Math.round(c.apparent_temperature)}°C, ${w.humidity} ${c.relative_humidity_2m}%, ${w.wind} ${Math.round(c.wind_speed_10m)} km/h.`];
+		const days = d.daily && d.daily.time ? d.daily.time.slice(0, 3) : [];
+		days.forEach((day, i) => {
+			const name = i === 0 ? w.today : i === 1 ? w.tomorrow : cap(DAY_NAMES[lang] ? DAY_NAMES[lang][new Date(day + 'T12:00:00Z').getUTCDay()] : day);
+			const p = d.daily.precipitation_probability_max ? d.daily.precipitation_probability_max[i] : null;
+			lines.push(`${name}: ${Math.round(d.daily.temperature_2m_min[i])}–${Math.round(d.daily.temperature_2m_max[i])}°C, ${desc(d.daily.weather_code[i])}${p != null ? `, ${p}% ${w.rain}` : ''}.`);
+		});
+		return answer(`${lines.join('\n')}\n\n${w.source}: Open-Meteo`);
+	}
+
+	function showNews(d, lang) {
+		const w = netWords(lang);
+		if (!d.items || !d.items.length) return null;
+		return answer(`**${w.news}** (Wikipedia, ${lang === 'en' ? 'in English' : lang === 'es' ? 'en inglés' : 'en anglais'}):\n${d.items.map((n) => `- ${n.date ? `*${n.date}*: ` : ''}${n.text}`).join('\n')}\n\n${w.source}: ${d.url}`);
+	}
+
+	function showDefinition(d, lang) {
+		const w = netWords(lang);
+		if (!d.found) return answer(w.notFoundWord(d.word));
+		convo.subject = d.word;
+		const senses = d.meanings.map((m) => m.definitions.map((x) => `*(${m.pos})* ${x.definition}${x.example ? `\n*"${x.example}"*` : ''}`).join('\n')).join('\n');
+		const syn = [...new Set(d.meanings.flatMap((m) => m.synonyms))].slice(0, 5);
+		return answer(`**${d.word}**${d.phonetic ? ` ${d.phonetic}` : ''}\n${senses}${syn.length ? `\nSimilar: ${syn.join(', ')}.` : ''}\n\n${w.source}: Wiktionary, via the Free Dictionary API (${d.url})`);
+	}
+
+	/* Recognizing lookups. */
+
+	/** The topic of a question, for when Wikipedia's search is unavailable: "who invented the telephone" -> "telephone". */
+	function topicOf(question) {
+		let t = String(question).trim().replace(/[?!.]+$/, '');
+		t = t.replace(/^(?:who|what|when|where|why|how|which)(?:'s|\s+(?:is|are|was|were|did|does|do|has|have|can|could|will))?\s+/i, '');
+		t = t.replace(/^(?:tell me (?:more )?about|the|a|an)\s+/i, '').replace(/^(?:invented|discovered|wrote|founded|built|made|created)\s+(?:the\s+)?/i, '');
+		return t.trim();
+	}
+
+	// "research black holes", "look up Ada Lovelace", "busca información sobre Frida Kahlo", "recherche la tour Eiffel".
+	const LOOKUPS = [
+		[/^(?:please |can you |could you |would you )?(research|investigate|read up on|look into|learn about|find out about|find information (?:on|about)|find info (?:on|about)|look up|lookup|search (?:the web |the internet |online |wikipedia )?for|search for|search|google)\s+(.+?)(?:\s+(?:online|on the internet|on wikipedia|for me))?\s*[?.!]*$/i, 'en'],
+		[/^(?:por favor )?(investiga|investigar|b[uú]scame|busca|buscar)(?: informaci[oó]n)?(?: sobre| de| acerca de)?\s+(.+?)(?: en internet)?\s*[?.!]*$/i, 'es'],
+		[/^(?:s'il te pla[iî]t )?(recherche|rechercher|cherche|trouve-moi|trouve)(?: des informations| des infos)?(?: sur| à propos de)?\s+(.+?)(?: sur internet)?\s*[?.!]*$/i, 'fr'],
+	];
+
+	/** { kind, query, topic, lang } for an explicit request to look something up, or null. */
+	function lookupRequest(text) {
+		for (const [re, lang] of LOOKUPS) {
+			const m = String(text).trim().match(re);
+			if (!m) continue;
+			const query = m[2].replace(/^(?:about|on|for|information about|info about)\s+/i, '').trim();
+			// "busca en google", "search online", "cherche sur internet": where, but not what.
+			if (!query || /^(it|that|this|eso|esto|lo|ça|cela)$/i.test(query) || /^(?:(?:en|sur|on|in)\s+)?(?:the\s+|la\s+|le\s+)?(?:google|internet|online|web|wikipedia|line)$/i.test(query)) return { kind: 'again', lang };
+			const deep = /^(research|investigate|read up|look into|learn about|find out|investiga|recherche)/i.test(m[1]);
+			return { kind: deep ? 'research' : 'search', query, topic: topicOf(query), lang };
+		}
+		return null;
+	}
+
+	/** The place a weather question names: "weather in New York tomorrow" -> "New York". */
+	function placeOf(text) {
+		const m = String(text).match(/\b(?:in|for|at|near|en|à|a|pour)\s+([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ.'-]*(?:\s+[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ.'-]*){0,3}?)(?:\s+(?:today|tomorrow|tonight|now|right now|this week|this weekend|hoy|mañana|aujourd'hui|demain|ce soir))?\s*[?.!]*$/i);
+		if (!m || /^(the|my|a|an|it|this|that|el|la|le|les|los|las)$/i.test(m[1])) return null;
+		return m[1].replace(/\b\w/g, (c) => c.toUpperCase());
+	}
+
+	/* ---------- Writing ---------- */
+
+	/** Words from what Onyx last looked up, so "write a poem about it" has something to say. */
+	function researchWords() {
+		const r = convo.research;
+		const d = Omni.onyxDictionary;
+		if (!r || !d) return [];
+		const out = [];
+		for (const w of (r.extract.toLowerCase().match(/[a-z]+/g) || [])) {
+			const hit = (d.lookup(w) || []).map((x) => x.e).find((e) => e.pos === 'noun' && !e.src && ['nature', 'animal', 'thing', 'food', 'time'].includes(e.kind));
+			if (hit && !out.includes(hit.w) && hit.w.length > 3) out.push(hit.w);
+		}
+		return out.slice(0, 8);
+	}
+
+	/** Makes a piece of writing; { text } or null. `job` is { kind, topic, ... } as writeQuery found it. */
+	function compose(job) {
+		const W = Omni.onyxWrite;
+		const extra = convo.research && job.topic === convo.research.title ? researchWords() : [];
+		const titled = (r, label) => r && answer(`**${label ? label + ': ' : ''}${r.title}**\n\n${r.text}`);
+		if (job.kind === 'haiku') return titled(W.haiku(job.topic, Math.random, extra), 'Haiku');
+		if (job.kind === 'poem') return titled(W.poem(job.topic, Math.random, extra));
+		if (job.kind === 'acrostic') return titled(W.acrostic(job.topic));
+		if (job.kind === 'story') return titled(W.story(job.topic));
+		if (job.kind === 'message') {
+			const r = W.message(job.occasion, { to: job.to, from: memory().name || '', about: job.about, holiday: job.holiday });
+			return r && answer(r.text);
+		}
+		if (job.kind === 'describe') {
+			const r = W.describe(job.topic);
+			if (r) return answer(r.text);
+			if (convo.research && job.topic === convo.research.title) return answer(leading(convo.research.extract, 4));
+			return null;
+		}
+		if (job.kind === 'summary') {
+			const text = job.text || (convo.research && (convo.research.text || convo.research.extract));
+			if (!text) return answer('Paste the text after "summarize:" and I\'ll pick out its key sentences. Or look something up first, then say "summarize it".');
+			const points = W.summarize(text, job.text ? 3 : 4);
+			if (!points.length) return answer('That\'s too short to summarize: it\'s already the gist.');
+			return answer(`${job.text ? '**Summary**' : `**${convo.research.title}, in short**`}\n${points.map((p) => `- ${p}`).join('\n')}`);
+		}
+		return null;
+	}
+
+	/**
+	 * A request for a short piece of writing: a haiku, a poem, an acrostic, a story, a message for a card, a description
+	 * or a summary. "About it" means what the conversation is about. Null when it isn't one.
+	 */
+	function writeQuery(body) {
+		if (!Omni.onyxWrite || !Omni.onyxDictionary) return null;
+		const t = String(body).trim();
+		const lower = t.toLowerCase().replace(/[’]/g, "'");
+		const about = (s) => {
+			const x = (s || '').trim().replace(/[?!.]+$/, '').replace(/^(?:about|on|for|of|with|featuring|called|named|using|the word)\s+/i, '').trim();
+			if (!x || /^(it|that|this|them|him|her)$/i.test(x)) return convo.subject || (convo.research && convo.research.title) || null;
+			return x;
+		};
+		const ask = '(?:please |can you |could you |would you |will you |i want |i need |i would like )?(?:write|compose|make|give|create|generate|tell|make up|send|draft|do|help me write)(?: me| us)?\\s+(?:a |an |another |one |some |my )?(?:short |little |quick |tiny |small |nice |sweet |funny |cute |simple |rhyming |bedtime |new )*';
+		let m;
+		// Long pieces are beyond Onyx: essays, articles, songs, code.
+		if (new RegExp(`^${ask}(?:essays?|reports?|articles?|thesis|papers?|code|programs?|scripts?|functions?|songs?|lyrics|novels?|books?|speech(?:es)?|cover letters?|resumes?|blog posts?|chapters?)\\b`).test(lower)) return { kind: 'long' };
+		if ((m = t.match(/^(?:please )?(?:summarize|summarise|sum up|tl;?dr|give me (?:a |the )?summary of|make a summary of|summary of)\b[:\s]*([\s\S]*)$/i))) {
+			const rest = m[1].trim().replace(/^(?:this|the following|this text|this article|this paragraph|the text)\s*[:\n]\s*/i, '');
+			if (/^(?:our |the |this )?(?:conversation|chat|talk)\b|^what we/i.test(rest)) return null;
+			const own = rest.split(/\s+/).length >= 25 || (rest.split(/\s+/).length >= 12 && (rest.match(/[.!?](?:\s|$)/g) || []).length >= 2) ? rest : null;
+			return { kind: 'summary', text: own };
+		}
+		if ((m = lower.match(new RegExp(`^${ask}haikus?\\b\\s*(.*)$`))) || (m = lower.match(/^haiku (?:about|on|for) (.+)$/))) return { kind: 'haiku', topic: about(m[1]) || pickTopic() };
+		if ((m = lower.match(new RegExp(`^${ask}acrostic(?: poem)?\\b\\s*(.*)$`)))) return about(m[1]) ? { kind: 'acrostic', topic: about(m[1]) } : null;
+		if ((m = lower.match(new RegExp(`^${ask}(?:poem|rhyme|verse|limerick|ditty)s?\\b\\s*(.*)$`)))) return { kind: 'poem', topic: about(m[1]) || pickTopic() };
+		if ((m = lower.match(new RegExp(`^${ask}(?:story|tale|fable)\\b\\s*(.*)$`)))) return { kind: 'story', topic: about(m[1]) || pickTopic() };
+		if ((m = lower.match(new RegExp(`^${ask}(.+?)\\s+(?:message|note|card|text|wish(?:es)?|letter|email|toast)\\b\\s*(.*)$`)))) {
+			const occasion = Omni.onyxWrite.occasionOf(m[1]);
+			if (!occasion) return null;
+			const rest = m[2];
+			const to = (rest.match(/\b(?:for|to)\s+((?:my |our )?[a-z][a-z' -]*?)(?=\s+(?:for|on|with|about|from)\b|$)/i) || [])[1] || '';
+			const without = to ? rest.replace(new RegExp(`\\b(?:for|to)\\s+${to.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i'), '') : rest;
+			const what = (without.match(/\b(?:for|on|with|about)\s+((?:her|his|their|my|your|the|our|a|an)\s+.+?)$/i) || [])[1] || '';
+			const holiday = (m[1].match(/christmas|new year|hanukkah|diwali|eid|easter/) || [])[0] || '';
+			return { kind: 'message', occasion, to: to.trim(), about: what.trim(), holiday: holiday.replace(/\b\w/g, (c) => c.toUpperCase()) };
+		}
+		if ((m = lower.match(/^(?:describe|write (?:a |me a )?(?:short )?(?:paragraph|description|few sentences|something) (?:about|on|of|describing))\s+(.+)$/))) return { kind: 'describe', topic: about(m[1]) };
+		return null;
+	}
+
+	const WRITE_LIMITS = 'Long writing like essays or songs, and big programs, are beyond me. I can write short things: a haiku, a rhyming poem, an acrostic, a short story, a message for a card, a description of something, a summary of a text, or a small program in Python, JavaScript, Rust, C, C#, C++, HTML or HTTP.';
+
+	/* ---------- Longer writing, from a prompt ---------- */
+
+	/** A composed piece as a reply: its title, the text, and where it came from. */
+	function showPiece(w, job) {
+		if (!w) return null;
+		// Days and months take a capital wherever the prompt's words ended up.
+		w.text = w.text.replace(/\b(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|january|february|april|june|july|august|september|october|november|december)\b/g, (d) => d[0].toUpperCase() + d.slice(1));
+		if (w.title) w.title = w.title.replace(/\b(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/g, (d) => d[0].toUpperCase() + d.slice(1));
+		convo.writing = job;
+		convo.lastKind = 'writing';
+		convo.output = w.text;
+		trace('plan', `${w.plan.length} parts: ${w.plan.join(', ')}`);
+		trace('generated', w.from === 'article' ? 'it is put together from sentences of the Wikipedia article, which I can\'t check' : 'it is assembled from patterns and what my dictionary says, so it reads plainer than a person\'s writing');
+		const source = w.from === 'article' ? `\n\nBuilt from the Wikipedia article, mostly in its own words: ${w.url}` : w.from === 'dictionary' ? '\n\n(Written from my dictionary alone.)' : '';
+		return answer(`**${w.title}**\n\n${w.text}${source}`, { piece: { form: w.form, title: w.title, plan: w.plan } });
+	}
+
+	/** Essays, stories, emails, speeches and product descriptions; null when the message isn't asking for one. */
+	async function composeReply(body, mem) {
+		const C = Omni.onyxCompose;
+		if (!C) return null;
+		const job = C.parse(body);
+		if (!job) return null;
+		// A plain "story about a dragon" is the short writer's; one with a hero, a wish or a place is written out in full.
+		if (job.form === 'story' && !job.rich && job.size !== 'long') return null;
+		if (job.form === 'essay' && !job.topic) {
+			const it = convo.subject || (convo.research && convo.research.title);
+			if (!it) return answer('About what? Say something like "write an essay about volcanoes".');
+			job.topic = it;
+		}
+		trace('skill', `the composer: a request for ${job.form === 'email' ? `${C.FORMS.includes(job.kind) ? job.kind : job.kind || 'an email'} (${job.purpose})` : `${job.size === 'medium' ? '' : job.size + ' '}${job.form}`}${job.topic ? ` about ${job.topic}` : ''}`);
+		if (job.form === 'essay') {
+			// What Onyx read last, if this is about it; then the dictionary; then, with permission, Wikipedia.
+			const r = convo.research;
+			if (r && r.text && r.title.toLowerCase() === String(job.topic).toLowerCase()) return showPiece(C.fromArticle(job, r), job);
+			const online = { kind: 'research', query: job.topic, topic: job.topic, lang: 'en', compose: job };
+			const w = C.write(job, Math.random, mem.name);
+			if (!w) {
+				trace('recall', `"${job.topic}" isn't in my dictionary`);
+				return (await lookOnline(online, { lead: `I don't know enough about ${job.topic} to write that from my dictionary.` })) || answer(`I don't know enough about ${job.topic} to write that from my dictionary${netReady() ? ', and I\'m set to stay offline' : ', and I can\'t look it up here'}. I can write about anything my dictionary has: try "write an essay about volcanoes".`);
+			}
+			trace('recall', `"${job.topic}" is in my dictionary: wrote from what it says`);
+			const shown = showPiece(w, job);
+			if (netReady() && settings().internet === 'on') return (await lookOnline(online, { granted: true })) || shown;
+			if (netReady() && settings().internet === 'ask') return Object.assign(shown, { offer: { kind: 'online', request: online, ask: 'Want a fuller one, from Wikipedia? (yes or no)' } });
+			return shown;
+		}
+		return showPiece(C.write(job, Math.random, mem.name), job) || answer('I couldn\'t make that one work. Tell me a little more about what it should say.');
+	}
+
+	/* ---------- Predicting what people say ---------- */
+
+	/** "Finish this sentence: I have an exam on", "what comes after 'how do you say'": the network's guesses. */
+	function predictReply(body) {
+		const P = Omni.onyxPredict;
+		if (!P) return null;
+		// "Freestyle about the sea": the network writes on its own, one likely word after another.
+		const free = body.trim().match(/^(?:freestyle|ramble|improvi[sz]e|let (?:your|the) (?:neural )?network (?:write|talk|speak|run|go)|let it (?:write|run))(?: about| on| from| with)?\s*[:,-]?\s*["'“]?(.*?)["'”]?[.!?]*$/i);
+		if (free && P.sample) {
+			const start = free[1].trim() || 'i';
+			convo.lastKind = null;
+			return answer(`**${start}** ${P.sample(start + ' ', 28)}\n\n(That was my prediction network on its own: one likely word after another, with no plan. For writing that holds together, ask for an essay, a story or an email.)`);
+		}
+		const m = body.trim().match(/^(?:(?:can you |please )?(?:finish|complete|continue|end) (?:this|my|the)(?: (?:sentence|phrase|thought)|(?=\s*:))|predict(?: the next words?| what comes next)?|what comes (?:next|after)|guess (?:the )?next words?|what(?:'s| is| would| will)? (?:i |come |be )?(?:say |next )?(?:after|next after))\s*[:,-]?\s*["'“]?(.+?)["'”]?\s*$/i);
+		if (!m || !P.tokens(m[1]).length) return null;
+		const text = m[1].replace(/[.!?]+$/, '');
+		const rest = P.complete(text + ' ');
+		const guesses = P.next(text + ' ', 3).map((x) => `${x.word} (${Math.round(x.p * 100)}%)`);
+		convo.lastKind = null;
+		if (!rest && !guesses.length) return answer(`I can't guess what comes after "${text}".`);
+		return answer(`**${text}** ${rest ? `*${rest}*` : '…'}\nMy guesses for the next word: ${listOf(guesses)}. They come from a small neural network trained on what people say to me; it gets the next word in its first three guesses about a third of the time.`);
+	}
+
+	/* ---------- Code ---------- */
+
+	const CODE_MENU = 'I can write small programs in Python, JavaScript, Rust, C, C#, C++, and HTML or raw HTTP: hello world, counting, FizzBuzz, a function (add, multiply, square... or your own, like "a function called area that takes w and h and returns w * h"), reversing a string, palindromes, factorials, Fibonacci numbers, primes, sorting a list, sum and average, looping over a list, reading and writing files, counting words, a class or struct with the fields you name, HTTP GET and POST requests, a tiny web server, asking for a name, a number guessing game, temperature conversion, and web pages, tables, forms and buttons. I also compose programs from a description of what to do with a list of numbers or words (keep, drop, change, sort, count, add up), whole web pages from the sections you name, and HTTP requests from their parts. Try "fizzbuzz in rust", "a class Book with title, author and price in C#", or "a python program that takes the numbers 1 to 20, keeps the even ones, squares them and prints the sum".';
+
+	/** A program as a reply: what it does, the code, and how to run it. */
+	function showCode(job) {
+		const C = Omni.onyxCode;
+		const w = C.write(job);
+		if (!w) return null;
+		const L = C.LANGS;
+		if (w.missing) {
+			const kind = C.TASKS[job.task].title.replace(/^[A-Z](?![A-Z])/, (c) => c.toLowerCase());
+			return answer(w.missing.length ? `I write ${kind} in ${listOf(w.missing.map((l) => L[l].name))}, not ${L[job.lang].name}.` : `I can't write that in ${L[job.lang].name}.`);
+		}
+		convo.code = job;
+		convo.lastKind = 'code';
+		convo.output = w.code;
+		trace('skill', `a ready-made program: ${w.title}, filled in with what you asked for`);
+		trace('exact', 'this program is compiled and run in every language when Onyx is built');
+		const others = C.languagesFor(job.task).filter((l) => l !== job.lang).map((l) => L[l].name);
+		const run = w.project || (/^save|^send/.test(w.run) ? `To use it, ${w.run}.` : `Save it as \`${w.file}\`, then run \`${w.run}\`.`) + (w.deps ? ' It needs the crates named at the top, in Cargo.toml.' : '');
+		const title = w.title.includes(w.name) ? w.title : `${w.title} in ${w.name}`;
+		return answer([
+			`**${title}**: it ${w.about}.`,
+			'```' + w.fence + '\n' + w.code.replace(/\r\n/g, '\n').replace(/\n$/, '') + '\n```',
+			run + (w.note ? `\n${w.note}` : ''),
+			job.defaulted && others.length ? `(Say "in ${others[0]}" or another language for a different one.)` : others.length ? `I can also write it in ${listOf(others)}.` : '',
+		].filter(Boolean).join('\n\n'), { code: { lang: job.lang, text: w.code } });
+	}
+
+	/**
+	 * A program, page or request composed from the prompt (onyx-synth.js): the plan Onyx read from it, step by step,
+	 * then the code that carries the plan out.
+	 */
+	function showSynth(plan, lang, defaulted) {
+		const S = Omni.onyxSynth;
+		const L = Omni.onyxCode.LANGS;
+		const w = S.write(plan, lang);
+		if (!w) return null;
+		convo.code = { synth: plan, lang };
+		convo.lastKind = 'code';
+		convo.output = w.code;
+		trace('skill', plan.kind === 'pipeline' ? `composing a program: I read the prompt into a plan, then write the plan in ${L[lang].name}` : plan.kind === 'page' ? 'composing a web page from the sections named' : 'composing an HTTP request from its parts');
+		trace('plan', w.plan.join(' → '));
+		if (plan.source && plan.source.assumed) trace('assumed', 'no list was given, so I put an example one in');
+		else trace('generated', plan.kind === 'pipeline' ? 'the code is exact for the plan shown; if I misread a step, the plan is where it shows' : 'the structure is right, but the words in it are placeholders');
+		const steps = w.plan.map((p, i) => `${i + 1}. ${p[0].toUpperCase()}${p.slice(1)}`).join('\n');
+		const fence = '```' + L[w.lang].fence + '\n' + w.code.replace(/\r\n/g, '\n').replace(/\n$/, '') + '\n```';
+		if (plan.kind === 'page') return answer([`**${w.title}**, put together from what you asked for:`, steps, fence, 'Save it as `index.html` and open it in a browser. The words in it are placeholders: put your own in.'].join('\n\n'), { code: { lang: 'html', text: w.code }, plan: w.plan });
+		if (plan.kind === 'request') return answer([`**${w.title}**, built from its parts:`, steps, fence, 'The same thing with curl:\n```bash\n' + w.curl + '\n```', /YOUR_/.test(w.code) ? 'Put your real key or token where it says YOUR_….' : ''].filter(Boolean).join('\n\n'), { code: { lang: 'http', text: w.code }, plan: w.plan });
+		const others = S.LANGS.filter((l) => l !== lang).map((l) => L[l].name);
+		const file = plan.source.file ? ` It reads \`${plan.source.file}\`, which should be in the same folder.` : plan.source.type === 'input-nums' ? ' It reads the numbers you type (or pipe in) until the input ends.' : '';
+		return answer([
+			`**A program in ${L[lang].name}**, composed from your prompt. This is how I read it:`,
+			steps,
+			fence,
+			(L[lang].project || `Save it as \`${L[lang].file}\`, then run \`${L[lang].run}\`.`) + file,
+			defaulted ? `(Say "in ${others[1]}" or another language for a different one, or tell me if I read a step wrong.)` : `I can also write it in ${listOf(others)}.`,
+		].join('\n\n'), { code: { lang, text: w.code }, plan: w.plan });
+	}
+
+	/** Reads a prompt as something to compose (a data program, a page with sections, a request with its parts), or null. */
+	function synthPlan(t, job, lang) {
+		const S = Omni.onyxSynth;
+		if (!S) return null;
+		const codey = lang || /\b(?:programs?|code|scripts?|functions?|snippets?)\b/i.test(t);
+		const pageTask = job && /^(?:htmlpage|table|form|button)$/.test(job.task || '');
+		if (lang === 'html' || pageTask || (!lang && /\b(?:landing |home ?|web ?)page\b|\bwebsite\b|\bsite for\b/i.test(t))) {
+			const page = S.page(t);
+			// One thing on a page (a form, a table) is the small writer's job; several sections is a page to compose.
+			return page && page.sections.length >= 2 && page.strength >= 3 ? { plan: page, lang: 'html' } : null;
+		}
+		if (lang === 'http' || (!lang && /\b(?:GET|POST|PUT|PATCH|DELETE|HEAD)\b/.test(t) && /\brequest\b|https?:\/\//i.test(t))) {
+			const req = S.request(t);
+			return req && req.strength >= 1 ? { plan: req, lang: 'http' } : null;
+		}
+		if (!codey || lang === 'html' || lang === 'http') return null;
+		const p = S.pipeline(t);
+		if (!p) return null;
+		// Two steps or more is a plan of its own; one step only when no ready-made program fits.
+		const generic = !(job && job.task) || (/^(?:count|loop|sort|stats|wordcount)$/.test(job.task) && p.steps.some((x) => x.op === 'filter' || x.op === 'map'));
+		return p.strength >= 2 || (p.strength >= 1 && generic) ? { plan: p, lang: lang || 'python', defaulted: !lang } : null;
+	}
+
+	/** Code requests and follow-ups ("now in Rust"); null when the message isn't about code. */
+	function codeReply(body) {
+		const C = Omni.onyxCode;
+		if (!C) return null;
+		const t = body.trim();
+		// "Fizzbuzz in Rust" names a program of its own; "now in Rust" is about the last one.
+		const fresh = C.parse(t);
+		const follows = !(fresh && fresh.task);
+		if (follows && convo.code && convo.code.synth && convo.lastKind === 'code') {
+			const m = t.match(/^(?:ok(?:ay)?,? |and |now |great,? |thanks,? |cool,? )?(?:now |also )?(?:what about|how about|same(?: thing| one)?|do (?:it|that)|write (?:it|that)|show (?:it|me)|translate (?:it|that)|convert (?:it|that)|port (?:it|that)|rewrite (?:it|that)|can you do (?:it|that)|and)?\s*(?:in|to|into|using|for)?\s*(.+?)(?:\s+(?:version|please|instead|too|now))?[.?!]*$/i);
+			const lang = m && m[1].split(/\s+/).length <= 3 && C.langOf(`in ${m[1]}`);
+			if (lang && !/\b(?:spanish|french|english|german|italian)\b/i.test(t)) {
+				const plan = convo.code.synth;
+				if (plan.kind === 'pipeline' && Omni.onyxSynth.LANGS.includes(lang)) return showSynth(plan, lang, false);
+				return answer(plan.kind === 'pipeline' ? `That one is a program, so not ${C.LANGS[lang].name}: I can write it in ${listOf(Omni.onyxSynth.LANGS.map((l) => C.LANGS[l].name))}.` : `A ${plan.kind === 'page' ? 'web page is HTML' : 'raw request is HTTP'}, whatever sends it. Ask me for "an HTTP ${plan.kind === 'page' ? 'server' : plan.method === 'POST' ? 'POST' : 'GET'} in ${C.LANGS[lang].name}" for code that does it.`);
+			}
+		}
+		// "Now in Rust", "same in C#", "what about JavaScript?", "translate it to C++".
+		if (follows && convo.code && !convo.code.synth && convo.lastKind === 'code') {
+			const m = t.match(/^(?:ok(?:ay)?,? |and |now |great,? |thanks,? |cool,? )?(?:now |also )?(?:what about|how about|same(?: thing| one)?|do (?:it|that)|write (?:it|that)|show (?:it|me)|translate (?:it|that)|convert (?:it|that)|port (?:it|that)|rewrite (?:it|that)|can you do (?:it|that)|and)?\s*(?:in|to|into|using|for)?\s*(.+?)(?:\s+(?:version|please|instead|too|now))?[.?!]*$/i);
+			const lang = m && m[1].split(/\s+/).length <= 3 && C.langOf(`in ${m[1]}`);
+			if (lang && !/\b(?:spanish|french|english)\b/i.test(t)) return showCode(Object.assign({}, convo.code, { lang, defaulted: false }));
+			if (/^(?:java|go|golang|kotlin|swift|ruby|php|typescript|perl|scala|haskell|lua|r|matlab|bash|shell|sql)\b/i.test(t.replace(/^(?:now |what about |how about |same in |in |and )+/i, ''))) return answer(`I don't write that language yet. I can write it in ${listOf(C.languagesFor(convo.code.task).map((l) => C.LANGS[l].name))}.`);
+		}
+		const job = fresh;
+		const made = synthPlan(t, job, C.langOf(t));
+		if (made) return showSynth(made.plan, made.lang, made.defaulted);
+		if (!job) return null;
+		if (!job.task) return answer(CODE_MENU);
+		return showCode(job);
+	}
+
+	/** Something to write about when no one said: what the conversation is about, else something from the sky or the sea. */
+	function pickTopic() {
+		if (convo.subject) return convo.subject;
+		const list = ['the moon', 'the sea', 'autumn', 'rain', 'a fox', 'the morning', 'snow', 'a lighthouse', 'the city', 'a garden'];
+		return list[Math.floor(Math.random() * list.length)];
+	}
+
+	/* ---------- Deciding the reply ---------- */
+
+	const answer = (text, extra) => Object.assign({ text }, extra || {});
+	/** Adds a step to the thinking trace of the message being answered (see onyx-mind.js). */
+	const trace = (step, detail, extra) => {
+		if (convo.trace) convo.trace.push(Object.assign({ step, detail }, extra || {}));
+	};
+	/** A reply that admits Onyx didn't understand, so a message of several sentences can leave it out. */
+	const answer2 = (text) => answer(text, { miss: true });
+	const asksMeaning = /^(?:what(?: is| are| does)|whats|define|definition of|explain|meaning of|tell me about|what do you mean by|whats an?)\s+(?:an?\s+|the\s+)?(.+?)(?:\s+mean|\s+stand for)?\s*[?.!]*$/i;
+
+	// "define X" and "what does X mean" are clearly about words; "what is X" might be about anything, so it only reaches
+	// the dictionary when no intent claims it ("what is new" is small talk, not a definition of "new").
+	const asksWord = /^(?:define|definition of|what is the definition of|whats the definition of|what does .+ mean|what is the meaning of|whats the meaning of|meaning of)\b/i;
+
+	/** A definition from the tech glossary, then (if `dictionary`) the everyday dictionary; null if neither has it. */
+	function define(term, dictionary) {
+		const r = defineQuiet(term, dictionary);
+		if (r) {
+			trace('skill', 'looking the word up: my glossary first, then the dictionary');
+			// "Define serendipity and translate it": "it" is the word.
+			convo.output = String(term).replace(/[?.!"“”]/g, '').trim();
+		}
+		return r;
+	}
+	function defineQuiet(term, dictionary) {
+		const t = term.toLowerCase().replace(/[?.!"“”]/g, '').replace(/^(?:the word\s+)?(?:an?|the)\s+/, '').trim();
+		const hit = Omni.onyxData.GLOSSARY.find((g) => g.terms.includes(t) || g.terms.includes(t.replace(/s$/, '')));
+		if (!hit) {
+			const entry = dictionary && Omni.onyxDictionary && Omni.onyxDictionary.define(t);
+			if (!entry) return null;
+			convo.lastKind = null;
+			convo.sentence = { word: t, n: 0, said: [] };
+			const hit = Omni.onyxDictionary.lookupAll ? Omni.onyxDictionary.lookupAll(t) : Omni.onyxDictionary.lookup(t);
+			convo.subject = hit ? hit[0].e.w : t;
+			mention(convo.subject);
+			return answer(entry);
+		}
+		const text = typeof hit.text === 'function' ? hit.text() : hit.text;
+		convo.lastKind = null;
+		if (hit.tool && Omni.byId[hit.tool]) return answer(`${text}\n\n${Omni.onyxData.toolLink(hit.tool)} works with it.`, { offer: { kind: 'open', id: hit.tool, ask: 'Want me to open it?' } });
+		if (hit.tool) return answer(`${text}\n\nThe tool for it is in the desktop edition.`);
+		return answer(text);
+	}
+
+	/** What to do with an affirmative answer to an offer. */
+	async function accept(offer) {
+		if (offer.kind === 'open') return answer(`Opening ${Omni.onyxData.toolLink(offer.id)}.`, { action: 'open:' + offer.id });
+		if (offer.kind === 'settings') return answer('Opening Settings.', { action: 'settings' });
+		if (offer.kind === 'forget') {
+			Omni.store.remove(MEMORY_KEY);
+			return answer('Done. I\'ve forgotten your name and everything you asked me to keep.');
+		}
+		if (offer.kind === 'games') {
+			const games = ['game-2048', 'minesweeper', 'snake', 'typing-test'].filter((id) => Omni.byId[id]);
+			const id = games[Math.floor(Math.random() * games.length)];
+			return answer(`Let's go with ${Omni.onyxData.toolLink(id)}.`, { action: 'open:' + id });
+		}
+		if (offer.kind === 'joke') return answer(draw('joke', Omni.onyxData.JOKES));
+		if (offer.kind === 'define') return define(offer.word, true) || answer('I seem to have lost that one.');
+		if (offer.kind === 'online') return (await lookOnline(offer.request, { granted: true })) || answer(netWords(offer.request.lang).failed(sourceOf(offer.request.kind)));
+		if (offer.kind === 'command') {
+			convo.lastCommand = offer.command;
+			convo.lastKind = 'command';
+			return answer('', { command: offer.command });
+		}
+		return answer('Okay.');
+	}
+
+	/**
+	 * Decides Onyx's reply to one message. Returns { text, offer?, action?, command? }; `command` means the text should
+	 * run through OmniTool's offline commands. Pure apart from memory writes, so tests can call it directly.
+	 */
+	async function respond(raw) {
+		const M = Omni.onyxMind;
+		const started = Date.now();
+		convo.trace = [];
+		convo.output = null;
+		convo.outputLang = null;
+		if (M && String(raw || '').trim()) trace('read', M.perceive(raw).summary);
+		const r = await mindful(raw);
+		const thinking = convo.trace;
+		convo.trace = null;
+		// The next message is read against this reply: its yes/no offer, or the name it asked for.
+		if (r) {
+			convo.pending = r.offer || null;
+			convo.expect = r.expect || null;
+			convo.lastReply = r.text + (r.offer ? `
+
+${r.offer.ask}` : '');
+			if (!r.steps) settle(r);
+			if (M) {
+				const sure = M.reflect(thinking, r);
+				thinking.push({ step: 'check', detail: `${{ sure: 'Confident', fair: 'Fairly confident', unsure: 'Not confident' }[sure.level]}: ${sure.why}.` });
+				r.thinking = thinking;
+				r.confidence = sure.level;
+				r.ms = Date.now() - started;
+				if (!r.explained) convo.lastThinking = thinking;
+			}
+		}
+		return r;
+	}
+
+	/** Keeps what a reply produced, so the next step or message can work on it ("translate it", "make it shorter"). */
+	function settle(r) {
+		if (!r || r.miss || !r.text || r.explained) return;
+		convo.lastOutput = convo.output || (Omni.onyxMind ? Omni.onyxMind.plain(r.text) : r.text);
+		convo.lastOutputLang = convo.outputLang || (convo.output ? 'en' : convo.lang || 'en');
+		convo.output = null;
+		convo.outputLang = null;
+	}
+
+	/**
+	 * Plans a message before answering it (onyx-mind.js): one thing goes straight to `decide`; several steps are done
+	 * in order, each free to use the result of the one before, and their answers are joined.
+	 */
+	async function mindful(raw) {
+		const text = String(raw || '').trim();
+		const M = Omni.onyxMind;
+		if (!text || !M || CRISIS.test(text) || (convo.expect === 'quiz' && convo.quiz)) return decide(raw);
+		const read = documentIntake(text);
+		if (read) return read;
+		const p = M.plan(text);
+		if (!p) return decide(raw);
+		const mark = convo.trace.length;
+		trace('plan', p.kind === 'each' ? `the same request for ${p.steps.length} ${p.of}: one step each` : `${p.steps.length} steps, each free to use the result before it: ${p.steps.map((x, i) => `(${i + 1}) ${x}`).join(' ')}`);
+		const done = [];
+		let stopped = '';
+		for (const [i, step] of p.steps.entries()) {
+			trace('step', `${i + 1} of ${p.steps.length}: "${step}"`);
+			const r = await decide(step);
+			if (!r || r.miss || !r.text || r.command) {
+				// The first step failing means this wasn't a plan after all: answer the message whole.
+				if (!done.length) {
+					convo.trace.length = mark;
+					return decide(raw);
+				}
+				trace('failed', `step ${i + 1} ("${step}") is beyond me`);
+				stopped = `I couldn't do the next part: "${step}".`;
+				break;
+			}
+			settle(r);
+			convo.pending = r.offer || null;
+			convo.expect = r.expect || null;
+			done.push(r);
+			// A step that needs a yes first (to go online) stops the plan there, and says what is left.
+			if (r.offer && i < p.steps.length - 1) {
+				stopped = `After that, ask me again for the rest: ${p.steps.slice(i + 1).map((x) => `"${x}"`).join(', then ')}.`;
+				break;
+			}
+		}
+		const last = done[done.length - 1];
+		const texts = done.map((r) => r.text).concat(stopped && !last.offer ? [stopped] : []);
+		return Object.assign({}, last, { text: texts.join(p.kind === 'each' && !texts.some((x) => x.includes('\n')) ? '\n' : '\n\n') + (stopped && last.offer ? `\n\n${stopped}` : ''), steps: done.length });
+	}
+
+	/* ---------- Working on the last result ---------- */
+
+	/** "Translate it to French", "make it shorter", "how many words is that", "explain it", "read it aloud". */
+	async function operationReply(body, mem) {
+		const M = Omni.onyxMind;
+		const op = M && M.operation(body);
+		if (!op) return null;
+		const last = convo.lastOutput;
+		const W = Omni.onyxWrite;
+		const G = Omni.onyxTongues;
+		const code = convo.lastKind === 'code' && convo.code;
+		if (op.op === 'explain') {
+			if (code && code.synth) {
+				const steps = Omni.onyxSynth.describe ? (code.synth.kind === 'pipeline' ? Omni.onyxSynth.describe(code.synth) : Omni.onyxSynth.write(code.synth, code.lang).plan) : [];
+				trace('skill', 'explaining the plan the code was written from');
+				return answer(`It works in ${steps.length} steps, and the code follows them in order:\n${steps.map((x, i) => `${i + 1}. ${x[0].toUpperCase()}${x.slice(1)}.`).join('\n')}`, { explained: true });
+			}
+			if (code) {
+				const w = Omni.onyxCode.write(code);
+				trace('skill', 'explaining a ready-made program');
+				return w && answer(`It ${w.about}.${w.note ? ' ' + w.note : ''}`, { explained: true });
+			}
+			if (!convo.lastThinking) return null;
+			trace('skill', 'showing the steps behind my last reply');
+			return answer(`Here is how I got there:\n${M.explain(convo.lastThinking)}`, { explained: true });
+		}
+		if (!last) return null;
+		if (op.op === 'translate') {
+			const T = Omni.onyxTranslate;
+			const to = G && G.codeOf(op.to);
+			if (!to || !T || code) return null;
+			// A translation is translated again from what it was made from, not from itself.
+			const made = convo.translatedFrom && convo.translatedFrom.result === last ? convo.translatedFrom : null;
+			const source = made ? made.text : last;
+			const from = made ? made.lang : convo.lastOutputLang || 'en';
+			if (from === to) return made ? ((convo.output = source), (convo.outputLang = to), answer(`Back in ${G.nameOf(to)}:\n\n${source}`)) : answer(`It's already in ${G.nameOf(to)}.`);
+			// A word or two is looked up as a word, with everything the dictionary says about it.
+			if (source.trim().split(/\s+/).length <= 3 && !/\n/.test(source.trim())) return translateAny({ word: source.trim().replace(/[.!?]+$/, ''), from, to, lang: 'en' }, 'en');
+			for (const c of [from, to]) if (!(await T.need(c))) return answer(`I know of ${G.nameOf(c)}, but its dictionary isn't loaded in this copy of me.`);
+			const hand = ['en', 'es', 'fr'].includes(from) && ['en', 'es', 'fr'].includes(to);
+			if (!hand) {
+				// For the other languages Onyx has words but no grammar: the main words, rather than a broken sentence.
+				const D = Omni.onyxDictionary;
+				const stop = (Omni.onyxUses && Omni.onyxUses.STOP) || new Set();
+				const seen = new Set();
+				const pairs = [];
+				for (const raw of from === 'en' ? source.toLowerCase().match(/[a-z][a-z'-]+/g) || [] : []) {
+					if (raw.length < 3 || stop.has(raw) || seen.has(raw)) continue;
+					seen.add(raw);
+					const e = D && (D.lookup(raw) || [])[0];
+					if (D && !e && !(D.lookupAll && D.lookupAll(raw))) continue;
+					const w = T.word(raw, 'en', to);
+					if (w && w.word && !seen.has(`=${w.word}`)) (seen.add(`=${w.word}`), pairs.push(`**${raw}** → ${w.said || w.word}`));
+					if (pairs.length >= 14) break;
+				}
+				trace('skill', `the ${G.nameOf(to)} dictionary: the main words, one by one`);
+				trace('rough', `for ${G.nameOf(to)} I have a dictionary (${T.sourceOf(to) || 'a wordnet'}) but no grammar, so I give the words rather than a sentence`);
+				if (!pairs.length) return answer(`I have ${/^[AEIOU]/.test(G.nameOf(to)) ? 'an' : 'a'} ${G.nameOf(to)} dictionary but not its grammar, so I can't translate whole sentences into it${from === 'en' ? '' : `, and only from English`}. Ask me for a word: "how do you say sea in ${G.nameOf(to)}".`);
+				return answer(`I have ${/^[AEIOU]/.test(G.nameOf(to)) ? 'an' : 'a'} ${G.nameOf(to)} dictionary but not its grammar, so I can't write that as ${G.nameOf(to)} sentences. Its main words, though:\n\n${pairs.join('\n')}\n\n(Whole sentences I can translate between English, Spanish and French.)`, { explained: true });
+			}
+			trace('skill', `translating my last result, ${G.nameOf(from)} to ${G.nameOf(to)}`);
+			let rough = false;
+			const unknown = [];
+			const lines = source.split('\n').map((line) => {
+				if (!line.trim()) return line;
+				const r = T.text(line.trim(), from, to);
+				if (!r) return line;
+				if (r.how === 'words') rough = true;
+				unknown.push(...(r.unknown || []));
+				return r.text;
+			});
+			if (rough) trace('rough', 'parts are translated word by word, so the grammar is rough');
+			convo.output = lines.join('\n');
+			convo.outputLang = to;
+			convo.translatedFrom = { text: source, lang: from, result: convo.output };
+			convo.lastKind = 'translation';
+			const missed = [...new Set(unknown)].slice(0, 6);
+			return answer(`In ${G.nameOf(to)}:\n\n${convo.output}${rough ? `\n\n(Partly word by word, so the grammar is rough${missed.length ? `; I had no word for ${listOf(missed.map((x) => `"${x}"`))}` : ''}.)` : ''}`);
+		}
+		if (op.op === 'count') {
+			const c = M.measure(last);
+			trace('skill', 'counting my last result');
+			trace('exact', 'counted, not estimated');
+			const order = [op.what, ...['word', 'character', 'sentence', 'line'].filter((k) => k !== op.what)];
+			return answer(`**${c[order[0]].toLocaleString('en-US')} ${order[0]}${c[order[0]] === 1 ? '' : 's'}**, ${order.slice(1).map((k) => `${c[k].toLocaleString('en-US')} ${k}${c[k] === 1 ? '' : 's'}`).join(', ')}.`, { explained: true });
+		}
+		if (op.op === 'upper' || op.op === 'lower') {
+			trace('skill', 'changing the letters of my last result');
+			convo.output = op.op === 'upper' ? last.toUpperCase() : last.toLowerCase();
+			convo.outputLang = convo.lastOutputLang;
+			return answer(convo.output);
+		}
+		if (op.op === 'speak') {
+			trace('skill', 'reading my last result aloud');
+			if (!(Omni.speech && typeof Omni.speech.say === 'function')) return answer('I have no voice in this copy of me. In the demo page, in a browser that can speak, I read replies aloud.', { explained: true });
+			return answer('Reading it aloud.', { speak: { text: last, lang: convo.lastOutputLang || 'en' }, explained: true });
+		}
+		// A piece from the composer is written again, shorter, longer or in another tone.
+		const job = convo.lastKind === 'writing' && convo.writing && convo.writing.form ? convo.writing : null;
+		if (job && ['shorten', 'lengthen', 'tone'].includes(op.op)) {
+			const sizes = ['paragraph', 'short', 'medium', 'long'];
+			const at = sizes.indexOf(job.size);
+			const next = Object.assign({}, job);
+			if (op.op === 'tone') next.tone = op.tone;
+			else next.size = sizes[Math.max(job.form === 'essay' ? 0 : 1, Math.min(3, at + (op.op === 'shorten' ? -1 : 1)))];
+			if (op.op !== 'tone' && next.size === job.size) return answer(op.op === 'shorten' ? 'That\'s as short as I make those. Say "summarize it" for just the main points.' : 'That\'s as long as I make those.');
+			trace('skill', `the composer again: ${op.op === 'tone' ? `in a ${op.tone} tone` : `a ${next.size} one`}`);
+			const r = convo.research;
+			const w = job.form === 'essay' && r && r.text && r.title.toLowerCase() === String(job.topic).toLowerCase() ? Omni.onyxCompose.fromArticle(next, r) : Omni.onyxCompose.write(next, Math.random, mem.name);
+			const shown = showPiece(w, next);
+			if (shown) return shown;
+		}
+		if (op.op === 'shorten' || op.op === 'summarize') {
+			if (convo.lastKind === 'research') return null;
+			const sents = W ? W.sentencesOf(last.replace(/\n+/g, ' ')) : [];
+			// "Summarize it" after a lookup and a haiku about it still means what was looked up.
+			if (sents.length < 3 && op.op === 'summarize' && convo.research) return null;
+			if (sents.length < 2) return answer('It\'s a single sentence already: there\'s nothing to cut.');
+			const keep = W.summarize(last.replace(/\n+/g, ' '), Math.max(1, Math.min(op.op === 'summarize' ? 3 : 4, Math.ceil(sents.length / 2.5))));
+			trace('skill', `keeping the ${keep.length} sentence${keep.length === 1 ? '' : 's'} that say the most, of ${sents.length}`);
+			convo.output = keep.join(' ');
+			convo.outputLang = convo.lastOutputLang;
+			return answer(op.op === 'summarize' ? `**In short**\n${keep.map((x) => `- ${x}`).join('\n')}` : keep.join(' '));
+		}
+		if (op.op === 'lengthen' || op.op === 'tone') return answer(`I can only do that to my own longer pieces: essays, stories, emails, speeches and product descriptions. Ask for one, like "write ${op.op === 'tone' ? `a ${op.tone} email asking for a day off` : 'a long essay about volcanoes'}".`);
+		return null;
+	}
+
+	/** "Double it", "add 10", "half of that": arithmetic on the last number. */
+	function carryOn(body) {
+		const last = convo.lastAnswer;
+		if (typeof last !== 'number' || !Number.isFinite(last) || !Omni.onyxMath) return null;
+		const t = body.trim().toLowerCase().replace(/^(?:now |then |and |ok(?:ay)?,? )+/, '').replace(/[?.!]+$/, '');
+		const n = '(-?\\d+(?:\\.\\d+)?)';
+		const it = '(?:it|that|the (?:result|answer))';
+		let m;
+		let expr = null;
+		if ((m = t.match(new RegExp(`^(double|triple|quadruple|halve|square|cube|negate) ${it}$`)))) expr = { double: `${last} * 2`, triple: `${last} * 3`, quadruple: `${last} * 4`, halve: `${last} / 2`, square: `${last} ^ 2`, cube: `${last} ^ 3`, negate: `0 - ${last}` }[m[1]];
+		else if (new RegExp(`^(?:what(?:'s| is) )?half (?:of )?${it}$`).test(t)) expr = `${last} / 2`;
+		else if ((m = t.match(new RegExp(`^(?:add|plus) ${n}(?: to ${it})?$`)))) expr = `${last} + ${m[1]}`;
+		else if ((m = t.match(new RegExp(`^(?:subtract|take away|minus) ${n}(?: from ${it})?$`)))) expr = `${last} - ${m[1]}`;
+		else if ((m = t.match(new RegExp(`^multiply ${it} by ${n}$`)))) expr = `${last} * ${m[1]}`;
+		else if ((m = t.match(new RegExp(`^divide ${it} by ${n}$`)))) expr = `${last} / ${m[1]}`;
+		return expr ? Omni.onyxMath.answer(expr.replace(/^(-\S+)/, '($1)')) : null;
+	}
+
+	/* ---------- Documents ---------- */
+
+	/** Takes a text in, measures it, and keeps it for questions: "summarize it", "what does it say about ...". */
+	function readDocument(text, name) {
+		const U = Omni.onyxUses;
+		if (!U) return null;
+		const doc = U.document(text, name);
+		if (doc.words < 8) return answer('That\'s too short to be a document. Paste a few sentences, or more.');
+		convo.document = doc;
+		convo.lastKind = 'document';
+		convo.output = doc.text;
+		trace('skill', `reading a document: ${doc.words.toLocaleString('en-US')} words, ${doc.sentences.length} sentences`);
+		trace('exact', 'I measure and search the text exactly; I don\'t understand it the way a reader does');
+		const keys = doc.keywords.slice(0, 5).map((k) => `**${k.word}**`);
+		return answer(`I've read ${name ? `**${name}**` : 'it'}: ${doc.words.toLocaleString('en-US')} words in ${doc.sentences.length} sentence${doc.sentences.length === 1 ? '' : 's'}${doc.paragraphs > 1 ? ` and ${doc.paragraphs} paragraphs` : ''}, about ${doc.minutes} minute${doc.minutes === 1 ? '' : 's'} of reading.${keys.length ? ` The words it comes back to most are ${listOf(keys)}.` : ''}\n\nAsk me to **summarize it**, **what it says about** something, **how many times** a word appears, or for its **key words**.`, { document: { name: name || null, words: doc.words } });
+	}
+
+	/** A text handed over to be read: "read this: ...", or a long paste with no request in front. */
+	function documentIntake(text) {
+		const m = text.match(/^(?:please )?(?:read|here(?:'s| is)|take a look at|look at|analy[sz]e|study|check) (?:this|the following|my)(?: text| document| article| passage| essay| email| paragraph)?\s*[:\n]\s*([\s\S]{40,})$/i);
+		if (m) return readDocument(m[1]);
+		const words = text.split(/\s+/).length;
+		const asks = /^(?:please |can you |could you )?(?:summari[sz]e|sum up|tl;?dr|translate|write|define|what|how|who|why|when|where|fix|correct|count|explain|finish|complete|make|create|give|tell|say)\b/i.test(text);
+		if (words >= 80 && (text.match(/[.!?](?:\s|$)/g) || []).length >= 4 && !asks) return readDocument(text);
+		return null;
+	}
+
+	/** Questions about the document being read; null when the message isn't one. */
+	function documentReply(body) {
+		const doc = convo.document;
+		if (!doc) return null;
+		const t = body.trim().replace(/[?.!]+$/, '').replace(/[’]/g, "'");
+		const named = /\b(?:the|this|that|my) (?:document|text|article|file|passage|paper|essay|email)\b/i.test(t);
+		if (convo.lastKind !== 'document' && !named) return null;
+		const IT = '(?:it|this|that|(?:the|this|that|my) (?:document|text|article|file|passage|paper|essay|email))';
+		const keep = (r) => ((convo.lastKind = 'document'), r);
+		let m;
+		if (new RegExp(`^(?:please )?(?:(?:summari[sz]e|sum up|condense) ${IT}|summary|tl;?dr|(?:give me )?(?:a |the )?(?:summary|gist|short version)(?: of ${IT})?|what(?:'s| is| does) ${IT} (?:about|say)|what(?:'s| is) the (?:main )?(?:point|idea)(?: of ${IT})?)$`, 'i').test(t)) {
+			const points = doc.summary(doc.sentences.length > 40 ? 5 : 3);
+			if (doc.sentences.length < 3) return keep(answer(`It's only ${doc.sentences.length === 1 ? 'one sentence' : 'two sentences'}: ${doc.text}`));
+			trace('skill', `picking the ${points.length} sentences that say the most, of ${doc.sentences.length}`);
+			trace('generated', 'a summary made of the document\'s own sentences: nothing is reworded, and something important can be left out');
+			convo.output = points.join(' ');
+			return keep(answer(`**${doc.name || 'The document'}, in short**\n${points.map((x) => `- ${x}`).join('\n')}`));
+		}
+		if ((m = t.match(new RegExp(`^how (?:many times|often) (?:does|is|do) (?:${IT} (?:say|mention|use|have|contain)|the word) ["'“]?(.+?)["'”]?(?: appear| used| mentioned| come up| in ${IT})*$`, 'i'))) || (m = t.match(new RegExp(`^how (?:many times|often) (?:does|is) ["'“]?(.+?)["'”]? (?:appear|used|mentioned|come up|occur)(?: in ${IT})?$`, 'i'))) || (m = t.match(new RegExp(`^count ["'“]?(.+?)["'”]? in ${IT}$`, 'i')))) {
+			const n = doc.count(m[1]);
+			trace('skill', 'counting a word in the document');
+			trace('exact', 'counted, with its endings (plural, -ing, -ed) taken as the same word');
+			return keep(answer(n ? `**${m[1]}** appears **${n} time${n === 1 ? '' : 's'}**.` : `**${m[1]}** doesn't appear in it.`, { explained: true }));
+		}
+		if ((m = t.match(new RegExp(`^(?:what does ${IT} say about|what(?:'s| is) said about|what about|where does ${IT} (?:mention|talk about|say|discuss)|does ${IT} (?:mention|say anything about|talk about|discuss)|is there anything (?:about|on)|anything (?:about|on)|find|search(?: ${IT})? for|look for|show me (?:the part|what it says) about) ["'“]?(.+?)["'”]?(?: in ${IT})?$`, 'i')))) {
+			const found = doc.find(m[1]);
+			trace('skill', `searching the document for "${m[1]}"`);
+			if (!found.length) return keep(answer(`It doesn't say anything about **${m[1]}** that I can find.`, { explained: true }));
+			trace('exact', 'these are the document\'s own sentences, found by their words');
+			convo.output = found.map((f) => f.sentence).join(' ');
+			return keep(answer(`About **${m[1]}**, it says:\n${found.map((f) => `> ${f.sentence}`).join('\n')}`));
+		}
+		if (new RegExp(`^(?:(?:what are )?(?:the |its )?(?:key ?words|main (?:topics|words|subjects|themes)|topics)(?: (?:of|in) ${IT})?|what words does ${IT} use most)$`, 'i').test(t)) {
+			trace('skill', 'counting the document\'s words');
+			return keep(answer(`Its key words: ${doc.keywords.map((k) => `**${k.word}** (${k.count})`).join(', ')}.`, { explained: true }));
+		}
+		if (new RegExp(`^(?:how long is ${IT}|how many (?:words|sentences|characters|paragraphs) (?:are |is )?(?:in|does|has) ${IT}(?: have)?|(?:what(?:'s| is) )?(?:the|its) word count(?: of ${IT})?)$`, 'i').test(t)) {
+			trace('skill', 'measuring the document');
+			trace('exact', 'counted, not estimated');
+			return keep(answer(`**${doc.words.toLocaleString('en-US')} words**, ${doc.sentences.length} sentences, ${doc.paragraphs} paragraph${doc.paragraphs === 1 ? '' : 's'} and ${doc.characters.toLocaleString('en-US')} characters: about ${doc.minutes} minute${doc.minutes === 1 ? '' : 's'} of reading.`, { explained: true }));
+		}
+		if ((m = t.match(new RegExp(`^(?:what(?:'s| is) |read (?:me )?|show (?:me )?|give me )?(?:the |its )?(first|last|opening|closing|final) (?:sentence|line)(?: of ${IT})?$`, 'i')))) {
+			const s = /first|opening/i.test(m[1]) ? doc.sentences[0] : doc.sentences[doc.sentences.length - 1];
+			convo.output = s;
+			return keep(answer(`> ${s}`));
+		}
+		if (new RegExp(`^(?:forget|close|drop|clear|discard|put away) ${IT}$`, 'i').test(t)) {
+			convo.document = null;
+			convo.lastKind = null;
+			return answer('Done: I\'ve put the document away.', { explained: true });
+		}
+		return null;
+	}
+
+	/* ---------- Quizzes ---------- */
+
+	async function quizQuestion(q) {
+		const Q = Omni.onyxUses.quiz;
+		if (q.kind === 'math') return Q.math(Math.random, q.right, q.only);
+		if (q.kind === 'words') return Q.words(Math.random);
+		if (!Omni.onyxTranslate || !(await Omni.onyxTranslate.need(q.lang))) return null;
+		return Q.vocab(Math.random, q.lang, q.asked);
+	}
+
+	/** "Quiz me on German", "a math quiz": starts one. The answers come back through quizTurn. */
+	async function quizStart(body) {
+		const U = Omni.onyxUses;
+		const s = U && U.quiz.start(body);
+		if (!s) return null;
+		const G = Omni.onyxTongues;
+		const menu = `I can quiz you on **math**, on **English word meanings**, or on vocabulary in ${G ? `any of my ${G.codes.length - 1} other languages` : 'Spanish or French'}: say "quiz me on German" or "a math quiz".`;
+		if (!s.kind) return answer(s.unknown ? `I don't have a quiz on ${s.unknown}. ${menu}` : `On what? ${menu}`);
+		const q = Object.assign({ n: 0, right: 0, asked: [] }, s);
+		const first = await quizQuestion(q);
+		if (!first) return answer(s.kind === 'vocab' ? `I know of ${G.nameOf(s.lang)}, but its dictionary isn't loaded in this copy of me.` : 'I can\'t make that quiz without my dictionary.');
+		q.current = first;
+		if (first.en) q.asked.push(first.en);
+		convo.quiz = q;
+		trace('skill', `a quiz: ${s.kind === 'vocab' ? `${G.nameOf(s.lang)} vocabulary` : s.kind === 'math' ? 'arithmetic' : 'English word meanings'}, ${s.total} questions`);
+		return answer(`${s.kind === 'vocab' ? `${G.nameOf(s.lang)} vocabulary` : s.kind === 'math' ? 'Math' : 'Word meanings'}: ${s.total} question${s.total === 1 ? '' : 's'}. Say "skip" to pass, or "stop" to end.\n\n**1.** ${first.ask}`, { expect: 'quiz', quiz: { n: 1, of: s.total } });
+	}
+
+	/** One answer in a quiz: right or wrong, then the next question or the score. */
+	async function quizTurn(text) {
+		const q = convo.quiz;
+		const Q = Omni.onyxUses.quiz;
+		const score = () => `**${q.right} of ${q.n}**`;
+		if (/^(?:stop|quit|end|enough|exit|cancel|no more|i'?m done|that'?s enough|finish)\b/i.test(text.trim())) {
+			convo.quiz = null;
+			return answer(q.n ? `Okay, stopping there. You got ${score()}.` : 'Okay, no quiz.');
+		}
+		const skipped = /^(?:skip|pass|next|i don'?t know|no idea|dunno|idk|not sure|no clue|\?+)[.!]*$/i.test(text.trim());
+		const right = !skipped && Q.check(q.current, text);
+		q.n++;
+		if (right) q.right++;
+		trace('skill', `checking a quiz answer: ${right ? 'right' : skipped ? 'skipped' : 'wrong'}`);
+		trace('exact', 'the answer is checked against the question I made, letter for letter apart from capitals, accents and articles');
+		const verdict = right ? pick('quizright', ['Right!', 'Correct.', 'Yes!', 'That\'s it.', 'Exactly.']) : skipped ? `It's ${q.current.show}.` : `Not quite: it's ${q.current.show}.`;
+		if (q.n >= q.total) {
+			convo.quiz = null;
+			const share = q.right / q.total;
+			return answer(`${verdict}\n\nThat's the quiz: ${score()}. ${share === 1 ? 'A perfect score!' : share >= 0.8 ? 'Very good.' : share >= 0.5 ? 'Not bad at all.' : 'Worth another go: say "quiz me" again whenever you like.'}`, { quiz: { done: true, right: q.right, of: q.total } });
+		}
+		const next = await quizQuestion(q);
+		if (!next) {
+			convo.quiz = null;
+			return answer(`${verdict}\n\nI've run out of questions. You got ${score()}.`);
+		}
+		q.current = next;
+		if (next.en) q.asked.push(next.en);
+		return answer(`${verdict}\n\n**${q.n + 1}.** ${next.ask}`, { expect: 'quiz', quiz: { n: q.n + 1, of: q.total } });
+	}
+
+	async function decide(raw) {
+		const text = String(raw || '').trim();
+		if (!text) return null;
+		const parts = sentencesOf(text);
+		if (parts.length >= 2 && parts.length <= 5 && !CRISIS.test(text)) {
+			const r = await several(parts);
+			if (r) return r;
+		}
+		return decideOne(text);
+	}
+
+	/** Decides the reply to one message (or one sentence of one). */
+	async function decideOne(raw) {
+		const text = String(raw || '').trim();
+		if (!text) return null;
+		const mem = memory();
+		const norm = normalize(text);
+		const pending = convo.pending;
+		const expect = convo.expect;
+		convo.pending = null;
+		convo.expect = null;
+
+		// An answer to a quiz question.
+		if (expect === 'quiz' && convo.quiz && !CRISIS.test(text)) return quizTurn(text);
+		// "Translate it to Spanish": the last result, not the word "it".
+		const pointed = Omni.onyxMind && convo.lastOutput && convo.lastKind !== 'code' && !CRISIS.test(text) && Omni.onyxMind.operation(text);
+		if (pointed && pointed.op === 'translate') {
+			const r = await operationReply(text, mem);
+			if (r) return r;
+		}
+		if (CRISIS.test(text)) {
+			return answer('I\'m really sorry you\'re feeling this way. I\'m only a small program, so please talk to a person who can help right now: in the US you can call or text **988** (Suicide & Crisis Lifeline), and anywhere else your local emergency number or a line listed at **findahelpline.com** will reach someone. If you\'re in danger, call emergency services. You don\'t have to go through this alone.');
+		}
+		// A translation question is answered in the language it was asked in: "translate merci" in English.
+		let translation = Omni.onyxLanguages && !nameFrom(text, false) && Omni.onyxLanguages.translateQuery(text.replace(/^(?:hi|hello|hey|hola|bonjour|salut)[\s,!.]+/i, ''));
+		// "What does 'tengo hambre' mean?": quoted Spanish or French in an English question.
+		const quoted = !translation && text.match(/^(?:what does|what do|what is the meaning of|what's the meaning of|meaning of)\s+["'«“](.+?)["'»”](?:\s+mean)?\s*\??$/i);
+		if (quoted && Omni.onyxLanguages) {
+			const said = Omni.onyxLanguages.detect(quoted[1]);
+			if (said === 'es' || said === 'fr') translation = { word: quoted[1], to: 'en', from: said, lang: 'en' };
+		}
+		if (translation && (translation.lang === 'en' || /\b(?:in|into|to)\s+(?:english|spanish|french)\b/i.test(text))) {
+			convo.lang = 'en';
+			return translateAny(translation, 'en');
+		}
+		// Another language: a greeting Onyx knows ("ciao", "こんにちは"), a language it has no dictionary for, or a script
+		// it can't read.
+		const G = Omni.onyxTongues;
+		if (G && !translation) {
+			const flat = (s) => G.strip(String(s).replace(/[¿¡.!?,;:。！？]+/g, ' ')).replace(/\s+/g, ' ').trim();
+			const said = flat(text);
+			for (const row of G.PHRASES) {
+				// Not "yes" and "no" (too short to tell: "da", "ne", "ja"), not what Spanish or French also say ("hola"), and
+				// not a slip of the English ("helo").
+				if (/^(?:Yes|No)$/.test(row.en) || said === 'helo' || [row.es, row.fr, row.en].some((x) => flat(x) === said)) continue;
+				const lang = G.codes.find((c) => !['en', 'es', 'fr'].includes(c) && row[c] && flat(row[c]) === said);
+				if (!lang || (Omni.onyxDictionary && Omni.onyxDictionary.lookup(said) && !/^(?:hallo|ciao|hej|hei|halo)$/.test(said))) continue;
+				return answer(`${row[lang][0].toUpperCase()}${row[lang].slice(1)}! That's "${row.en.toLowerCase()}" in ${G.nameOf(lang)}. I talk in English, Spanish and French, and I have dictionaries for ${G.codes.length - 1} languages: try "how do you say dog in ${G.nameOf(lang)}".`);
+			}
+			const unknown = text.match(/^(?:how (?:do|would) (?:you|i|we) say|translate|say)\s+.+?\s+(?:in|into|to)\s+([A-Za-z]+)\s*\??$/i);
+			if (unknown && !G.codeOf(unknown[1]) && !(Omni.onyxDictionary && Omni.onyxDictionary.lookupAll && Omni.onyxDictionary.lookupAll(unknown[1].toLowerCase()) && !/^[A-Z]/.test(unknown[1]))) return answer(`I don't have a dictionary for ${unknown[1]}. I have ${G.codes.length - 1}: ${listOf(G.LIST.filter((l) => l.code !== 'en').map((l) => l.name))}.`);
+		}
+		if (FOREIGN.test(text)) return answer(G ? `I can't read that as a sentence: I talk in English, Spanish and French. I do have dictionaries for ${G.codes.length - 1} languages, so you can ask "translate ... from Japanese" or "how do you say dog in Greek".` : 'I speak English, Spanish and French. Hablo inglés, español y francés. Je parle anglais, espagnol et français.');
+		// So is a request to look something up: "busca Frida Kahlo" is answered in Spanish, "search online" in English.
+		const lookup = !translation && lookupRequest(text);
+		const lang = translation ? (convo.lang = translation.lang) : lookup ? (convo.lang = lookup.lang) : languageOf(text, expect === 'name' || (convo.topic && convo.topic.kind === 'name'));
+		const asked = convo.topic;
+		convo.topic = null;
+		// Settings are asked for in English ("stay offline"), whatever language the conversation was in.
+		const early = settingsCommand(norm);
+		if (early) {
+			convo.lang = 'en';
+			return early;
+		}
+		if (lang !== 'en') return foreign(lang, text, mem, expect, pending);
+		if (convo.switched) {
+			convo.switched = false;
+			return answer('Sure, English it is. Write to me in Spanish or French whenever you like, and I\'ll switch back.');
+		}
+		const setting = settingsCommand(norm);
+		if (setting) return setting;
+
+		if (pending) {
+			if (pending.kind === 'online' && ALWAYS.test(text)) {
+				setSetting('internet', 'on');
+				return accept(pending);
+			}
+			if (pending.kind === 'online' && /^(?:look it up|search (?:for )?it|google it|check online|go ahead and look)\b/i.test(text)) return accept(pending);
+			if (pending.kind === 'online' && pending.retry && /^(?:try again|again|retry|try (?:it|that) again|one more time|tell me more|more|go on)\b[\s!.?]*$/i.test(text)) return accept(pending);
+			if (YES.test(text)) return accept(pending);
+			if (NO.test(text)) return answer(pending.kind === 'forget' ? 'Okay, I\'ll keep it.' : pending.kind === 'online' ? netWords(pending.request.lang).declined : 'Okay.');
+		}
+		// A city, after "which city?".
+		if (expect === 'place' && text.split(/\s+/).length <= 4 && !/\?$/.test(text)) {
+			const r = await lookOnline({ kind: 'weather', place: text.replace(/[.!]+$/, '').replace(/\b\w/g, (c) => c.toUpperCase()), query: text, lang: 'en' });
+			if (r) return r;
+		}
+
+		const name = nameFrom(text, expect === 'name');
+		if (name) {
+			if (/^onyx$/i.test(name)) return answer('That\'s my name. What should I call you?', { expect: 'name' });
+			saveMemory(Object.assign(mem, { name, met: mem.met || new Date().toISOString() }));
+			return answer(mem.met && mem.name !== name ? `Got it, ${name}. I'll remember that on this device.` : `Nice to meet you, ${name}. I'll remember your name on this device.`);
+		}
+
+		const rem = text.match(/^(?:please\s+)?(?:can you\s+|could you\s+)?remember(?:\s+that)?\s+(.{3,200})$/i);
+		if (rem) {
+			const fact = rem[1].replace(/[.!]+$/, '').replace(/\bmy\b/gi, 'your').replace(/\bi am\b/gi, 'you are').replace(/\bi\b/g, 'you');
+			mem.facts = [{ text: fact, at: new Date().toISOString() }, ...mem.facts].slice(0, 30);
+			saveMemory(mem);
+			return answer(`I'll remember: ${fact}.`);
+		}
+
+		const followed = asked && settings().reader && followUp(text, asked, mem);
+		if (followed) return shape(followed);
+		const recalled = recallQuery(norm);
+		if (recalled) return recalled;
+
+		// After a lookup: more of the article, its source, or the full brief.
+		if (convo.research && convo.lastKind === 'research') {
+			if (/^(?:tell me more|more|go on|keep going|what else|and|more please|continue|more about (?:it|that|this))[.!?]*$/i.test(text.trim())) return moreResearch();
+			if (/^(?:source|sources|link|where did you (?:get|find) (?:that|this|it)|what s (?:the|your) source|whats your source)[?.!]*$/i.test(norm)) return answer(`Wikipedia: ${convo.research.url}`);
+			if (/^research it[.!]*$/i.test(text.trim())) return (await lookOnline({ kind: 'research', query: convo.research.title, topic: convo.research.title, lang: convo.research.lang }, { granted: true })) || answer(netWords('en').failed('Wikipedia'));
+		}
+		// "Look up Ada Lovelace", "research black holes": a word in the dictionary is answered from it, offline.
+		const wanted = lookupRequest(text);
+		if (wanted && wanted.kind !== 'again' && wanted.lang === 'en') {
+			const known = wanted.kind === 'search' && /^[a-z-]+$/i.test(wanted.query) && define(wanted.query, true);
+			if (known) return known;
+			const r = await lookOnline(wanted);
+			if (r) return r;
+			return answer(netReady() ? netWords('en').off : 'I can\'t go online from here: this copy of Onyx has no internet connection. In a browser or in OmniTool with one, I can look things up once you say so.');
+		}
+		if (wanted && wanted.kind === 'again' && convo.lastQuestion) {
+			const r = await lookOnline({ kind: 'search', query: convo.lastQuestion, topic: topicOf(convo.lastQuestion), lang: 'en' });
+			if (r) return r;
+		} else if (wanted && wanted.kind === 'again' && netReady() && !(convo.research && /\b(?:it|that|this)\b/i.test(text))) return answer(netWords('en').whatTopic);
+
+		// "Hi Onyx, what can you do?" gets a short greeting in front of the real answer.
+		let greet = '';
+		let body = text;
+		const g = text.match(/^(hi|hello|hey|heya|hiya|yo|howdy|good (?:morning|afternoon|evening))(?:\s+there)?(?:\s+onyx)?[\s,!.]+(.+)$/i);
+		if (g && g[2].trim().length > 1 && !/^(onyx|you|there)[\s!.?]*$/i.test(g[2].trim())) {
+			greet = `${g[1][0].toUpperCase()}${g[1].slice(1).toLowerCase()}${mem.name ? ', ' + mem.name : ''}. `;
+			body = g[2];
+		}
+		const withGreet = (r) => (r && greet ? Object.assign({}, r, { text: greet + r.text }) : r);
+
+		const decision = /^(?:should i|shall i|do i)\s+(.+?)\s+or\s+(.+?)\??$/i.exec(body) || /^(?:pick|choose)(?: one)?(?: between|:)?\s+(.+?)\s+(?:or|and)\s+(.+?)\??$/i.exec(body);
+		if (decision) {
+			const options = [decision[1], ...decision[2].split(/,\s*|\s+or\s+/)].map((s) => s.trim()).filter(Boolean);
+			const choice = options[Math.floor(Math.random() * options.length)];
+			return withGreet(answer(`Go with **${choice}**. I picked at random, so if your stomach disagrees, listen to it.`));
+		}
+		// "How did you get that?": the steps behind the last reply.
+		if (convo.lastThinking && Omni.onyxMind && /^(?:how did you (?:get|work out|come up with|know|decide|figure out)(?: that| this| it)?(?: out)?|show (?:me )?(?:your|the) (?:thinking|work|working|reasoning|steps)|explain your(?:self| thinking| reasoning| answer)|what were you thinking|how do you know(?: that)?|why (?:that|did you say that)|walk me through (?:it|that|your thinking))[?.!]*$/i.test(body.trim())) {
+			trace('skill', 'showing the steps behind my last reply');
+			return withGreet(answer(`Here is how I got there:\n${Omni.onyxMind.explain(convo.lastThinking)}`, { explained: true }));
+		}
+		// A document being read, a quiz asked for, or something to do to the last result.
+		const aboutDoc = documentReply(body);
+		if (aboutDoc) return withGreet(aboutDoc);
+		const quizzed = await quizStart(body);
+		if (quizzed) return withGreet(quizzed);
+		const worked = await operationReply(body, mem);
+		if (worked) return withGreet(worked);
+		// Longer writing from a prompt: essays, stories, emails, speeches, product descriptions.
+		const piece = await composeReply(body, mem);
+		if (piece) return withGreet(piece);
+		// "Finish this sentence: I have an exam on": the prediction network.
+		const predicted = predictReply(body);
+		if (predicted) return trace('skill', 'the prediction network: 340,320 weights guessing the next word from the last four'), trace('generated', 'these are guesses from patterns in what people say to me, not knowledge'), withGreet(predicted);
+		// Code: "fizzbuzz in rust", "a class Book with title and price in C#", then "now in Python".
+		const coded = codeReply(body);
+		if (coded) return withGreet(coded);
+		const asksTranslation = Omni.onyxLanguages && Omni.onyxLanguages.translateQuery(body);
+		if (asksTranslation) return withGreet(await translateAny(asksTranslation, 'en'));
+		const word = wordTrick(body);
+		if (word) return trace('skill', 'word tools: letters, counts and spelling'), trace('exact', 'worked out from the letters themselves'), withGreet(answer(word));
+		const aboutWords = wordQuery(body);
+		if (aboutWords) return trace('skill', `the dictionary: ${Omni.onyxDictionary ? Omni.onyxDictionary.total.toLocaleString('en-US') : 'its'} words, with their meanings, sounds and relatives`), withGreet(aboutWords);
+		const job = writeQuery(body);
+		if (job) {
+			const written = compose(job);
+			if (written) {
+				convo.writing = job;
+				convo.lastKind = 'writing';
+				trace('skill', `the short writer: ${job.kind === 'summary' ? 'a summary, made of the text\'s own key sentences' : `a ${job.kind}${job.topic ? ` about ${job.topic}` : ''}`}`);
+				if (job.kind !== 'summary' && job.kind !== 'describe') trace('generated', job.kind === 'haiku' ? 'the syllables are counted (5, 7, 5), but the lines come from patterns and related words' : 'it is assembled from patterns and words related to the topic');
+				if (job.kind === 'summary' && job.text) convo.document = Omni.onyxUses ? Omni.onyxUses.document(job.text) : convo.document;
+				convo.output = written.text.replace(/^\*\*[^\n]*\*\*\n+/, '');
+				return withGreet(written);
+			}
+			if (job.kind !== 'summary') return withGreet(answer(job.kind === 'long' ? WRITE_LIMITS : 'I couldn\'t make that one fit. Try another topic, or another kind of piece.'));
+		}
+		const thought = think(body);
+		if (thought) return trace('skill', 'reasoning over the dictionary: what things are kinds of, what they have, how they differ'), withGreet(thought);
+		// "Who was Ada Lovelace?": a person or place the full dictionary names is answered from it, before small talk
+		// ("who made you") can claim the question; Wikipedia is offered for more.
+		if (/^who (?:is|was|were) (?!you\b|your\b|i\b|me\b|my\b|we\b|this\b|that\b|it\b)/i.test(body.trim())) {
+			const known = fromDictionary(body);
+			if (known && (known.e.instance || /^[A-Z]/.test(known.e.w))) {
+				convo.lastQuestion = body;
+				const net = await lookOnline({ kind: 'search', query: body.replace(/[?!.]+$/, ''), topic: known.e.w, lang: 'en' }, { lead: known.text, more: true });
+				return withGreet(net || answer(known.text));
+			}
+		}
+		// Arithmetic is answered directly, and the answer is kept so "times 3" or "that squared" can follow.
+		const U = Omni.onyxUses;
+		const sum = (U && U.series(body)) || carryOn(body) || (Omni.onyxMath && Omni.onyxMath.answer(body, convo.lastAnswer));
+		if (sum) {
+			if (typeof sum.value === 'number') convo.lastAnswer = sum.value;
+			convo.lastKind = null;
+			trace('skill', 'arithmetic');
+			trace('exact', 'computed, not recalled');
+			if (typeof sum.value === 'number') convo.output = String(sum.value);
+			return withGreet(answer(sum.text));
+		}
+		const pickNum = body.match(/\bpick (?:a|one) number (?:between|from) (-?\d+) (?:and|to) (-?\d+)/i);
+		const math = wordsToMath(body);
+		const commandText = pickNum ? `random number between ${pickNum[1]} and ${pickNum[2]}` : math || body;
+		if (Omni.offline.plan(commandText)) {
+			convo.lastCommand = commandText;
+			convo.lastKind = 'command';
+			trace('skill', 'an OmniTool command: handed to the tool that does it');
+			return withGreet(answer('', { command: commandText }));
+		}
+		// Units and dates.
+		const measured = U && (U.convert(body) || U.dates(body));
+		if (measured) {
+			if (typeof measured.value === 'number') convo.lastAnswer = measured.value;
+			convo.lastKind = null;
+			trace('skill', measured.unit || measured.mismatch ? 'unit conversion' : 'the calendar');
+			trace('exact', measured.unit ? 'computed from the units\' defined sizes' : 'computed from the calendar and this device\'s date');
+			return withGreet(answer(measured.text));
+		}
+
+		const ranked = classify(body);
+		const top = ranked[0] || { id: null, score: 0, tfidf: 0 };
+		const understood = () => trace('understood', `closest to "${top.id}" among the ${Omni.onyxData.INTENTS.length} things I know how to answer (${Math.round(top.score * 100)}% sure${ranked[1] ? `; next was "${ranked[1].id}" at ${Math.round(ranked[1].score * 100)}%` : ''})`, { score: top.score });
+		// The phrase matcher's best score, for weighing an intent against a reading or a definition.
+		const matched = Math.max(0, ...ranked.map((r) => r.tfidf));
+		const meaning = body.match(asksMeaning);
+		const reading = meaning || !settings().reader ? null : read(body, mem);
+		// Remember what a reading asked about, so the answer to "How did the exam go?" is read against the exam.
+		const useReading = () => {
+			trace('skill', 'reading the sentence itself: who did what, when, and how they feel about it');
+			convo.topic = reading.topic || null;
+			note(reading.note, reading.about);
+			return withGreet(shape(reading.reply));
+		};
+		// A reading beats a weak intent match: "I'm going to bake a cake" isn't "going to bed".
+		// "Do you like dogs" reads to the intent model like "do you like me"; the dictionary knows better.
+		if (reading && ((reading.sure && matched < 0.9) || matched < (reading.strong ? 0.7 : 0.6))) return useReading();
+		const aboutWord = asksWord.test(body.trim());
+		if (meaning && /^(it|that|this|that word|this word)$/i.test(meaning[1].trim()) && convo.subject) {
+			const gl = define(convo.subject, true);
+			if (gl) return withGreet(gl);
+		}
+		if (meaning && !(matched > 0.75 && ['identity', 'omnitool', 'meaning', 'date', 'time', 'weather', 'news', 'version'].includes(top.id))) {
+			const gl = define(meaning[1], aboutWord);
+			if (gl) return withGreet(gl);
+			// "Define flibber" is about a word, whatever else it resembles.
+			if (aboutWord && !/^(that|it|this|these|those)$/i.test(meaning[1].trim()) && matched < 0.75) {
+				const unknown = meaning[1].replace(/[?.!"“”]/g, '').trim();
+				// Not English, but maybe Spanish or French: "what does gato mean?"
+				const L = Omni.onyxLanguages;
+				if (L && (L.findForeign('es', unknown).length || L.findForeign('fr', unknown).length)) return withGreet(translateReply({ word: unknown, to: 'en' }, 'en'));
+				const missing = `"${unknown}" isn't in my dictionary or glossary.`;
+				return withGreet((await lookOnline({ kind: 'define', query: unknown, lang: 'en' }, { lead: missing })) || answer(`${missing} I know ${Omni.onyxDictionary ? Omni.onyxDictionary.total.toLocaleString('en-US') + ' words and ' : ''}${Omni.onyxData.GLOSSARY.length} tech terms${netReady() ? '' : ', and I can\'t look up new ones here'}.`));
+			}
+		}
+		// Replies about Onyx itself need the question to be about Onyx: "who is Grace Hopper?" isn't "who made you?".
+		const aboutOnyx = ['creator', 'identity', 'age', 'where', 'is_ai'].includes(top.id) && /^(?:who|what|when|where|how)\b/i.test(body.trim()) && !/\b(?:you|your|yourself|yours|onyx|u|ur|this|talking)\b/i.test(body);
+		if (!aboutOnyx && (top.score >= 0.5 || (top.score >= 0.38 && top.score - ((ranked[1] && ranked[1].score) || 0) >= 0.12))) {
+			const intent = Omni.onyxData.INTENTS.find((i) => i.id === top.id);
+			understood();
+			const searching = intent.id === 'limits' && /\b(web|internet|google|search|look (this|it) up|online|browse)\b/.test(normalize(body));
+			if (searching && netReady()) return withGreet(answer(settings().internet === 'off' ? netWords('en').off : 'I can, with your permission: tell me what to look up, like "look up Ada Lovelace" or "research black holes", and I\'ll check Wikipedia.'));
+			// Prices and scores are "news" to the intent models, but no service here has them: the reply says so.
+			if (['weather', 'news'].includes(intent.id) && netReady() && !(intent.id === 'news' && /\b(stock|bitcoin|price|scores?|won the game)\b/.test(normalize(body)))) {
+				if (settings().internet === 'off') return withGreet(answer(netWords('en').off));
+				const place = intent.id === 'weather' ? placeOf(body) || convo.place : null;
+				if (intent.id === 'weather' && !place) return withGreet(answer(netWords('en').whichCity, { expect: 'place' }));
+				const net = await lookOnline(intent.id === 'weather' ? { kind: 'weather', place, query: place, lang: 'en' } : { kind: 'news', query: 'today\'s headlines', lang: 'en' });
+				if (net) return withGreet(net);
+			}
+			// "Hey hey" is one greeting, not a greeting in front of another.
+			return intent.id === 'greet' ? reply(intent, body, mem) : withGreet(await reply(intent, body, mem));
+		}
+		if (meaning) {
+			const gl = define(meaning[1], true);
+			if (gl) return withGreet(gl);
+			if (aboutWord && !/^(that|it|this|these|those)$/i.test(meaning[1].trim())) {
+				const word = meaning[1].replace(/[?.!"“”]/g, '').trim();
+				const missing = `"${word}" isn't in my dictionary or glossary.`;
+				return withGreet((await lookOnline({ kind: 'define', query: word, lang: 'en' }, { lead: missing })) || answer(`${missing} I know ${Omni.onyxDictionary ? Omni.onyxDictionary.total.toLocaleString('en-US') + ' words and ' : ''}${Omni.onyxData.GLOSSARY.length} tech terms${netReady() ? '' : ', and I can\'t look up new ones here'}.`));
+			}
+		}
+
+		const found = /^(who|when|where|why)\b/i.test(body.trim()) ? [] : findTools(body);
+		if (found.length) {
+			trace('skill', 'searching OmniTool\'s tools for one that does this');
+			const [first, second] = found;
+			const more = second && second.score > first.score * 0.6 ? ` ${Omni.onyxData.toolLink(second.tool.id)} is close too.` : '';
+			return withGreet(answer(`That sounds like ${Omni.onyxData.toolLink(first.tool.id)}: ${first.tool.description}${more}`, { offer: { kind: 'open', id: first.tool.id, ask: 'Want me to open it?' } }));
+		}
+
+		if (reading) return useReading();
+
+		// "Howdy partner": the greeting is the message, even when the rest of it isn't something I understand.
+		if (greet) return reply(Omni.onyxData.INTENTS.find((i) => i.id === 'greet'), g[1], mem);
+
+		convo.misses++;
+		trace('miss', `nothing fit: the closest thing I know was "${top.id}", at only ${Math.round(top.score * 100)}%`);
+		if (/^(who|what|when|where|why|how|which|is|are|does|do|did|can|could|will|would)\b/i.test(body) || /\?\s*$/.test(body) || /^tell me (?:more )?about\b/i.test(body)) {
+			// Questions Onyx can't answer offline can be looked up, with permission. The full dictionary may know the
+			// person or place already ("who was Einstein?"): that comes first, and Wikipedia is offered for more.
+			convo.lastQuestion = body;
+			const known = fromDictionary(body);
+			if (known && known.e) convo.misses--;
+			const net = await lookOnline({ kind: 'search', query: body.replace(/[?!.]+$/, ''), topic: topicOf(body), lang: 'en' }, { lead: known ? known.text : 'I don\'t know that offline.', more: !!known });
+			if (net) return withGreet(net);
+			if (known) return withGreet(answer(known.text));
+			if (net) return withGreet(net);
+			return withGreet(answer2(pick('dunno', [
+				'I don\'t know that one. I only know about OmniTool and a few small things, and I can\'t look anything up.',
+				'That\'s outside what I know. I\'m a small local assistant: no internet, no encyclopedia.',
+				'No idea, honestly. Ask me about OmniTool, or tell me what you\'re trying to do and I\'ll find a tool.',
+			]) + (convo.misses > 1 ? ' Type **help** to see what I can do.' : '')));
+		}
+		return withGreet(answer2(pick('miss', [
+			'I didn\'t catch that. Try rephrasing, or type **help** to see what I can do.',
+			'I\'m not sure what you mean. You can ask me things like "what is a JWT" or "I need to convert a timestamp".',
+			'That one went past me. Type **help** for the things I understand.',
+		])));
+	}
+
+	/** Runs an intent's reply against the conversation so far. */
+	async function reply(intent, body, mem) {
+		const ctx = {
+			text: normalize(body), raw: body, mem, part: part(), tools: Omni.tools.length, hasKey: (await Omni.ai.mode()) === 'claude',
+			// Whether this copy of Onyx can go online (a connector is loaded), and whether the person allows it.
+			net: netReady(), online: netReady() && settings().internet !== 'off',
+			notes: convo.notes.map((n) => `${n[0].toUpperCase()}${n.slice(1)}.`), topics: convo.topics, lang: convo.lang,
+			last: convo.lastIntent, lastKind: convo.lastKind, lastReply: convo.lastReply, why: convo.why, mayAskName: !convo.askedName,
+			pick, draw,
+			again: () => {
+				if (convo.lastKind === 'command' && convo.lastCommand) return { text: '', command: convo.lastCommand };
+				if (['joke', 'tip', 'fact'].includes(convo.lastKind)) return draw(convo.lastKind, Omni.onyxData[{ joke: 'JOKES', tip: 'TIPS', fact: 'FACTS' }[convo.lastKind]]);
+				if (convo.lastKind === 'sentence') return nextSentence(convo.sentence.word);
+				if (convo.lastKind === 'writing' && convo.writing && convo.writing.form) return showPiece(Omni.onyxCompose.write(convo.writing, Math.random, mem.name), convo.writing) || 'I\'m out of ideas for that one.';
+				if (convo.lastKind === 'writing' && convo.writing) return compose(convo.writing) || 'I\'m out of ideas for that one.';
+				return 'Another what? I can do jokes, tips, facts, sentences, or repeat the last command.';
+			},
+		};
+		let r = typeof intent.reply === 'function' ? intent.reply(ctx) : pick(intent.id, intent.reply);
+		if (typeof r === 'string') r = answer(r);
+		if (!['again', 'repeat', 'why', 'ack'].includes(intent.id) && !['joke', 'tip', 'fact'].includes(intent.id)) convo.lastKind = null;
+		convo.lastIntent = intent.id;
+		if (r.expect === 'name') convo.askedName = true;
+		r.text = fill(r.text, mem);
+		r.intent = intent.id;
+		return r;
+	}
+
+	/* ---------- Talking in the agent panel ---------- */
+
+	async function say(turn, text) {
+		if (!text) return;
+		// Short replies appear word by word over at most half a second; reduced motion shows them at once.
+		const parts = text.split(/(\s+)/);
+		if (Omni.motion && Omni.motion.ok() && parts.length > 2) {
+			const chunk = Math.max(2, Math.ceil(parts.length / 18));
+			for (let i = 0; i < parts.length; i += chunk) {
+				turn.text(parts.slice(i, i + chunk).join(''));
+				await new Promise((r) => setTimeout(r, 22));
+			}
+		} else turn.text(text);
+		await turn.endText();
+	}
+
+	async function act(action, api) {
+		if (!action) return;
+		if (action === 'new-chat') return setTimeout(() => api.newChat(), 600);
+		if (action.startsWith('theme:')) return Omni.setTheme(action.slice(6));
+		if (action.startsWith('open:')) return Omni.open(action.slice(5));
+		if (action === 'settings') return (location.hash = '#/settings');
+		if (action.startsWith('engine:')) return Omni.store.set('agent.engine', action.slice(7));
+	}
+
+	/** Answers one message in the agent panel: words, steps for commands, and a yes/no offer when there is one. */
+	async function handle(text, api) {
+		const turn = api.addTurn('Onyx');
+		let r = await respond(text);
+		if (!r) return;
+		if (r.command) {
+			const reply = await Omni.offline.run(Omni.offline.plan(r.command), api, turn);
+			r = Object.assign({}, r, { text: [r.text, reply].filter(Boolean).join('\n\n') });
+		}
+		const offer = r.offer ? `\n\n${r.offer.ask}` : '';
+		await say(turn, r.text + offer);
+		convo.lastReply = r.text + offer;
+		convo.misses = r.text && !/didn't catch|not sure what you mean|went past me/.test(r.text) ? 0 : convo.misses;
+		await act(r.action, api);
+	}
+
+	Omni.onyx = {
+		respond,
+		handle,
+		version: '3',
+		/** Hands Onyx a text to read (a file's contents, say); it answers with what it found, and takes questions about it. */
+		read: async (text, name) => {
+			convo.trace = [];
+			const r = readDocument(String(text || ''), name);
+			if (r) {
+				r.thinking = convo.trace;
+				settle(r);
+			}
+			convo.trace = null;
+			return r;
+		},
+		/** The steps behind the last reply: [{ step, detail }]. */
+		thinking: () => (convo.lastThinking ? convo.lastThinking.slice() : []),
+		classify: (text, lang) => classify(text, lang),
+		/** The likeliest next words (or the end of the word being typed), from the prediction network: [{ word, p }]. */
+		predict: (text, k = 5) => (Omni.onyxPredict ? Omni.onyxPredict.next(text, k) : []),
+		/** A few likely endings for what's typed so far, for suggestions under the text box. */
+		suggest: (text, n = 3) => (Omni.onyxPredict ? Omni.onyxPredict.suggest(text, n) : []),
+		detect: (text) => (Omni.onyxLanguages ? Omni.onyxLanguages.detect(text) : 'en'),
+		context: () => ({ lang: convo.lang, notes: [...convo.notes], topics: [...convo.topics], names: Object.assign({}, convo.names), subject: convo.subject }),
+		findTools,
+		normalize,
+		memory,
+		settings: { get: settings, set: setSetting, reset: () => Omni.store.remove(SETTINGS_KEY), describe: describeSettings },
+		reset: () => {
+			convo = fresh();
+			Omni.offline.reset();
+		},
+	};
+})();
