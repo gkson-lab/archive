@@ -1,0 +1,5 @@
+d3be19f  2026-11-15  github-actions[bot]  Deploy 83fc08b2ae3b1a55bc1c4b7fdbcb471f18da9972 (origin/gh-pages)
+83fc08b  2026-11-15  Claude  Fit the tunnel to each subject, per-subject air, and a flat UI redesign (HEAD -> main, origin/main, origin/claude/exciting-shannon-b4yeu2, origin/HEAD)
+6ab02bb  2026-11-15  Claude  More realistic models, air physics and telemetry; publish via gh-pages
+880e60e  2026-11-15  Claude  Add Zephyr 3D wind tunnel and GitHub Pages deployment
+9194968  2026-11-14  gkson  Initial commit
