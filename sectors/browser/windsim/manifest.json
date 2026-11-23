@@ -1,0 +1,388 @@
+{
+ "name": "windsim",
+ "title": "windsim",
+ "sector": "browser",
+ "summary": "a real-time 3d wind tunnel in the browser. drop something in and watch the air go around it.",
+ "source": "https://github.com/gkson-lab/windsim",
+ "repo": "gkson-lab/windsim",
+ "kind": "source",
+ "first": "2026-11-14",
+ "last": "2026-11-15",
+ "commits": 5,
+ "pulls": {
+  "open": 0,
+  "total": 0
+ },
+ "signature": "fb7b0f69d7090557bafd1d401a6f24db1ec2a7db",
+ "versions": [
+  {
+   "id": "main",
+   "branch": "main",
+   "head": "83fc08b",
+   "sha": "83fc08b2ae3b1a55bc1c4b7fdbcb471f18da9972",
+   "date": "2026-11-15",
+   "message": "Fit the tunnel to each subject, per-subject air, and a flat UI redesign",
+   "commits": 4,
+   "files": [
+    [
+     ".gitignore",
+     18
+    ],
+    [
+     "LICENSE",
+     1062
+    ],
+    [
+     "README.md",
+     5838
+    ],
+    [
+     "index.html",
+     9446
+    ],
+    [
+     "package-lock.json",
+     32469
+    ],
+    [
+     "package.json",
+     535
+    ],
+    [
+     "vite.config.js",
+     174
+    ],
+    [
+     ".github/workflows/pages.yml",
+     1038
+    ],
+    [
+     "docs/screenshot.png",
+     347552
+    ],
+    [
+     "src/loaders.js",
+     3164
+    ],
+    [
+     "src/main.js",
+     45543
+    ],
+    [
+     "src/style.css",
+     10316
+    ],
+    [
+     "src/presets/index.js",
+     38268
+    ],
+    [
+     "src/presets/kit.js",
+     11571
+    ],
+    [
+     "src/sim/kernel.js",
+     13084
+    ],
+    [
+     "src/sim/voxelize.js",
+     6841
+    ],
+    [
+     "src/sim/worker.js",
+     2878
+    ],
+    [
+     "src/viz/colormaps.js",
+     1936
+    ],
+    [
+     "src/viz/field.js",
+     2426
+    ],
+    [
+     "src/viz/slice.js",
+     3962
+    ],
+    [
+     "src/viz/streaks.js",
+     7364
+    ],
+    [
+     "src/viz/voxels.js",
+     2937
+    ],
+    [
+     "test/kernel.test.js",
+     2568
+    ]
+   ]
+  },
+  {
+   "id": "claude--exciting-shannon-b4yeu2",
+   "branch": "claude/exciting-shannon-b4yeu2",
+   "head": "83fc08b",
+   "sha": "83fc08b2ae3b1a55bc1c4b7fdbcb471f18da9972",
+   "date": "2026-11-15",
+   "message": "Fit the tunnel to each subject, per-subject air, and a flat UI redesign",
+   "commits": 4,
+   "files": [],
+   "same_as": "main"
+  },
+  {
+   "id": "gh-pages",
+   "branch": "gh-pages",
+   "head": "d3be19f",
+   "sha": "d3be19f7643a1f2f934a4641ad6961f737a08a53",
+   "date": "2026-11-15",
+   "message": "Deploy 83fc08b2ae3b1a55bc1c4b7fdbcb471f18da9972",
+   "commits": 1,
+   "files": [
+    [
+     ".nojekyll",
+     0
+    ],
+    [
+     "index.html",
+     9547
+    ],
+    [
+     "assets/ibm-plex-mono-cyrillic-400-normal-BSMlKf0J.woff2",
+     8356
+    ],
+    [
+     "assets/ibm-plex-mono-cyrillic-400-normal-CEL4l2ZJ.woff",
+     7204
+    ],
+    [
+     "assets/ibm-plex-mono-cyrillic-500-normal-Ael50iVv.woff",
+     7208
+    ],
+    [
+     "assets/ibm-plex-mono-cyrillic-500-normal-Bq9vWWag.woff2",
+     8460
+    ],
+    [
+     "assets/ibm-plex-mono-cyrillic-ext-400-normal-DMdlQ8Kv.woff",
+     5820
+    ],
+    [
+     "assets/ibm-plex-mono-cyrillic-ext-400-normal-xuaO2J-f.woff2",
+     6912
+    ],
+    [
+     "assets/ibm-plex-mono-cyrillic-ext-500-normal-BIfNGwUT.woff",
+     5772
+    ],
+    [
+     "assets/ibm-plex-mono-cyrillic-ext-500-normal-BqneJy0T.woff2",
+     6972
+    ],
+    [
+     "assets/ibm-plex-mono-latin-400-normal-CvHOgSBP.woff",
+     13144
+    ],
+    [
+     "assets/ibm-plex-mono-latin-400-normal-DMJ8VG8y.woff2",
+     14708
+    ],
+    [
+     "assets/ibm-plex-mono-latin-500-normal-CB9ihrfo.woff",
+     13156
+    ],
+    [
+     "assets/ibm-plex-mono-latin-500-normal-DSY6xOcd.woff2",
+     14888
+    ],
+    [
+     "assets/ibm-plex-mono-latin-ext-400-normal-BmRBH3aV.woff2",
+     13348
+    ],
+    [
+     "assets/ibm-plex-mono-latin-ext-400-normal-D3D2R8hC.woff",
+     11768
+    ],
+    [
+     "assets/ibm-plex-mono-latin-ext-500-normal-CAhNIIs5.woff2",
+     13432
+    ],
+    [
+     "assets/ibm-plex-mono-latin-ext-500-normal-CZ70TYgx.woff",
+     11768
+    ],
+    [
+     "assets/ibm-plex-mono-vietnamese-400-normal-BulugwFq.woff2",
+     5868
+    ],
+    [
+     "assets/ibm-plex-mono-vietnamese-400-normal-DDuiU_S-.woff",
+     5620
+    ],
+    [
+     "assets/ibm-plex-mono-vietnamese-500-normal-C8zxqsMH.woff",
+     5616
+    ],
+    [
+     "assets/ibm-plex-mono-vietnamese-500-normal-DZ4AoWbu.woff2",
+     6040
+    ],
+    [
+     "assets/ibm-plex-sans-cyrillic-400-normal-BTotfTJu.woff",
+     13512
+    ],
+    [
+     "assets/ibm-plex-sans-cyrillic-400-normal-DZqxrq2p.woff2",
+     14800
+    ],
+    [
+     "assets/ibm-plex-sans-cyrillic-500-normal-ByOcLdNv.woff",
+     13856
+    ],
+    [
+     "assets/ibm-plex-sans-cyrillic-500-normal-CocWQlwt.woff2",
+     15000
+    ],
+    [
+     "assets/ibm-plex-sans-cyrillic-600-normal-71GNu3SW.woff2",
+     15040
+    ],
+    [
+     "assets/ibm-plex-sans-cyrillic-600-normal-BGq0mW3O.woff",
+     13888
+    ],
+    [
+     "assets/ibm-plex-sans-cyrillic-ext-400-normal-Dsrv2Tcn.woff",
+     10288
+    ],
+    [
+     "assets/ibm-plex-sans-cyrillic-ext-400-normal-g30qAdWV.woff2",
+     12148
+    ],
+    [
+     "assets/ibm-plex-sans-cyrillic-ext-500-normal-Cs5J6C77.woff2",
+     12308
+    ],
+    [
+     "assets/ibm-plex-sans-cyrillic-ext-500-normal-DB5PtV2g.woff",
+     10592
+    ],
+    [
+     "assets/ibm-plex-sans-cyrillic-ext-600-normal-Bz0x94Yp.woff",
+     10616
+    ],
+    [
+     "assets/ibm-plex-sans-cyrillic-ext-600-normal-DUMzJB7m.woff2",
+     12304
+    ],
+    [
+     "assets/ibm-plex-sans-greek-400-normal-D9ESIMu3.woff",
+     8760
+    ],
+    [
+     "assets/ibm-plex-sans-greek-400-normal-_efipK4i.woff2",
+     9940
+    ],
+    [
+     "assets/ibm-plex-sans-greek-500-normal-CuWXN6rf.woff",
+     9148
+    ],
+    [
+     "assets/ibm-plex-sans-greek-500-normal-JMMifIXV.woff2",
+     10376
+    ],
+    [
+     "assets/ibm-plex-sans-greek-600-normal-D-CqTdkO.woff",
+     9220
+    ],
+    [
+     "assets/ibm-plex-sans-greek-600-normal-DzTrcv_p.woff2",
+     10368
+    ],
+    [
+     "assets/ibm-plex-sans-latin-400-normal-CDDApCn2.woff2",
+     22588
+    ],
+    [
+     "assets/ibm-plex-sans-latin-400-normal-CYLoc0-x.woff",
+     22104
+    ],
+    [
+     "assets/ibm-plex-sans-latin-500-normal-6ng42L7E.woff2",
+     24184
+    ],
+    [
+     "assets/ibm-plex-sans-latin-500-normal-BgVn5rGT.woff",
+     23916
+    ],
+    [
+     "assets/ibm-plex-sans-latin-600-normal-Cu4Hd6ag.woff",
+     23876
+    ],
+    [
+     "assets/ibm-plex-sans-latin-600-normal-CuJfVYMP.woff2",
+     24252
+    ],
+    [
+     "assets/ibm-plex-sans-latin-ext-400-normal-C5H60-Va.woff2",
+     15980
+    ],
+    [
+     "assets/ibm-plex-sans-latin-ext-400-normal-RBey6euL.woff",
+     14360
+    ],
+    [
+     "assets/ibm-plex-sans-latin-ext-500-normal-D0aIdm-b.woff",
+     14736
+    ],
+    [
+     "assets/ibm-plex-sans-latin-ext-500-normal-DakdToA3.woff2",
+     16456
+    ],
+    [
+     "assets/ibm-plex-sans-latin-ext-600-normal-DIrixKbi.woff",
+     14772
+    ],
+    [
+     "assets/ibm-plex-sans-latin-ext-600-normal-DOrvGEcy.woff2",
+     16448
+    ],
+    [
+     "assets/ibm-plex-sans-vietnamese-400-normal-DG4YqDda.woff2",
+     8204
+    ],
+    [
+     "assets/ibm-plex-sans-vietnamese-400-normal-fK1oJ5dG.woff",
+     6392
+    ],
+    [
+     "assets/ibm-plex-sans-vietnamese-500-normal-BEb3_waV.woff",
+     6588
+    ],
+    [
+     "assets/ibm-plex-sans-vietnamese-500-normal-e4dixQRQ.woff2",
+     8416
+    ],
+    [
+     "assets/ibm-plex-sans-vietnamese-600-normal-DgdngZtN.woff",
+     6584
+    ],
+    [
+     "assets/ibm-plex-sans-vietnamese-600-normal-DpPYBSTl.woff2",
+     8460
+    ],
+    [
+     "assets/index-BAaVVaGb.css",
+     18728
+    ],
+    [
+     "assets/index-ppYQdkQC.js",
+     767427
+    ],
+    [
+     "assets/worker-nvwU_o6j.js",
+     7892
+    ]
+   ]
+  }
+ ]
+}
