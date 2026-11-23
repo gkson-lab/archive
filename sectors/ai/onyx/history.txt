@@ -1,0 +1,64 @@
+f376c4f  2026-11-22  Claude  A demo of the app with no AI inside, in one HTML file for a Mac (origin/demo)
+a7613d2  2026-11-22  gkson  uses claude to merge over items from figma to finsih development (HEAD -> main, origin/main, origin/gh-pages, origin/HEAD)
+983f895  2026-11-22  Claude  Themes: Standard, Liquid glass and Black chrome, chosen in Settings (origin/themes)
+d804f9a  2026-11-22  Claude  Black chrome (beta 2): black liquid metal edges with hot chromatic fringes (origin/black-chrome)
+b6c3ca1  2026-11-22  Claude  Liquid glass everywhere: outward liquid edges, glass surfaces, chromatic accents, and glass that answers back (origin/glass)
+fb65bd8  2026-11-22  Claude  Liquid glass with glisse: the intro page and the app
+35e7a76  2026-11-22  Claude  Intro page: smooth on any device, with quality levels and stills (origin/perf)
+caf8749  2026-11-22  Claude  Intro page: chromatic logo, a 3D glass prism, detailed hardware, and a chromatic style throughout
+beaa34e  2026-11-22  Claude  Work in progress: detailed graphics card and memory, prism labels that never overlap (origin/chromatic)
+7d43787  2026-11-22  Claude  Work in progress: chromatic restyle of the whole page, prism full width
+fbf17f8  2026-11-22  Claude  Work in progress: chromatic logo and a 3D glass prism
+cd3bbcf  2026-11-21  Claude  Rework the intro page: liquid chrome, the sky over Austin, a prism, a glass graphics card
+ff60f1e  2026-11-21  Claude  Intro page: works on phones and PCs alike, and bigger cost examples
+ce2ddbf  2026-11-21  Claude  Intro page: background settings in place of the stone section, and new copy
+cd4a985  2026-11-21  Claude  Intro page: a playground for the stone gradient
+1c876be  2026-11-21  Claude  Intro page redesigned: things to do, not slides to read
+f0cc03c  2026-11-20  Claude  Intro page: every feature, in detail, with screens from the real app
+ebd72ee  2026-11-19  Claude  The intro page, rebuilt: the new stone in 3D, opening into its six agents
+9382da7  2026-11-19  Claude  Onyx Agents: a new mark, the pentagon-cut stone, on every platform
+82bfc9a  2026-11-19  Claude  Link the Onyx Agents intro page from the READMEs and the trailer page (origin/intro-page)
+706c2f0  2026-11-19  Claude  Onyx Agents intro page: the Onyx cube in 3D, its five specialists and a ring of type
+6ca0b5f  2026-11-18  Claude  Onyx Agents: Claude and ChatGPT as optional cloud models, with your own keys
+1b77691  2026-11-18  Claude  Post the Onyx Agents trailer, with its own page on the website
+8edc259  2026-11-18  Claude  Onyx Agents: Setup goes on when a model cannot be downloaded, and says why
+12451f1  2026-11-17  Claude  Onyx Agents: reminders in local time; a reply that is only thinking is tried again
+83b4cf8  2026-11-17  Claude  Onyx Agents: recover the tool calls Ollama loses, the cause of the qwen3:8b failures
+9035784  2026-11-17  Claude  Onyx Agents: updates itself from GitHub; a careful second pass over chats and attachments
+76cfb22  2026-11-17  Claude  Onyx Agents: gpt-oss 20B and more models, chats, attachments, health check, backups
+f83439e  2026-11-17  Claude  Onyx Agents: fix the failed model calls, and set up the phone through Tailscale
+89eccf3  2026-11-17  Claude  README: one guide to both Onyx 3 and Onyx Agents
+8c55061  2026-11-17  Claude  Show what each local answer would cost on a paid host
+77be9da  2026-11-17  Claude  Windows scripts: find newly installed programs without a restart
+bded4bf  2026-11-17  Claude  Keep this PC's tier choices in tiers.local.yaml, so updates never conflict
+4e81c4a  2026-11-17  Claude  Setup: a password prompt that works with any input and never hangs
+3f94211  2026-11-17  Claude  Windows: Setup, Start and Update scripts
+834918e  2026-11-17  Claude  Onyx Agents: fixes from the first run against a real Qwen model
+0ac7e53  2026-11-17  Claude  Onyx Agents, milestone (f): what your PC can run, SMS catch-up, accounts
+ef8146d  2026-11-17  Claude  README: using the app on your phone through Tailscale
+8ff1f85  2026-11-16  Claude  Onyx Agents, milestone (e): WhatsApp, SMS, sign-in, push; no token limit
+4b3385e  2026-11-16  Claude  README: the test count
+d4f2438  2026-11-16  Claude  Onyx Agents, milestone (c): the web app
+8f31102  2026-11-16  Claude  Onyx Agents, milestone (b): the agent runtime, tools, reminders and connectors
+a5a7f9c  2026-11-16  Claude  Onyx Agents, milestone (a): local Qwen tiers, a router and fallbacks
+dc5c510  2026-11-16  Claude  Onyx Agents: the empty workspace
+2a493d1  2026-11-11  Claude  The website follows main
+bb51ec0  2026-11-11  Claude  The app at the top of the repository, so it can be served as a website (origin/onyx-3.0)
+31fbab5  2026-11-11  Claude  Dictionaries: leave out entries the source files hold damaged
+2f8c877  2026-11-11  Claude  Onyx 3: a new look, an app with the internet switch and the thinking on the side
+2506cc4  2026-11-11  Claude  Tests: tone changes checked both ways
+f66e528  2026-11-11  Claude  Onyx 3 (in progress): a mind that plans in steps and shows its thinking
+52d76fc  2026-11-11  Claude  Onyx 3 (in progress): programs, pages and requests composed from a prompt
+12298c5  2026-11-09  Claude  Onyx 3 (in progress): longer writing from a prompt
+89c9bfd  2026-11-09  Claude  Onyx 3 (in progress): dictionaries for 31 languages
+6ecda17  2026-11-09  Claude  Onyx 2.5: the whole dictionary, sentence translation, predictions, code (origin/onyx-2.5)
+b9d00dd  2026-11-09  Claude  Onyx 2.5 (in progress): a neural network that predicts what people say
+f65eb4c  2026-11-09  Claude  Onyx 2.5 (in progress): small programs in eight languages
+78e21ba  2026-11-09  Claude  Onyx 2.5 (in progress): the full English dictionary and better translation
+2c2c68c  2026-11-07  Claude  Onyx 2.1: the internet with permission, and short writing (origin/onyx-2.1)
+36d9dcb  2026-11-06  Claude  Onyx 2: 14,390-word dictionary, Spanish and French, open-weights model (origin/onyx-2.0)
+f791144  2026-10-24  Claude  Onyx 1.3: 3,000-word dictionary, follow-ups and reply settings (origin/onyx-1.3)
+793caa5  2026-10-24  Claude  Onyx 1.3: a dictionary five times bigger, and replies built from it
+c38e6c9  2026-10-24  Claude  Onyx 1.2: more math, a mini dictionary, sentences, more small talk (origin/onyx-1.2)
+3634086  2026-10-22  gkson  Onyx 1.1: math of its own, word tricks, a bigger vocabulary (tag: v1.1, origin/onyx-1.1)
+33431ee  2026-10-22  gkson  Onyx 1: Omni Agent's local engine, on its own (tag: v1, origin/onyx-1.0)
