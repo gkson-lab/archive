@@ -1,0 +1,43 @@
+4537625  2026-10-19  gkson  Revert "Show the odometer rollover instantly instead of racing the digits" (HEAD -> main, origin/main, origin/HEAD)
+f98b398  2026-10-19  gkson  Show the odometer rollover instantly instead of racing the digits
+268354c  2026-10-18  gkson  Replace main with gklabs Device Manager 1.1 (redesign)
+44c5ca5  2026-10-18  gkson  Sync package-lock.json version to 1.2.0 (origin/expansion-pack/distribution)
+347fc13  2026-10-18  gkson  Merge branch 'gkcc-2' into expansion-pack/macos (origin/expansion-pack/macos)
+ea69bbf  2026-10-18  gkson  Merge branch 'gkcc-2' into expansion-pack/custom-layout (origin/expansion-pack/custom-layout)
+2bc548d  2026-10-18  gkson  Merge branch 'gkcc-2' into expansion-pack/multi-pc (origin/expansion-pack/multi-pc)
+ee55639  2026-10-18  gkson  Merge branch 'gkcc-2' into expansion-pack/distribution
+56181ba  2026-10-18  gkson  Merge branch 'gkcc-2' into expansion-pack/always-on (origin/expansion-pack/always-on)
+855e031  2026-10-18  gkson  Merge branch 'gkcc-2' into expansion-pack/history (origin/expansion-pack/history)
+41fb100  2026-10-18  gkson  Merge branch 'gkcc-2' into expansion-pack/process-explorer (origin/expansion-pack/process-explorer)
+116fd80  2026-10-18  gkson  README for each version (Windows, Linux, macOS); make the Linux scripts executable
+2633e58  2026-10-18  gkson  Expansion pack: macOS
+c02cd94  2026-10-18  gkson  Expansion pack: Custom layout
+d30d900  2026-10-18  gkson  Merge branch 'gkcc-2' into expansion-pack/multi-pc
+7f74175  2026-10-18  gkson  Merge branch 'gkcc-2' into expansion-pack/distribution
+35f0b1c  2026-10-18  gkson  Merge branch 'gkcc-2' into expansion-pack/always-on
+6ee2d43  2026-10-18  gkson  Merge branch 'gkcc-2' into expansion-pack/history
+ff8ae91  2026-10-18  gkson  Merge branch 'gkcc-2' into expansion-pack/process-explorer
+e1ce131  2026-10-18  gkson  Fit the odometer on narrow windows without a scrollbar
+da619fe  2026-10-18  gkson  Expansion pack: Distribution
+9ba9712  2026-10-18  gkson  Expansion pack: Multi-PC
+5786a2e  2026-10-18  gkson  Expansion pack: Always on
+ccc5db5  2026-10-18  gkson  Expansion pack: Process explorer
+8452c6d  2026-10-18  gkson  Expansion pack: History
+492df23  2026-10-18  gkson  Rename to gklabs Device Manager, add five achievements, per-system READMEs
+eeb3f43  2026-10-18  gkson  Redesign the interface in the gklabs language
+bee4856  2026-10-18  gkson  Revise branching note in README
+83fe54d  2026-10-18  gkson  final merge with main branch for macos
+ec45ea9  2026-10-18  gkson  final merge request for macOS (origin/mac-gkcc)
+dc5a21d  2026-10-18  gkson  GK Control Center 1.1.0 with Linux port
+16d3704  2026-10-18  gkson  merging both linux and windows into a duo branch.
+38b3b91  2026-10-18  gkson  Merge branch 'main' into linux-gkcc (origin/linux-gkcc)
+d541127  2026-10-17  gkson  added support for mac / macOS users on apple silicon
+c321a8b  2026-10-17  gkson  Fix formatting of Linux version note in README
+4a85c84  2026-10-17  gkson  Reformat warning message in README
+d8a9e36  2026-10-17  gkson  Update warning message for OS compatibility
+fe3a3b5  2026-10-17  gkson  added the linux version of this, large change!
+2c4db9c  2026-10-17  gkson  released v1.04 change
+83d3f0e  2026-10-17  gkson  deleting project dir to input / shelve new version
+412e4a7  2026-10-16  gkson  critically updated the readme (tag: main-releases)
+b8734f2  2026-10-16  gkson  added readme outside of folder
+1e408fe  2026-10-16  gkson  started repo, added all critical files
