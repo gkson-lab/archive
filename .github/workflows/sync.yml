@@ -52,7 +52,13 @@ jobs:
           git add -A sectors sources.json
           moved=$(git status --porcelain sectors | awk '{print $2}' | cut -d/ -f3 | sort -u | tr '\n' ' ')
           git commit -q -m "Sync: ${moved:-sources}" -m "Filed again because the source repos moved."
-          git push
+          # main can move while sync runs (a merged pull request), so rebase and try again
+          for i in 1 2 3 4; do
+            git push && break
+            [ "$i" = 4 ] && exit 1
+            sleep $((i * 5))
+            git pull -q --rebase origin main
+          done
           echo "changed=true" >> "$GITHUB_OUTPUT"
 
   publish:
