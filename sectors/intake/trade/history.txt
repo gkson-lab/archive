@@ -1,0 +1,6 @@
+caffcfe  2026-11-23  gkson  Add a phone version: hosted link and a single-file offline build (HEAD -> main, origin/main, origin/HEAD)
+d58d60c  2026-11-23  gkson  Make each bot's starting cash configurable
+2a886c8  2026-11-23  gkson  Endless runs, advanced data, per-bot and combined exports, update checker
+2c2f1d5  2026-11-22  gkson  import full program
+3e744d7  2026-11-23  gkson  Add Trade Box: evolving AI trading bots on a simulated US market (origin/trade-box)
+0953608  2026-11-23  gkson  Initialize repository

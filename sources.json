@@ -2,7 +2,9 @@
  "intake": {
   "owner": "gkson-lab",
   "sector": "intake",
-  "exclude": ["archive"],
+  "exclude": [
+   "archive"
+  ],
   "skip_archived": false
  },
  "projects": [
@@ -12,7 +14,16 @@
    "name": "onyx",
    "title": "onyx",
    "summary": "my own open source ai. this shelf has onyx 3 installed: a planner, two small neural networks and a pile of dictionaries, all running in the page.",
-   "demo": ["index.html", "src", "host", "brand", "LICENSE", "LICENSE-CMUDICT", "LICENSE-WORDNET", "licenses"],
+   "demo": [
+    "index.html",
+    "src",
+    "host",
+    "brand",
+    "LICENSE",
+    "LICENSE-CMUDICT",
+    "LICENSE-WORDNET",
+    "licenses"
+   ],
    "entry": "index.html"
   },
   {
@@ -56,6 +67,14 @@
    "name": "gk-labs",
    "title": "gk-labs",
    "summary": "my profile site. light through glass: a prism, three chromatic themes and a live feed of what i'm pushing."
+  },
+  {
+   "repo": "https://github.com/gkson-lab/trade",
+   "sector": "intake",
+   "name": "trade",
+   "title": "trade",
+   "summary": "trading bot simulation",
+   "auto": true
   }
  ]
 }

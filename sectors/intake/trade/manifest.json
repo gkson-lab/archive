@@ -1,0 +1,285 @@
+{
+ "name": "trade",
+ "title": "trade",
+ "sector": "intake",
+ "summary": "trading bot simulation",
+ "source": "https://github.com/gkson-lab/trade",
+ "repo": "gkson-lab/trade",
+ "kind": "source",
+ "first": "2026-11-22",
+ "last": "2026-11-23",
+ "commits": 6,
+ "pulls": {
+  "open": 0,
+  "total": 1
+ },
+ "signature": "7b5afdda5ab53c700f1a931ae73bdaf8b4d48498",
+ "versions": [
+  {
+   "id": "main",
+   "branch": "main",
+   "head": "caffcfe",
+   "sha": "caffcfec3485f39e120f7d95f4c4a6a7e7804e54",
+   "date": "2026-11-23",
+   "message": "Add a phone version: hosted link and a single-file offline build",
+   "commits": 6,
+   "files": [
+    [
+     ".gitignore",
+     29
+    ],
+    [
+     "README.md",
+     12226
+    ],
+    [
+     "cli.js",
+     5507
+    ],
+    [
+     "icon.svg",
+     435
+    ],
+    [
+     "index.html",
+     16222
+    ],
+    [
+     "manifest.webmanifest",
+     336
+    ],
+    [
+     "package.json",
+     606
+    ],
+    [
+     "sw.js",
+     1144
+    ],
+    [
+     ".github/workflows/test.yml",
+     284
+    ],
+    [
+     "css/app.css",
+     17458
+    ],
+    [
+     "data/source/amex.json",
+     117962
+    ],
+    [
+     "data/source/nasdaq.json",
+     1661551
+    ],
+    [
+     "data/source/nyse.json",
+     1078758
+    ],
+    [
+     "data/source/sp500.csv",
+     53594
+    ],
+    [
+     "dist/trade-box.html",
+     1582201
+    ],
+    [
+     "js/app.js",
+     37958
+    ],
+    [
+     "js/bots.js",
+     21909
+    ],
+    [
+     "js/charts.js",
+     11535
+    ],
+    [
+     "js/market.js",
+     36195
+    ],
+    [
+     "js/news.js",
+     13304
+    ],
+    [
+     "js/report.js",
+     15057
+    ],
+    [
+     "js/rng.js",
+     2192
+    ],
+    [
+     "js/sim.js",
+     27434
+    ],
+    [
+     "js/symbols.js",
+     340828
+    ],
+    [
+     "js/updates.js",
+     4841
+    ],
+    [
+     "tests/market_stats.js",
+     2816
+    ],
+    [
+     "tests/run.js",
+     6333
+    ],
+    [
+     "tools/build_single.js",
+     2369
+    ],
+    [
+     "tools/build_symbols.py",
+     3484
+    ],
+    [
+     "tools/check-updates.js",
+     2881
+    ],
+    [
+     "tools/combine.js",
+     2914
+    ],
+    [
+     "vendor/xlsx.LICENSE.txt",
+     11355
+    ],
+    [
+     "vendor/xlsx.full.min.js",
+     881727
+    ]
+   ]
+  },
+  {
+   "id": "trade-box",
+   "branch": "trade-box",
+   "head": "3e744d7",
+   "sha": "3e744d757a7ed7008276f924905294f7fe957ff0",
+   "date": "2026-11-23",
+   "message": "Add Trade Box: evolving AI trading bots on a simulated US market",
+   "commits": 2,
+   "files": [
+    [
+     ".gitignore",
+     29
+    ],
+    [
+     "README.md",
+     6392
+    ],
+    [
+     "cli.js",
+     2439
+    ],
+    [
+     "icon.svg",
+     435
+    ],
+    [
+     "index.html",
+     10792
+    ],
+    [
+     "manifest.webmanifest",
+     336
+    ],
+    [
+     "package.json",
+     425
+    ],
+    [
+     "sw.js",
+     1127
+    ],
+    [
+     ".github/workflows/test.yml",
+     284
+    ],
+    [
+     "css/app.css",
+     15987
+    ],
+    [
+     "data/source/amex.json",
+     117962
+    ],
+    [
+     "data/source/nasdaq.json",
+     1661551
+    ],
+    [
+     "data/source/nyse.json",
+     1078758
+    ],
+    [
+     "data/source/sp500.csv",
+     53594
+    ],
+    [
+     "js/app.js",
+     29342
+    ],
+    [
+     "js/bots.js",
+     12560
+    ],
+    [
+     "js/charts.js",
+     11480
+    ],
+    [
+     "js/market.js",
+     27700
+    ],
+    [
+     "js/news.js",
+     13036
+    ],
+    [
+     "js/report.js",
+     3971
+    ],
+    [
+     "js/rng.js",
+     2192
+    ],
+    [
+     "js/sim.js",
+     10320
+    ],
+    [
+     "js/symbols.js",
+     340828
+    ],
+    [
+     "tests/market_stats.js",
+     2816
+    ],
+    [
+     "tests/run.js",
+     2457
+    ],
+    [
+     "tools/build_symbols.py",
+     3484
+    ],
+    [
+     "vendor/xlsx.LICENSE.txt",
+     11355
+    ],
+    [
+     "vendor/xlsx.full.min.js",
+     881727
+    ]
+   ]
+  }
+ ]
+}

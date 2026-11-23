@@ -1,0 +1,67 @@
+{
+ "commits": [
+  {
+   "sha": "caffcfec3485f39e120f7d95f4c4a6a7e7804e54",
+   "date": "2026-11-23T04:13:41Z",
+   "author": "gkson",
+   "message": "Add a phone version: hosted link and a single-file offline build",
+   "tips": [
+    "main"
+   ]
+  },
+  {
+   "sha": "d58d60c1541759a415cddce87d5162674526ae3b",
+   "date": "2026-11-23T03:18:56Z",
+   "author": "gkson",
+   "message": "Make each bot's starting cash configurable",
+   "tips": []
+  },
+  {
+   "sha": "2a886c89b950f3fdf9731bae467f5b70371db2d6",
+   "date": "2026-11-23T03:17:58Z",
+   "author": "gkson",
+   "message": "Endless runs, advanced data, per-bot and combined exports, update checker",
+   "tips": []
+  },
+  {
+   "sha": "2c2f1d5cdc476dee711987fcc5f30ad500af23c4",
+   "date": "2026-11-22T21:53:04-05:00",
+   "author": "gkson",
+   "message": "import full program",
+   "tips": []
+  },
+  {
+   "sha": "3e744d757a7ed7008276f924905294f7fe957ff0",
+   "date": "2026-11-23T02:52:02Z",
+   "author": "gkson",
+   "message": "Add Trade Box: evolving AI trading bots on a simulated US market",
+   "tips": [
+    "trade-box"
+   ]
+  },
+  {
+   "sha": "0953608d62bbcc3c1b52078435aa996fa3381087",
+   "date": "2026-11-23T02:51:54Z",
+   "author": "gkson",
+   "message": "Initialize repository",
+   "tips": []
+  }
+ ],
+ "pulls": [
+  {
+   "number": 1,
+   "title": "Add Trade Box: evolving AI trading bots on a simulated US market",
+   "state": "merged",
+   "draft": false,
+   "author": "gkson-lab",
+   "head": "trade-box",
+   "base": "main",
+   "sha": "3e744d757a7ed7008276f924905294f7fe957ff0",
+   "created": "2026-11-23T02:52:24Z",
+   "updated": "2026-11-23T02:53:04Z",
+   "closed": "2026-11-23T02:53:04Z",
+   "merged": "2026-11-23T02:53:04Z",
+   "url": "https://github.com/gkson-lab/trade/pull/1"
+  }
+ ]
+}
