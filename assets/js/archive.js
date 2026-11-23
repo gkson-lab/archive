@@ -454,7 +454,7 @@
 
   function loadActivity() {
     if (!state.activity) {
-      state.activity = getJSON('activity.json').then(function (a) { state.activityData = a; return a; },
+      state.activity = getJSON('activity.json').catch(buildActivity).then(function (a) { state.activityData = a; return a; },
         function (e) { state.activity = null; throw e; });
     }
     return state.activity;
@@ -648,12 +648,94 @@
 
   /* ---------- start ---------- */
 
+  /* the publish workflow builds catalog.json and activity.json. when the site is served straight from the
+     branch they aren't there, so the page builds the same thing itself from sources.json and the shelves. */
+
+  function optional(url) { return getJSON(url).catch(function () { return null; }); }
+
+  function buildCatalog() {
+    return getJSON('sources.json').then(function (src) {
+      var sectorIds = [];
+      src.projects.forEach(function (p) { if (sectorIds.indexOf(p.sector) < 0) sectorIds.push(p.sector); });
+      var intake = src.intake && src.intake.sector;
+      if (intake && sectorIds.indexOf(intake) < 0) sectorIds.push(intake);
+      return Promise.all([
+        Promise.all(sectorIds.map(function (id) {
+          return optional('sectors/' + enc(id) + '/sector.json').then(function (s) { if (s) s.id = id; return s; });
+        })),
+        Promise.all(src.projects.map(function (p) {
+          var path = 'sectors/' + enc(p.sector) + '/' + enc(p.name);
+          return optional(path + '/manifest.json').then(function (m) { return m && { m: m, path: path }; });
+        }))
+      ]);
+    }).then(function (r) {
+      var sectors = r[0].filter(Boolean).sort(function (a, b) { return (a.order || 99) - (b.order || 99); });
+      var projects = r[1].filter(Boolean).map(function (x) {
+        var m = x.m, filed = m.versions.filter(function (v) { return !v.same_as; });
+        state.manifests[m.name] = Promise.resolve(m);
+        return {
+          name: m.name, title: m.title, sector: m.sector, summary: m.summary || '', source: m.source,
+          kind: m.kind || 'source', entry: m.entry, first: m.first, last: m.last, commits: m.commits || 0,
+          pulls: m.pulls || { open: 0, total: 0 }, versions: m.versions.length,
+          files: filed.reduce(function (n, v) { return n + v.files.length; }, 0),
+          bytes: filed.reduce(function (n, v) { return n + v.files.reduce(function (b, f) { return b + f[1]; }, 0); }, 0),
+          path: x.path
+        };
+      });
+      projects.sort(function (a, b) { return (a.first || '9999') < (b.first || '9999') ? -1 : (a.first || '9999') > (b.first || '9999') ? 1 : a.name < b.name ? -1 : 1; });
+      projects.forEach(function (p, i) { p.accession = ('00' + (i + 1)).slice(-3); });
+      if (!projects.length) throw new Error('no shelves found');
+      return {
+        sectors: sectors,
+        projects: projects,
+        totals: {
+          projects: projects.length,
+          versions: projects.reduce(function (n, p) { return n + p.versions; }, 0),
+          files: projects.reduce(function (n, p) { return n + p.files; }, 0),
+          bytes: projects.reduce(function (n, p) { return n + p.bytes; }, 0),
+          pulls: projects.reduce(function (n, p) { return n + p.pulls.total; }, 0),
+          events: 0
+        },
+        built: 'browser'
+      };
+    });
+  }
+
+  function buildActivity() {
+    return Promise.all(state.catalog.projects.map(function (p) {
+      return optional(p.path + '/activity.json').then(function (a) {
+        var ev = [];
+        if (!a) return ev;
+        (a.commits || []).forEach(function (c) {
+          ev.push({ type: 'commit', project: p.name, date: c.date, who: c.author, text: c.message, sha: c.sha, tips: c.tips || [] });
+        });
+        (a.pulls || []).forEach(function (pr) {
+          var base = { project: p.name, number: pr.number, text: pr.title, url: pr.url, head: pr.head, base: pr.base };
+          ev.push(Object.assign({}, base, { type: 'pr-opened', date: pr.created, who: pr.author, draft: pr.draft }));
+          if (pr.merged) ev.push(Object.assign({}, base, { type: 'pr-merged', date: pr.merged, who: pr.author }));
+          else if (pr.closed) ev.push(Object.assign({}, base, { type: 'pr-closed', date: pr.closed, who: pr.author }));
+        });
+        return ev;
+      });
+    })).then(function (all) {
+      var ev = [].concat.apply([], all);
+      ev.sort(function (a, b) { return (b.date || '') < (a.date || '') ? -1 : (b.date || '') > (a.date || '') ? 1 : 0; });
+      return ev;
+    });
+  }
+
+  var routing = false;
   function start() {
     app.setAttribute('aria-busy', 'true');
-    getJSON('catalog.json').then(function (c) {
+    getJSON('catalog.json').catch(buildCatalog).then(function (c) {
       state.catalog = c;
-      window.addEventListener('hashchange', route);
+      if (!routing) { window.addEventListener('hashchange', route); routing = true; }
       route();
+      /* the front desk counts logbook entries; a browser-built catalog learns that number afterwards */
+      if (c.built === 'browser') loadActivity().then(function (a) {
+        c.totals.events = a.length;
+        if (!location.hash.replace(/^#\/?/, '')) renderHome();
+      }, function () {});
     }, function (e) {
       app.textContent = '';
       app.removeAttribute('aria-busy');
@@ -661,8 +743,8 @@
         el('p', { class: 'desk-eyebrow', text: 'the archive is closed' }),
         el('h1', {}, [split('span', 'no catalog')]),
         el('p', { class: 'lede', text: location.protocol === 'file:'
-          ? 'browsers won\'t let a page read files straight off your disk. run python3 tools/catalog.py, then python3 -m http.server, and open localhost:8000.'
-          : 'catalog.json didn\'t load (' + e.message + '). it gets built when main is published; locally, run python3 tools/catalog.py.' }),
+          ? 'browsers won\'t let a page read files straight off your disk. run python3 -m http.server in the archive folder and open localhost:8000.'
+          : 'the catalog didn\'t load (' + e.message + '). check your connection and try again.' }),
         el('p', { style: 'margin-top:24px' }, [el('button', { class: 'btn', type: 'button', onclick: start, text: 'try again' })])
       ])]));
     });
