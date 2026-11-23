@@ -4,15 +4,22 @@
  "sector": "browser",
  "summary": "a real-time 3d wind tunnel in the browser. drop something in and watch the air go around it.",
  "source": "https://github.com/gkson-lab/windsim",
+ "repo": "gkson-lab/windsim",
  "kind": "source",
  "first": "2026-11-14",
  "last": "2026-11-15",
  "commits": 5,
+ "pulls": {
+  "open": 0,
+  "total": 0
+ },
+ "signature": "fb7b0f69d7090557bafd1d401a6f24db1ec2a7db",
  "versions": [
   {
    "id": "main",
    "branch": "main",
    "head": "83fc08b",
+   "sha": "83fc08b2ae3b1a55bc1c4b7fdbcb471f18da9972",
    "date": "2026-11-15",
    "message": "Fit the tunnel to each subject, per-subject air, and a flat UI redesign",
    "commits": 4,
@@ -115,6 +122,7 @@
    "id": "claude--exciting-shannon-b4yeu2",
    "branch": "claude/exciting-shannon-b4yeu2",
    "head": "83fc08b",
+   "sha": "83fc08b2ae3b1a55bc1c4b7fdbcb471f18da9972",
    "date": "2026-11-15",
    "message": "Fit the tunnel to each subject, per-subject air, and a flat UI redesign",
    "commits": 4,
@@ -125,6 +133,7 @@
    "id": "gh-pages",
    "branch": "gh-pages",
    "head": "d3be19f",
+   "sha": "d3be19f7643a1f2f934a4641ad6961f737a08a53",
    "date": "2026-11-15",
    "message": "Deploy 83fc08b2ae3b1a55bc1c4b7fdbcb471f18da9972",
    "commits": 1,

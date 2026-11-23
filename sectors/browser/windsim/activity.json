@@ -1,0 +1,45 @@
+{
+ "commits": [
+  {
+   "sha": "d3be19f7643a1f2f934a4641ad6961f737a08a53",
+   "date": "2026-11-15T03:48:21+00:00",
+   "author": "github-actions[bot]",
+   "message": "Deploy 83fc08b2ae3b1a55bc1c4b7fdbcb471f18da9972",
+   "tips": [
+    "gh-pages"
+   ]
+  },
+  {
+   "sha": "83fc08b2ae3b1a55bc1c4b7fdbcb471f18da9972",
+   "date": "2026-11-15T03:47:15+00:00",
+   "author": "Claude",
+   "message": "Fit the tunnel to each subject, per-subject air, and a flat UI redesign",
+   "tips": [
+    "main",
+    "claude/exciting-shannon-b4yeu2"
+   ]
+  },
+  {
+   "sha": "6ab02bb088a76a6b3121c20b58d82322baee2515",
+   "date": "2026-11-15T03:02:44+00:00",
+   "author": "Claude",
+   "message": "More realistic models, air physics and telemetry; publish via gh-pages",
+   "tips": []
+  },
+  {
+   "sha": "880e60e5242f43a1e8e292b305db61988cd83288",
+   "date": "2026-11-15T02:42:39+00:00",
+   "author": "Claude",
+   "message": "Add Zephyr 3D wind tunnel and GitHub Pages deployment",
+   "tips": []
+  },
+  {
+   "sha": "9194968d9ccd8d6084e4c33c28bfb2313b8118cb",
+   "date": "2026-11-14T20:40:24-06:00",
+   "author": "gkson",
+   "message": "Initial commit",
+   "tips": []
+  }
+ ],
+ "pulls": []
+}
