@@ -5,7 +5,7 @@
 
   var root = document.documentElement;
   var app = document.getElementById('app');
-  var state = { catalog: null, manifests: {}, searchIndex: null };
+  var state = { catalog: null, manifests: {}, searchIndex: null, activity: null };
 
   /* ---------- small helpers ---------- */
 
@@ -111,7 +111,9 @@
       el('p', { class: 'tally' }, [
         el('b', { text: plural(t.projects, 'project', 'projects') }), ' across ', el('b', { text: plural(c.sectors.length, 'sector', 'sectors') }),
         ', ', el('b', { text: plural(t.versions, 'version', 'versions') }), ', ',
-        el('b', { text: plural(t.files, 'file', 'files') }), ' (' + bytes(t.bytes) + ').'
+        el('b', { text: plural(t.files, 'file', 'files') }), ' (' + bytes(t.bytes) + '). ',
+        t.events ? el('a', { href: '#/activity', text: plural(t.events, 'thing', 'things') + ' in the logbook' }) : null,
+        t.events ? '.' : null
       ]),
       el('div', { class: 'finder', role: 'search' }, [
         el('label', { for: 'find', text: 'find anything in the stacks' }),
@@ -248,11 +250,13 @@
         fact('last touched', p.last || 'unknown'),
         fact('commits', num(p.commits)),
         fact('versions', num(p.versions)),
+        fact('pull requests', p.pulls && p.pulls.total ? num(p.pulls.open) + ' open of ' + num(p.pulls.total) : 'none'),
         fact('on the shelf', plural(p.files, 'file', 'files') + ', ' + bytes(p.bytes))
       ]),
       el('div', { class: 'folio-actions' }, [
         p.kind === 'demo' ? el('a', { class: 'btn solid', href: p.path + '/' + p.entry, text: 'run the demo' }) : null,
-        el('a', { class: 'btn', href: p.path + '/history.txt', text: 'full commit history' }),
+        el('a', { class: 'btn', href: '#/activity/' + enc(p.name), text: 'activity' }),
+        el('a', { class: 'btn', href: p.path + '/history.txt', text: 'history.txt' }),
         p.source ? el('a', { class: 'btn', href: p.source, rel: 'noopener', text: 'where it came from' }) : null
       ])
     ]);
@@ -338,12 +342,16 @@
         ul.appendChild(el('li', {}, [el('details', { open: open }, [el('summary', { text: d + '/' }), list(node.dirs[d], full + '/')])]));
       });
       node.files.sort(function (a, b) { return a[0] < b[0] ? -1 : 1; }).forEach(function (f) {
-        ul.appendChild(el('li', {}, [el('a', {
+        var fname = f[0].split('/').pop();
+        ul.appendChild(el('li', { class: 'leaf' }, [el('a', {
           href: '#/' + enc(p.name) + '/' + enc(v.id) + '/' + enc(f[0]),
           'aria-current': f[0] === current ? 'true' : null,
           title: bytes(f[1]),
-          text: f[0].split('/').pop()
-        })]));
+          text: fname
+        }), el('a', {
+          class: 'get', href: p.path + '/' + enc(v.id) + '/' + enc(f[0]), download: fname,
+          'aria-label': 'download ' + fname, title: 'download ' + fname + ' (' + bytes(f[1]) + ')'
+        }, [downIcon()])]));
       });
       return ul;
     }
@@ -353,6 +361,131 @@
     top.style.marginLeft = '0';
     return top;
   }
+
+  function downIcon() {
+    var ns = 'http://www.w3.org/2000/svg';
+    var svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('viewBox', '0 0 16 16'); svg.setAttribute('width', '14'); svg.setAttribute('height', '14');
+    svg.setAttribute('aria-hidden', 'true'); svg.setAttribute('focusable', 'false');
+    var path = document.createElementNS(ns, 'path');
+    path.setAttribute('d', 'M8 2.5v8M4.5 7 8 10.5 11.5 7M3 13.5h10');
+    path.setAttribute('fill', 'none'); path.setAttribute('stroke', 'currentColor');
+    path.setAttribute('stroke-width', '1.6'); path.setAttribute('stroke-linecap', 'round'); path.setAttribute('stroke-linejoin', 'round');
+    svg.appendChild(path);
+    return svg;
+  }
+
+  /* ---------- the logbook: every commit and pull request ---------- */
+
+  var KINDS = { all: 'everything', commit: 'commits', pr: 'pull requests' };
+  var LABEL = { commit: 'commit', 'pr-opened': 'pr opened', 'pr-merged': 'pr merged', 'pr-closed': 'pr closed' };
+
+  function renderActivity(only) {
+    document.title = 'activity · gk-labs archive';
+    var q = { project: only || '', kind: 'all', text: '', shown: 80 };
+    var select = el('select', { id: 'log-project', class: 'log-select' }, [el('option', { value: '', text: 'every project' })].concat(
+      state.catalog.projects.map(function (p) { return el('option', { value: p.name, text: p.title, selected: p.name === only }); })));
+    var kinds = el('div', { class: 'strata-list', role: 'group', 'aria-label': 'what to show' }, Object.keys(KINDS).map(function (k) {
+      return el('button', { class: 'stratum', type: 'button', 'aria-pressed': k === 'all' ? 'true' : 'false', 'data-kind': k, text: KINDS[k] });
+    }));
+    var text = el('input', { class: 'drawer-filter log-search', type: 'search', placeholder: 'search messages, people, shas', 'aria-label': 'search the logbook' });
+    var count = el('p', { class: 'stratum-note', role: 'status' });
+    var list = el('div', { class: 'log', 'aria-busy': 'true' }, [skeleton(8)]);
+    var more = el('button', { class: 'btn', type: 'button', hidden: true, text: 'show more' });
+
+    swap([
+      el('nav', { class: 'crumbs', 'aria-label': 'where you are' }, [el('a', { href: '#/', text: 'the archive' }), el('span', { class: 'dot', text: '/' }), el('span', { text: 'activity' })]),
+      el('header', { class: 'folio' }, [
+        el('p', { class: 'folio-acc', text: 'the logbook' }),
+        el('h1', {}, [split('span', 'activity')]),
+        el('p', { class: 'folio-summary', text: 'every commit and pull request across the archive, newest first. it refreshes itself whenever a repo moves.' })
+      ]),
+      el('section', { class: 'log-controls', 'aria-label': 'filters' }, [
+        el('label', { class: 'sr', for: 'log-project', text: 'project' }), select, kinds, text
+      ]),
+      count, list, el('p', { class: 'log-more' }, [more])
+    ]);
+
+    function draw() {
+      var all = state.activityData;
+      var t = q.text.trim().toLowerCase();
+      var rows = all.filter(function (e) {
+        if (q.project && e.project !== q.project) return false;
+        if (q.kind === 'commit' && e.type !== 'commit') return false;
+        if (q.kind === 'pr' && e.type === 'commit') return false;
+        if (t && ((e.text || '') + ' ' + (e.who || '') + ' ' + (e.sha || '') + ' ' + (e.number ? '#' + e.number : '')).toLowerCase().indexOf(t) < 0) return false;
+        return true;
+      });
+      count.textContent = rows.length ? plural(rows.length, 'entry', 'entries') : '';
+      list.textContent = '';
+      list.removeAttribute('aria-busy');
+      if (!rows.length) { list.appendChild(el('p', { class: 'note', text: all.length ? 'nothing in the logbook matches that.' : 'the logbook is empty for now.' })); more.hidden = true; return; }
+      var day = null, group = null;
+      rows.slice(0, q.shown).forEach(function (e) {
+        var d = (e.date || '').slice(0, 10);
+        if (d !== day) {
+          day = d;
+          list.appendChild(el('h2', { class: 'log-day', text: d || 'undated' }));
+          group = el('ol', { class: 'log-list' });
+          list.appendChild(group);
+        }
+        group.appendChild(logRow(e));
+      });
+      more.hidden = rows.length <= q.shown;
+    }
+    more.addEventListener('click', function () { q.shown += 120; draw(); });
+    select.addEventListener('change', function () {
+      q.project = select.value; q.shown = 80;
+      history.replaceState(null, '', '#/activity' + (q.project ? '/' + enc(q.project) : ''));
+      draw();
+    });
+    kinds.addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b) return;
+      kinds.querySelectorAll('button').forEach(function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+      q.kind = b.getAttribute('data-kind'); q.shown = 80; draw();
+    });
+    text.addEventListener('input', debounce(function () { q.text = text.value; q.shown = 80; draw(); }, 120));
+
+    loadActivity().then(draw, function (e) {
+      list.textContent = '';
+      list.appendChild(failure('couldn\'t open the logbook (' + e.message + ').', function () { state.activity = null; renderActivity(q.project); }));
+    });
+  }
+
+  function loadActivity() {
+    if (!state.activity) {
+      state.activity = getJSON('activity.json').then(function (a) { state.activityData = a; return a; },
+        function (e) { state.activity = null; throw e; });
+    }
+    return state.activity;
+  }
+
+  function logRow(e) {
+    var p = project(e.project) || { title: e.project, name: e.project, source: null };
+    var time = e.date && e.date.length > 10 ? new Date(e.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).toLowerCase() : '';
+    var links = [];
+    if (e.type === 'commit') {
+      if (p.source) links.push(el('a', { href: p.source + '/commit/' + e.sha, rel: 'noopener', text: e.sha.slice(0, 7) }));
+      if (p.kind !== 'demo') (e.tips || []).forEach(function (b) {
+        links.push(el('a', { href: '#/' + enc(p.name) + '/' + enc(slugify(b)), text: 'browse ' + b }));
+      });
+    } else {
+      links.push(el('a', { href: e.url, rel: 'noopener', text: '#' + e.number }));
+      if (e.type === 'pr-opened' && e.head) links.push(el('span', { class: 'muted', text: e.head + ' → ' + e.base }));
+    }
+    return el('li', { class: 'log-row' }, [
+      el('span', { class: 'log-time', text: time }),
+      el('span', { class: 'log-kind k-' + e.type, text: LABEL[e.type] || e.type }),
+      el('div', { class: 'log-body' }, [
+        el('p', { class: 'log-text' }, [e.text || '']),
+        el('p', { class: 'log-meta' }, [
+          el('a', { href: '#/' + enc(p.name), text: p.title }), el('span', { class: 'dot', text: '·' }), e.who || 'someone',
+          links.length ? el('span', { class: 'dot', text: '·' }) : null
+        ].concat(links.reduce(function (acc, l, i) { if (i) acc.push(el('span', { class: 'dot', text: '·' })); acc.push(l); return acc; }, [])))
+      ])
+    ]);
+  }
+  function slugify(b) { return b.replace(/\//g, '--').toLowerCase().replace(/[^a-z0-9._-]+/g, '-').replace(/^-+|-+$/g, ''); }
 
   var IMG = /\.(png|jpe?g|gif|webp|svg|ico|avif|bmp)$/i;
   var BIN = /\.(woff2?|ttf|otf|eot|zip|gz|tgz|7z|rar|exe|dll|msi|bin|pdf|mp3|mp4|webm|mov|wav|ogg|icns|dmg|node|wasm|jar|class|o|a|so|pyc|db|sqlite)$/i;
@@ -452,6 +585,11 @@
   function go(hash) { if (location.hash === hash) route(); else location.hash = hash; }
   function route() {
     var h = location.hash.replace(/^#\/?/, '');
+    var onLog = h.indexOf('activity') === 0;
+    document.querySelectorAll('.nav a').forEach(function (a) {
+      var isLog = a.getAttribute('href') === '#/activity';
+      a.setAttribute('aria-current', (isLog ? onLog : !onLog) ? 'page' : 'false');
+    });
     if (!h || h.indexOf('sector-') === 0) {
       var keep = lastProject === null && app.querySelector('.stacks');
       if (!keep) renderHome();
@@ -461,6 +599,12 @@
       return;
     }
     var parts = h.split('/').map(function (x) { try { return decodeURIComponent(x); } catch (e) { return x; } });
+    if (parts[0] === 'activity') {
+      lastProject = 'activity';
+      renderActivity(parts[1] || '');
+      scrollTo(0, 0);
+      return;
+    }
     var name = parts[0], version = parts[1], file = parts.slice(2).join('/');
     var sameShelf = lastProject === name + '/' + (version || '');
     var reading = app.querySelector('.reading');

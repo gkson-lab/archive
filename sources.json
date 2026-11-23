@@ -1,0 +1,61 @@
+{
+ "intake": {
+  "owner": "gkson-lab",
+  "sector": "intake",
+  "exclude": ["archive"],
+  "skip_archived": false
+ },
+ "projects": [
+  {
+   "repo": "https://github.com/gkson-lab/onyx",
+   "sector": "ai",
+   "name": "onyx",
+   "title": "onyx",
+   "summary": "my own open source ai. this shelf has onyx 3 installed: a planner, two small neural networks and a pile of dictionaries, all running in the page.",
+   "demo": ["index.html", "src", "host", "brand", "LICENSE", "LICENSE-CMUDICT", "LICENSE-WORDNET", "licenses"],
+   "entry": "index.html"
+  },
+  {
+   "repo": "https://github.com/gkson-lab/gk-control-center",
+   "sector": "desktop",
+   "name": "gk-control-center",
+   "title": "gk control center",
+   "summary": "a desktop system monitor in tauri, react and rust. cpu, gpu, memory, drives and network, plus every expansion pack and the linux and mac builds."
+  },
+  {
+   "repo": "https://github.com/gkson-lab/omnitool",
+   "sector": "desktop",
+   "name": "omnitool",
+   "title": "omnitool",
+   "summary": "150 developer and everyday tools in one window, with the labscode editor built in and an agent that can run the tools for you."
+  },
+  {
+   "repo": "https://github.com/gkson-lab/longshot10",
+   "sector": "browser",
+   "name": "longshot10",
+   "title": "long shot 10",
+   "summary": "a ten-digit luck game with unlimited rolls, 300-odd badges and a multiplier reel. formerly rngdle 10."
+  },
+  {
+   "repo": "https://github.com/gkson-lab/windsim",
+   "sector": "browser",
+   "name": "windsim",
+   "title": "windsim",
+   "summary": "a real-time 3d wind tunnel in the browser. drop something in and watch the air go around it."
+  },
+  {
+   "repo": "https://github.com/gkson-lab/formula-one-live-data-tracker",
+   "sector": "browser",
+   "name": "race-watch",
+   "title": "race watch",
+   "summary": "a live formula 1 companion for race day. timing tower, flags, safety cars and pit stops as they happen."
+  },
+  {
+   "repo": "https://github.com/gkson-lab/gkson-lab",
+   "sector": "sites",
+   "name": "gk-labs",
+   "title": "gk-labs",
+   "summary": "my profile site. light through glass: a prism, three chromatic themes and a live feed of what i'm pushing."
+  }
+ ]
+}

@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
-"""catalog: rebuild catalog.json from every sector and manifest.
+"""catalog: rebuild catalog.json and activity.json from every shelf.
 
   python3 tools/catalog.py
+
+catalog.json lists the sectors and projects. activity.json is one feed of
+every commit and pull request across the archive, newest first.
 
 accession numbers come from when a project started, oldest first,
 so they stay put when a newer project is filed.
@@ -42,6 +45,7 @@ def main():
             "first": m.get("first"),
             "last": m.get("last"),
             "commits": m.get("commits", 0),
+            "pulls": m.get("pulls", {"open": 0, "total": 0}),
             "versions": len(m["versions"]),
             "files": sum(len(v["files"]) for v in filed),
             "bytes": sum(size for v in filed for _, size in v["files"]),
@@ -61,11 +65,35 @@ def main():
             "bytes": sum(p["bytes"] for p in projects),
         },
     }
+    events = []
+    for p in projects:
+        path = os.path.join(ROOT, p["path"], "activity.json")
+        if not os.path.isfile(path):
+            continue
+        a = load(path)
+        for c in a.get("commits", []):
+            events.append({"type": "commit", "project": p["name"], "date": c["date"], "who": c["author"],
+                           "text": c["message"], "sha": c["sha"], "tips": c.get("tips", [])})
+        for pr in a.get("pulls", []):
+            base = {"project": p["name"], "number": pr["number"], "text": pr["title"], "url": pr["url"],
+                    "head": pr.get("head"), "base": pr.get("base")}
+            events.append(dict(base, type="pr-opened", date=pr["created"], who=pr["author"], draft=pr.get("draft")))
+            if pr.get("merged"):
+                events.append(dict(base, type="pr-merged", date=pr["merged"], who=pr["author"]))
+            elif pr.get("closed"):
+                events.append(dict(base, type="pr-closed", date=pr["closed"], who=pr["author"]))
+    events.sort(key=lambda e: e["date"] or "", reverse=True)
+    catalog["totals"]["events"] = len(events)
+    catalog["totals"]["pulls"] = sum(p["pulls"]["total"] for p in projects)
     with open(os.path.join(ROOT, "catalog.json"), "w", encoding="utf-8") as f:
         json.dump(catalog, f, indent=1, ensure_ascii=False)
         f.write("\n")
+    with open(os.path.join(ROOT, "activity.json"), "w", encoding="utf-8") as f:
+        json.dump(events, f, ensure_ascii=False, separators=(",", ":"))
+        f.write("\n")
+
     t = catalog["totals"]
-    print(f"catalog: {t['projects']} projects, {t['versions']} versions, {t['files']} files")
+    print(f"catalog: {t['projects']} projects, {t['versions']} versions, {t['files']} files, {t['events']} events")
 
 
 if __name__ == "__main__":

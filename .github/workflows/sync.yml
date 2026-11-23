@@ -1,0 +1,61 @@
+name: sync the archive
+
+# every 30 minutes, by hand, or when a source repo pings it with
+#   gh api repos/gkson-lab/archive/dispatches -f event_type=source-updated
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "file every shelf again, even if nothing moved"
+        type: boolean
+        default: false
+  repository_dispatch:
+    types: [source-updated]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.commit.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: check every source repo
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/sync.py ${{ inputs.force && '--force' || '' }}
+      - name: every manifest matches its shelf
+        run: python3 tools/check.py
+      - id: commit
+        name: file what moved
+        run: |
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "nothing moved"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git config user.name "archive-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A sectors sources.json
+          moved=$(git status --porcelain sectors | awk '{print $2}' | cut -d/ -f3 | sort -u | tr '\n' ' ')
+          git commit -q -m "Sync: ${moved:-sources}" -m "Filed again because the source repos moved."
+          git push
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+  publish:
+    needs: sync
+    if: needs.sync.outputs.changed == 'true'
+    uses: ./.github/workflows/pages.yml
