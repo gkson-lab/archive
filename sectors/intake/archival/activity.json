@@ -1,13 +1,62 @@
 {
  "commits": [
   {
+   "sha": "52aa953cf4fbc3d163687652d2b840e7d04b286e",
+   "date": "2026-11-23T22:47:05Z",
+   "author": "gkson",
+   "message": "linux: turn off webkitgtk's dmabuf renderer to avoid blank windows; launch check waits for the ui",
+   "tips": [
+    "main"
+   ]
+  },
+  {
+   "sha": "42b5411fabf34e9ccff4b9b8d4fb9ee80950df94",
+   "date": "2026-11-23T22:36:05Z",
+   "author": "gkson",
+   "message": "launch check: require the ui to reach the backend",
+   "tips": []
+  },
+  {
+   "sha": "155540704559a4991f71bb6a30e43beae19c5798",
+   "date": "2026-11-23T22:25:15Z",
+   "author": "gkson",
+   "message": "terminal uses a system monospace font, files open in preview once loaded",
+   "tips": []
+  },
+  {
+   "sha": "a0d7285a701b05883127015c92c4e1948813676e",
+   "date": "2026-11-23T22:23:16Z",
+   "author": "gkson",
+   "message": "launch the app on macos and linux in ci and keep screenshots",
+   "tips": []
+  },
+  {
+   "sha": "0568422617ccb198d528c144a293f654c45806c5",
+   "date": "2026-11-23T22:08:30Z",
+   "author": "gkson",
+   "message": "link advapi32 for libgit2 on windows, drop unused dependencies",
+   "tips": []
+  },
+  {
+   "sha": "0a1aa9e60f25d400713700deeeddd4d374b66fa3",
+   "date": "2026-11-23T21:57:08Z",
+   "author": "gkson",
+   "message": "track the vendored paper shaders build",
+   "tips": []
+  },
+  {
+   "sha": "39e8426dff5173b68cdd612febd6fe973877e402",
+   "date": "2026-11-23T21:55:52Z",
+   "author": "gkson",
+   "message": "build archival: vault, git, runner, connectors, mcp, cli and desktop app",
+   "tips": []
+  },
+  {
    "sha": "d0fc8733d4a77cb472bb0428bd34c4aed9d66b7e",
    "date": "2026-11-23T20:34:36Z",
    "author": "gkson",
    "message": "add archival plan and blueprints",
-   "tips": [
-    "main"
-   ]
+   "tips": []
   }
  ],
  "pulls": []

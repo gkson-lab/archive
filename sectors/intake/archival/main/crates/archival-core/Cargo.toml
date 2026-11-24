@@ -1,0 +1,23 @@
+[package]
+name = "archival-core"
+description = "vault, index, objects, snapshots, trash and search"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+thiserror.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+rusqlite.workspace = true
+blake3.workspace = true
+zstd.workspace = true
+ignore.workspace = true
+walkdir.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+zip.workspace = true
+mime_guess.workspace = true
+dirs.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

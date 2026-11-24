@@ -1,0 +1,68 @@
+[workspace]
+resolver = "2"
+members = [
+  "crates/archival-core",
+  "crates/archival-ingest",
+  "crates/archival-git",
+  "crates/archival-github",
+  "crates/archival-run",
+  "crates/archival-connectors",
+  "crates/archival-service",
+  "crates/archival-mcp",
+  "crates/archival-cli",
+  "apps/desktop/src-tauri",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["gk labs"]
+repository = "https://github.com/gkson-lab/archival"
+
+[workspace.dependencies]
+anyhow = "1"
+thiserror = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+rusqlite = { version = "0.32", features = ["bundled"] }
+blake3 = "1"
+zstd = "0.13"
+ignore = "0.4"
+walkdir = "2"
+uuid = { version = "1", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+zip = { version = "2", default-features = false, features = ["deflate"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json", "stream"] }
+tokio = { version = "1", features = ["full"] }
+async-trait = "0.1"
+notify = "6"
+git2 = { version = "0.19", features = ["vendored-libgit2", "https", "ssh", "vendored-openssl"] }
+octocrab = "0.41"
+portable-pty = "0.8"
+base64 = "0.22"
+regex = "1"
+which = "6"
+keyring = { version = "3", features = ["apple-native", "windows-native", "linux-native-sync-persistent", "crypto-rust", "vendored"] }
+object_store = { version = "0.11", features = ["aws"] }
+futures = "0.3"
+dirs = "5"
+clap = { version = "4", features = ["derive", "env"] }
+axum = "0.7"
+tempfile = "3"
+mime_guess = "2"
+slug = "0.1"
+url = "2"
+
+archival-core = { path = "crates/archival-core" }
+archival-ingest = { path = "crates/archival-ingest" }
+archival-git = { path = "crates/archival-git" }
+archival-github = { path = "crates/archival-github" }
+archival-run = { path = "crates/archival-run" }
+archival-connectors = { path = "crates/archival-connectors" }
+archival-service = { path = "crates/archival-service" }
+archival-mcp = { path = "crates/archival-mcp" }
+
+[profile.release]
+lto = "thin"
+codegen-units = 4
+strip = true

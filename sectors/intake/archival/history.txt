@@ -1,1 +1,8 @@
-d0fc873  2026-11-23  gkson  add archival plan and blueprints (HEAD -> main, origin/main, origin/HEAD)
+52aa953  2026-11-23  gkson  linux: turn off webkitgtk's dmabuf renderer to avoid blank windows; launch check waits for the ui (HEAD -> main, origin/main, origin/HEAD)
+42b5411  2026-11-23  gkson  launch check: require the ui to reach the backend
+1555407  2026-11-23  gkson  terminal uses a system monospace font, files open in preview once loaded
+a0d7285  2026-11-23  gkson  launch the app on macos and linux in ci and keep screenshots
+0568422  2026-11-23  gkson  link advapi32 for libgit2 on windows, drop unused dependencies
+0a1aa9e  2026-11-23  gkson  track the vendored paper shaders build
+39e8426  2026-11-23  gkson  build archival: vault, git, runner, connectors, mcp, cli and desktop app
+d0fc873  2026-11-23  gkson  add archival plan and blueprints

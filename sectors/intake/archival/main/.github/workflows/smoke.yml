@@ -1,0 +1,91 @@
+name: smoke
+
+# builds the release app, launches it on a real mac and a linux display with a seeded vault,
+# checks it stays up, and keeps a screenshot of the running window.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  launch:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: linux packages
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libsoup-3.0-dev libayatana-appindicator3-dev librsvg2-dev xvfb imagemagick
+
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: build app and cli
+        run: |
+          pnpm tauri build --no-bundle
+          cargo build --release -p archival-cli
+
+      - name: seed a vault
+        run: |
+          export ARCHIVAL_VAULT="$RUNNER_TEMP/vault"
+          A=target/release/archival
+          $A add crates/archival-core --file
+          $A add docs --file
+          $A add apps/desktop/public/icon.svg
+          $A ls
+
+      - name: launch on macos
+        if: runner.os == 'macOS'
+        run: |
+          export ARCHIVAL_VAULT="$RUNNER_TEMP/vault"
+          mkdir -p shots
+          target/release/archival-desktop > shots/app.log 2>&1 &
+          PID=$!
+          for i in $(seq 1 60); do grep -q "ui connected" shots/app.log && break; sleep 1; done
+          sleep 4
+          kill -0 $PID
+          screencapture -x shots/macos.png
+          kill $PID
+          cat shots/app.log
+          grep -q "ui connected" shots/app.log
+          sips -Z 1000 shots/macos.png --out shots/small.png
+          echo "screenshot-base64:$(base64 -i shots/small.png | tr -d '\n')"
+
+      - name: launch on linux
+        if: runner.os == 'Linux'
+        run: |
+          export ARCHIVAL_VAULT="$RUNNER_TEMP/vault"
+          mkdir -p shots
+          cat > launch.sh <<'SH'
+          target/release/archival-desktop > shots/app.log 2>&1 &
+          PID=$!
+          for i in $(seq 1 60); do grep -q "ui connected" shots/app.log && break; sleep 1; done
+          sleep 4
+          kill -0 $PID
+          import -window root shots/linux.png
+          kill $PID
+          SH
+          xvfb-run -a -s "-screen 0 1440x900x24" sh launch.sh
+          cat shots/app.log
+          grep -q "ui connected" shots/app.log
+          convert shots/linux.png -resize 1000x shots/small.png
+          echo "screenshot-base64:$(base64 -w0 shots/small.png)"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: smoke-${{ runner.os }}
+          path: shots/

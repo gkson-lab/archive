@@ -1,0 +1,119 @@
+/* archival design tokens. chrome on near-black (dark) and ink on paper (print). */
+@import "@fontsource/instrument-serif/latin-400.css";
+@import "@fontsource/instrument-serif/latin-400-italic.css";
+@import "@fontsource-variable/recursive/full.css";
+
+:root {
+  --font-display: "Instrument Serif", "Iowan Old Style", Georgia, serif;
+  --font-body: "Recursive Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --casl: "CASL" 1, "MONO" 0, "CRSV" 0.5;
+  --mono: "CASL" 0, "MONO" 1, "CRSV" 0;
+
+  --fs-xs: 12px;
+  --fs-sm: 13px;
+  --fs-md: 14px;
+  --fs-lg: 16px;
+  --fs-xl: 22px;
+  --fs-display: 56px;
+
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 16px;
+  --r-pill: 999px;
+
+  --t-fast: 150ms;
+  --t-med: 200ms;
+  --t-slow: 280ms;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --tap: 44px;
+  --gutter: 16px;
+
+  color-scheme: dark;
+  --canvas: #0b0b0d;
+  --glass: #1a1a1f;
+  --raise: #131317;
+  --text: #f3f1ec;
+  --muted: #a6a3ab;
+  --line: #3a3a42;
+  --edge: #7a7782;
+  --accent: #d7dde6;
+  --on-accent: #0b0b0d;
+  --add: #7fd1a8;
+  --del: #f08a80;
+  --warn: #f2c66d;
+  --add-bg: rgba(127, 209, 168, 0.1);
+  --del-bg: rgba(240, 138, 128, 0.1);
+  --chrome: linear-gradient(180deg, #ffffff 0%, #e4e6ea 30%, #8d929c 47%, #6e727b 52%, #d9dce2 64%, #ffffff 82%, #c3c7ce 100%);
+  --rim: linear-gradient(100deg, #ffd23d 0%, #ff4a3d 22%, #2a1f5c 40%, #3d6bff 60%, #19e0b0 80%, #ffd23d 100%);
+  --shadow: 0 18px 50px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.4);
+  --glass-fill: rgba(26, 26, 31, 0.72);
+  --glass-hi: inset 0 1px 0 rgba(255, 255, 255, 0.09);
+  --blend: screen;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --canvas: #f4f1ea;
+  --glass: #fbf9f4;
+  --raise: #ece8de;
+  --text: #1b1a17;
+  --muted: #5d5a52;
+  --line: #d6d1c4;
+  --edge: #8b867a;
+  --accent: #1f5f78;
+  --on-accent: #f4f1ea;
+  --add: #1d6b47;
+  --del: #a8322a;
+  --warn: #8a5b00;
+  --add-bg: rgba(29, 107, 71, 0.09);
+  --del-bg: rgba(168, 50, 42, 0.08);
+  /* print: ink with cmy misregistration instead of chrome */
+  --chrome: linear-gradient(180deg, #1b1a17 0%, #1b1a17 100%);
+  --rim: linear-gradient(100deg, #00a3c7 0%, #e5007e 50%, #f5c400 100%);
+  --shadow: 0 14px 40px rgba(60, 50, 30, 0.16), 0 1px 3px rgba(60, 50, 30, 0.12);
+  --glass-fill: rgba(251, 249, 244, 0.78);
+  --glass-hi: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  --blend: multiply;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    color-scheme: light;
+    --canvas: #f4f1ea;
+    --glass: #fbf9f4;
+    --raise: #ece8de;
+    --text: #1b1a17;
+    --muted: #5d5a52;
+    --line: #d6d1c4;
+    --edge: #8b867a;
+    --accent: #1f5f78;
+    --on-accent: #f4f1ea;
+    --add: #1d6b47;
+    --del: #a8322a;
+    --warn: #8a5b00;
+    --add-bg: rgba(29, 107, 71, 0.09);
+    --del-bg: rgba(168, 50, 42, 0.08);
+    --chrome: linear-gradient(180deg, #1b1a17 0%, #1b1a17 100%);
+    --rim: linear-gradient(100deg, #00a3c7 0%, #e5007e 50%, #f5c400 100%);
+    --shadow: 0 14px 40px rgba(60, 50, 30, 0.16), 0 1px 3px rgba(60, 50, 30, 0.12);
+    --glass-fill: rgba(251, 249, 244, 0.78);
+    --glass-hi: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    --blend: multiply;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --t-fast: 0ms;
+    --t-med: 0ms;
+    --t-slow: 0ms;
+  }
+  *, *::before, *::after {
+    animation-duration: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+}

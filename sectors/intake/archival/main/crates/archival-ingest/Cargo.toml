@@ -1,0 +1,21 @@
+[package]
+name = "archival-ingest"
+description = "importers: folders, zips, files, pastes and urls"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+archival-core.workspace = true
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+walkdir.workspace = true
+zip.workspace = true
+reqwest.workspace = true
+regex.workspace = true
+url.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

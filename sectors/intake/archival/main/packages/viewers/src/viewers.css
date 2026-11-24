@@ -1,0 +1,64 @@
+.code-editor { height: 100%; min-height: 0; }
+.code-editor .cm-editor { height: 100%; }
+
+.prose { max-width: 72ch; padding: 24px 0 120px; line-height: 1.65; }
+.prose h1 { font-size: 44px; margin: 0 0 18px; }
+.prose h2 { font-size: 30px; margin: 32px 0 10px; }
+.prose h3 { font-size: 22px; margin: 26px 0 8px; }
+.prose p, .prose ul, .prose ol, .prose blockquote, .prose pre, .prose table { margin: 0 0 14px; }
+.prose code { font-size: 0.92em; padding: 1px 5px; border-radius: 5px; background: var(--raise); }
+.prose pre { padding: 14px 16px; border-radius: var(--r-md); background: var(--raise); overflow: auto; }
+.prose pre code { padding: 0; background: none; }
+.prose blockquote { border-left: 2px solid var(--edge); padding-left: 14px; color: var(--muted); }
+.prose img { max-width: 100%; border-radius: var(--r-md); }
+.prose hr { border: 0; height: 1px; background: var(--line); margin: 24px 0; }
+.prose table { border-collapse: collapse; }
+.prose th, .prose td { border-bottom: 1px solid var(--line); padding: 6px 10px; text-align: left; }
+
+.image-viewer { height: 100%; display: grid; grid-template-rows: auto 1fr; min-height: 0; }
+.iv-tools { display: flex; align-items: center; gap: 6px; padding: 8px 0; }
+.iv-stage { overflow: hidden; display: grid; place-items: center; cursor: grab; touch-action: none; min-height: 0; }
+.iv-stage:active { cursor: grabbing; }
+.iv-stage img { max-width: 100%; max-height: 100%; transition: transform var(--t-fast) var(--ease); user-select: none; }
+
+.compare { display: grid; gap: 10px; }
+.compare-stage { position: relative; overflow: hidden; border-radius: var(--r-md); }
+.compare-stage img { display: block; width: 100%; }
+.compare-before { position: absolute; inset: 0; }
+.compare-line { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--text); }
+.compare-range { display: flex; align-items: center; gap: 10px; }
+.compare-range input { flex: 1; accent-color: var(--accent); }
+
+.tokens { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
+.tokens th { text-align: left; font-weight: 500; color: var(--muted); padding: 8px 10px; border-bottom: 1px solid var(--line); }
+.tokens td { padding: 7px 10px; border-bottom: 1px solid color-mix(in srgb, var(--line) 50%, transparent); }
+.tok-val { display: inline-flex; align-items: center; gap: 8px; }
+.swatch { width: 16px; height: 16px; border-radius: 4px; box-shadow: inset 0 0 0 1px rgba(127,127,127,0.4); }
+
+.pdf { display: grid; gap: 10px; padding-bottom: 120px; }
+.pdf-pages { display: grid; gap: 16px; justify-items: center; }
+.pdf-pages canvas { width: min(100%, 860px); background: #fff; border-radius: 4px; box-shadow: var(--shadow); }
+
+.media { width: min(100%, 960px); border-radius: var(--r-md); margin-top: 16px; }
+.html-preview { width: 100%; height: 100%; min-height: 420px; border: 1px solid var(--line); border-radius: var(--r-md); background: #fff; }
+
+.link-card { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; max-width: 760px; padding: 24px 0; }
+.link-thumb { width: 100%; max-height: 360px; object-fit: cover; border-radius: var(--r-md); }
+.link-body { display: grid; gap: 8px; }
+
+.diff { font-size: 12.5px; padding-bottom: 120px; }
+.diff-file + .diff-file { margin-top: 18px; }
+.diff-head { display: flex; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--canvas); z-index: 1; }
+.diff-hh { padding: 6px 12px; font-size: 11.5px; }
+.diff-line { display: grid; grid-template-columns: 44px 44px 16px 1fr; align-items: start; font-variation-settings: var(--mono); }
+.diff-line code { white-space: pre-wrap; word-break: break-word; padding-right: 12px; }
+.diff-line .ln { color: color-mix(in srgb, var(--muted) 65%, transparent); text-align: right; padding-right: 8px; user-select: none; }
+.diff-line .sig { color: var(--muted); user-select: none; }
+.diff-line.add, .diff-line.del { animation: diffin var(--t-med) var(--ease) both; }
+.diff-line.add { background: var(--add-bg); }
+.diff-line.add .sig, .diff-line.add code { color: var(--add); }
+.diff-line.del { background: var(--del-bg); }
+.diff-line.del .sig, .diff-line.del code { color: var(--del); }
+@keyframes diffin { from { background: color-mix(in srgb, var(--line) 50%, transparent); } }
+.diff-line.add code, .diff-line.del code { animation: diffink var(--t-med) var(--ease) both; animation-delay: inherit; }
+@keyframes diffink { from { color: var(--muted); } }

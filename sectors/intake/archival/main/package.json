@@ -1,0 +1,12 @@
+{
+  "name": "archival-workspace",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "pnpm --filter archival-desktop dev",
+    "build": "pnpm --filter archival-desktop build",
+    "tauri": "pnpm --filter archival-desktop tauri",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "packageManager": "pnpm@9.15.0"
+}
