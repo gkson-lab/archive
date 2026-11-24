@@ -27,6 +27,7 @@
     S.newsSeen = 0; S.tradeSeen = {}; S.dirtyBots = true; S.heldCount = null;
     clear($("feedNews")); clear($("feedTrades"));
     S.sim.on(onSimEvent);
+    if (T.onSimBuilt) T.onSimBuilt(S.sim);
     S.sim.market.on(function (t, d) { if (t === "regime") setStatus("Regime change: " + d + " market."); });
     $("genTotal").textContent = S.sim.forever ? "∞" : cfg.generations;
     $("genDays").textContent = cfg.daysPerGen;
@@ -742,4 +743,16 @@
   requestAnimationFrame(frame);
   if ("serviceWorker" in navigator && location.protocol.indexOf("http") === 0) navigator.serviceWorker.register("sw.js").catch(function () {});
   T.app = S;
+  // shared with final training mode (js/final-ui.js)
+  T.ui = {
+    download: download, setStatus: setStatus, table: table, el: el, clear: clear, pct: pct, money: money, signedMoney: signed$, cls: cls,
+    pauseSim: function () { S.running = false; setPlay(); },
+    bestBot: function () {
+      var sim = S.sim; if (!sim || !sim.log.generations.length) return null;
+      var g = sim.log.generations[sim.log.generations.length - 1], top = sim.log.bots.filter(function (r) { return r.gen === g.gen && r.rank === 1; })[0];
+      var b = top && sim.allBots[top.id];
+      return b ? { name: b.name, gen: g.gen, stopLoss: b.cfg.stopLoss, takeProfit: b.cfg.takeProfit, maxPos: b.cfg.maxPos, ret: top.returnPct } : null;
+    },
+    redraw: function () { renderAll(true); }
+  };
 })(window.T = window.T || {});

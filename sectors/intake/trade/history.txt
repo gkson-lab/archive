@@ -1,4 +1,7 @@
-6333751  2026-11-23  gkson  README: measured cloud output size (about 650 MB per hour) (HEAD -> main, origin/main, origin/HEAD)
+40a31f8  2026-11-24  gkson  Trading data bot: send through a local clone with git and gh (--docs-git) (HEAD -> main, origin/main, origin/HEAD)
+bbc20cf  2026-11-24  gkson  Add the Trading data bot: send all bot data to the internal documents repo as pull requests
+3275efc  2026-11-24  gkson  Add final training mode: the trading bot for real price data
+6333751  2026-11-23  gkson  README: measured cloud output size (about 650 MB per hour)
 6aa21dd  2026-11-23  gkson  Keep long and cloud runs bounded: memory counted in cells, rolling history, sized cloud defaults
 39aeda0  2026-11-23  gkson  Add 10 inherited traits on 4 chromosomes, smaller data output, free cloud workflows
 cd35eb7  2026-11-23  gkson  Remove mobile usage instructions from README

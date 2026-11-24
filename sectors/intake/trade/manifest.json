@@ -7,22 +7,22 @@
  "repo": "gkson-lab/trade",
  "kind": "source",
  "first": "2026-11-22",
- "last": "2026-11-23",
- "commits": 12,
+ "last": "2026-11-24",
+ "commits": 15,
  "pulls": {
   "open": 0,
   "total": 1
  },
- "signature": "bc6db4251fc41d218613505584ad78f2b3ca45b9",
+ "signature": "67a9bf06bce0641eb92ce55f284255751848d8a7",
  "versions": [
   {
    "id": "main",
    "branch": "main",
-   "head": "6333751",
-   "sha": "63337513e77314d24b3e7acc67c95f1aa6bfa7f6",
-   "date": "2026-11-23",
-   "message": "README: measured cloud output size (about 650 MB per hour)",
-   "commits": 12,
+   "head": "40a31f8",
+   "sha": "40a31f8d03ef71873124debfc547dc0621965e4e",
+   "date": "2026-11-24",
+   "message": "Trading data bot: send through a local clone with git and gh (--docs-git)",
+   "commits": 15,
    "files": [
     [
      ".gitignore",
@@ -30,11 +30,11 @@
     ],
     [
      "README.md",
-     20163
+     26747
     ],
     [
      "cli.js",
-     8391
+     10171
     ],
     [
      "icon.svg",
@@ -42,7 +42,7 @@
     ],
     [
      "index.html",
-     19631
+     34464
     ],
     [
      "manifest.webmanifest",
@@ -54,15 +54,15 @@
     ],
     [
      "sw.js",
-     1162
+     1231
     ],
     [
      ".github/workflows/simulate.yml",
-     3542
+     4301
     ],
     [
      ".github/workflows/test.yml",
-     284
+     349
     ],
     [
      ".github/workflows/train.yml",
@@ -70,7 +70,7 @@
     ],
     [
      "css/app.css",
-     18153
+     25302
     ],
     [
      "data/source/amex.json",
@@ -90,7 +90,7 @@
     ],
     [
      "dist/trade-box.html",
-     1642236
+     1758359
     ],
     [
      "docs/DATASET.md",
@@ -98,7 +98,7 @@
     ],
     [
      "js/app.js",
-     46929
+     47746
     ],
     [
      "js/bots.js",
@@ -111,6 +111,22 @@
     [
      "js/charts.js",
      11535
+    ],
+    [
+     "js/docs-push.js",
+     18636
+    ],
+    [
+     "js/docs-ui.js",
+     8037
+    ],
+    [
+     "js/final-ui.js",
+     19823
+    ],
+    [
+     "js/final.js",
+     46824
     ],
     [
      "js/market.js",
@@ -141,6 +157,14 @@
      4841
     ],
     [
+     "tests/docs.js",
+     7500
+    ],
+    [
+     "tests/final.js",
+     6285
+    ],
+    [
      "tests/market_stats.js",
      2816
     ],
@@ -163,6 +187,14 @@
     [
      "tools/combine.js",
      3061
+    ],
+    [
+     "tools/docs_node.js",
+     4977
+    ],
+    [
+     "tools/final_train.js",
+     7513
     ],
     [
      "tools/train_model.py",

@@ -1,13 +1,34 @@
 {
  "commits": [
   {
+   "sha": "40a31f8d03ef71873124debfc547dc0621965e4e",
+   "date": "2026-11-24T15:30:36Z",
+   "author": "gkson",
+   "message": "Trading data bot: send through a local clone with git and gh (--docs-git)",
+   "tips": [
+    "main"
+   ]
+  },
+  {
+   "sha": "bbc20cf6b3a9c031e91d13d6348cbc9751a1954a",
+   "date": "2026-11-24T15:27:10Z",
+   "author": "gkson",
+   "message": "Add the Trading data bot: send all bot data to the internal documents repo as pull requests",
+   "tips": []
+  },
+  {
+   "sha": "3275efca15465f2d1e179470f250e822bc0e7315",
+   "date": "2026-11-24T15:16:18Z",
+   "author": "gkson",
+   "message": "Add final training mode: the trading bot for real price data",
+   "tips": []
+  },
+  {
    "sha": "63337513e77314d24b3e7acc67c95f1aa6bfa7f6",
    "date": "2026-11-23T16:52:34Z",
    "author": "gkson",
    "message": "README: measured cloud output size (about 650 MB per hour)",
-   "tips": [
-    "main"
-   ]
+   "tips": []
   },
   {
    "sha": "6aa21dde9e5d2be18e7894bec92d4414a78500bf",
