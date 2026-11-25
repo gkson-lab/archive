@@ -1,13 +1,27 @@
 {
  "commits": [
   {
+   "sha": "edbca8b37aecfb6e1c3417574c6083d8ffb227a1",
+   "date": "2026-11-24T22:53:17Z",
+   "author": "gkson",
+   "message": "Stop iPhones zooming in when typing: 16px form fields on phones",
+   "tips": [
+    "main"
+   ]
+  },
+  {
+   "sha": "b46c03f046477b524cfacc428bfc8978887f872c",
+   "date": "2026-11-24T20:24:41Z",
+   "author": "gkson",
+   "message": "Trading data bot: say when a network proxy blocks the upload",
+   "tips": []
+  },
+  {
    "sha": "40a31f8d03ef71873124debfc547dc0621965e4e",
    "date": "2026-11-24T15:30:36Z",
    "author": "gkson",
    "message": "Trading data bot: send through a local clone with git and gh (--docs-git)",
-   "tips": [
-    "main"
-   ]
+   "tips": []
   },
   {
    "sha": "bbc20cf6b3a9c031e91d13d6348cbc9751a1954a",

@@ -8,21 +8,21 @@
  "kind": "source",
  "first": "2026-11-22",
  "last": "2026-11-24",
- "commits": 15,
+ "commits": 17,
  "pulls": {
   "open": 0,
   "total": 1
  },
- "signature": "67a9bf06bce0641eb92ce55f284255751848d8a7",
+ "signature": "70ae0ef3372a9518b9f1064bf49721b45c181c39",
  "versions": [
   {
    "id": "main",
    "branch": "main",
-   "head": "40a31f8",
-   "sha": "40a31f8d03ef71873124debfc547dc0621965e4e",
+   "head": "edbca8b",
+   "sha": "edbca8b37aecfb6e1c3417574c6083d8ffb227a1",
    "date": "2026-11-24",
-   "message": "Trading data bot: send through a local clone with git and gh (--docs-git)",
-   "commits": 15,
+   "message": "Stop iPhones zooming in when typing: 16px form fields on phones",
+   "commits": 17,
    "files": [
     [
      ".gitignore",
@@ -70,7 +70,7 @@
     ],
     [
      "css/app.css",
-     25302
+     25691
     ],
     [
      "data/source/amex.json",
@@ -90,7 +90,7 @@
     ],
     [
      "dist/trade-box.html",
-     1758359
+     1758997
     ],
     [
      "docs/DATASET.md",
@@ -114,7 +114,7 @@
     ],
     [
      "js/docs-push.js",
-     18636
+     18885
     ],
     [
      "js/docs-ui.js",
@@ -158,7 +158,7 @@
     ],
     [
      "tests/docs.js",
-     7500
+     7700
     ],
     [
      "tests/final.js",

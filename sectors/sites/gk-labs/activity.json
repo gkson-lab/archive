@@ -1,6 +1,22 @@
 {
  "commits": [
   {
+   "sha": "4b9e31ef0115da75632110e96f34f27e93c954b1",
+   "date": "2026-11-24T17:47:41-05:00",
+   "author": "gkson",
+   "message": "Merge pull request #9 from gkson-lab/claude/charming-heisenberg-xtjmf4",
+   "tips": [
+    "main"
+   ]
+  },
+  {
+   "sha": "119905ee8c5e05e4bf20dbbb090ecdb833a6043d",
+   "date": "2026-11-24T20:44:21Z",
+   "author": "Claude",
+   "message": "Add reanimate skill to project skills",
+   "tips": []
+  },
+  {
    "sha": "f616967a1be46f8c5a568d5f5dc8c14d2babda6a",
    "date": "2026-11-23T20:12:58Z",
    "author": "gkson",
@@ -21,9 +37,7 @@
    "date": "2026-11-23T10:31:58-05:00",
    "author": "gkson",
    "message": "Merge pull request #8 from gkson-lab/claude/happy-mendel-7xev5b",
-   "tips": [
-    "main"
-   ]
+   "tips": []
   },
   {
    "sha": "e885d5b928017b1614a9ed4e5218753f878ead0b",
@@ -209,6 +223,21 @@
   }
  ],
  "pulls": [
+  {
+   "number": 9,
+   "title": "Add reanimate skill to project skills",
+   "state": "merged",
+   "draft": false,
+   "author": "gkson-lab",
+   "head": "claude/charming-heisenberg-xtjmf4",
+   "base": "main",
+   "sha": "119905ee8c5e05e4bf20dbbb090ecdb833a6043d",
+   "created": "2026-11-24T22:47:32Z",
+   "updated": "2026-11-24T22:47:47Z",
+   "closed": "2026-11-24T22:47:41Z",
+   "merged": "2026-11-24T22:47:41Z",
+   "url": "https://github.com/gkson-lab/gkson-lab/pull/9"
+  },
   {
    "number": 8,
    "title": "remove cursor-driven light on the prism",

@@ -387,6 +387,14 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 1
   .mode-switch .mode-label { font-size: 12px; }
 }
 
+/* Phones: iOS Safari zooms into any text field under 16px and doesn't zoom back out, so fields use 16px on
+   small or touch screens (pinch zoom stays available; the viewport is not locked) */
+@media (max-width: 900px), (pointer: coarse) {
+  input, select, textarea, .input, .select { font-size: 16px; }
+  .input, .select { height: 36px; }
+  .input.tiny { height: 30px; width: 76px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
 }
@@ -5711,6 +5719,7 @@ T.SYMBOLS = [["AAPL","Apple",0,0,349.21,5074783.28,40906860,1],["MSFT","Microsof
   }
 
   function explain(e, repo) {
+    if (/proxy/i.test(e.message || "")) return "A network proxy between this device and GitHub blocked the upload (" + e.message.replace(/\.$/, "") + "). Send from a network without that proxy, or use the bundle download and GitHub's upload page.";
     if (e.status === 401) return "GitHub rejected the token. Check it was copied in full and hasn't expired.";
     if (e.status === 403 || e.status === 404) return "The token can't write to " + repo + ". Give it access to that repository with Contents and Pull requests set to Read and write. The gk-research-group organization may also need to approve fine-grained tokens.";
     if (e.status === 422) return "GitHub refused the change: " + e.message + ".";

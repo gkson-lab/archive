@@ -7,22 +7,22 @@
  "repo": "gkson-lab/gkson-lab",
  "kind": "source",
  "first": "2026-10-16",
- "last": "2026-11-23",
- "commits": 29,
+ "last": "2026-11-24",
+ "commits": 31,
  "pulls": {
   "open": 0,
-  "total": 7
+  "total": 8
  },
- "signature": "bc8aa232aa18997f073376968da8ad25eb7a4977",
+ "signature": "15efe805ae736cce629a649505882fc6dac1ff7e",
  "versions": [
   {
    "id": "main",
    "branch": "main",
-   "head": "76fc4c7",
-   "sha": "76fc4c7e751573437a1e8d8384e670c101396cb3",
-   "date": "2026-11-23",
-   "message": "Merge pull request #8 from gkson-lab/claude/happy-mendel-7xev5b",
-   "commits": 27,
+   "head": "4b9e31e",
+   "sha": "4b9e31ef0115da75632110e96f34f27e93c954b1",
+   "date": "2026-11-24",
+   "message": "Merge pull request #9 from gkson-lab/claude/charming-heisenberg-xtjmf4",
+   "commits": 29,
    "files": [
     [
      ".nojekyll",
@@ -47,6 +47,82 @@
     [
      "index.html",
      13931
+    ],
+    [
+     ".claude/skills/reanimate/LICENSE",
+     1069
+    ],
+    [
+     ".claude/skills/reanimate/SKILL.md",
+     10775
+    ],
+    [
+     ".claude/skills/reanimate/references/analysis.md",
+     6687
+    ],
+    [
+     ".claude/skills/reanimate/references/capture.md",
+     8792
+    ],
+    [
+     ".claude/skills/reanimate/references/implementation.md",
+     5899
+    ],
+    [
+     ".claude/skills/reanimate/references/verify.md",
+     7257
+    ],
+    [
+     ".claude/skills/reanimate/references/webgl.md",
+     11579
+    ],
+    [
+     ".claude/skills/reanimate/scripts/bun.lock",
+     4929
+    ],
+    [
+     ".claude/skills/reanimate/scripts/capture.ts",
+     40071
+    ],
+    [
+     ".claude/skills/reanimate/scripts/compare.ts",
+     12254
+    ],
+    [
+     ".claude/skills/reanimate/scripts/easing.ts",
+     9441
+    ],
+    [
+     ".claude/skills/reanimate/scripts/frames.ts",
+     3031
+    ],
+    [
+     ".claude/skills/reanimate/scripts/gl.ts",
+     28663
+    ],
+    [
+     ".claude/skills/reanimate/scripts/lib.ts",
+     3513
+    ],
+    [
+     ".claude/skills/reanimate/scripts/package.json",
+     207
+    ],
+    [
+     ".claude/skills/reanimate/scripts/setup.sh",
+     818
+    ],
+    [
+     ".claude/skills/reanimate/scripts/sheet.ts",
+     6309
+    ],
+    [
+     ".claude/skills/reanimate/scripts/inpage/clock.js",
+     11387
+    ],
+    [
+     ".claude/skills/reanimate/scripts/inpage/gl-hooks.js",
+     46606
     ],
     [
      ".github/scripts/card.py",

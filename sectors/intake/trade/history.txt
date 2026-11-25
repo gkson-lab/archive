@@ -1,4 +1,6 @@
-40a31f8  2026-11-24  gkson  Trading data bot: send through a local clone with git and gh (--docs-git) (HEAD -> main, origin/main, origin/HEAD)
+edbca8b  2026-11-24  gkson  Stop iPhones zooming in when typing: 16px form fields on phones (HEAD -> main, origin/main, origin/HEAD)
+b46c03f  2026-11-24  gkson  Trading data bot: say when a network proxy blocks the upload
+40a31f8  2026-11-24  gkson  Trading data bot: send through a local clone with git and gh (--docs-git)
 bbc20cf  2026-11-24  gkson  Add the Trading data bot: send all bot data to the internal documents repo as pull requests
 3275efc  2026-11-24  gkson  Add final training mode: the trading bot for real price data
 6333751  2026-11-23  gkson  README: measured cloud output size (about 650 MB per hour)

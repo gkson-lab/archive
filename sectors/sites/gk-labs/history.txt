@@ -1,6 +1,8 @@
+4b9e31e  2026-11-24  gkson  Merge pull request #9 from gkson-lab/claude/charming-heisenberg-xtjmf4 (HEAD -> main, origin/main, origin/HEAD)
+119905e  2026-11-24  Claude  Add reanimate skill to project skills
 f616967  2026-11-23  gkson  remove CLAUDE.md from the repo (origin/claude/happy-mendel-7xev5b)
 1457725  2026-11-23  gkson  add design laws to CLAUDE.md
-76fc4c7  2026-11-23  gkson  Merge pull request #8 from gkson-lab/claude/happy-mendel-7xev5b (HEAD -> main, origin/main, origin/HEAD)
+76fc4c7  2026-11-23  gkson  Merge pull request #8 from gkson-lab/claude/happy-mendel-7xev5b
 e885d5b  2026-11-23  gkson  Update README to simplify project description
 b3c987d  2026-11-23  gkson  remove cursor-driven light on the prism
 63e2896  2026-11-23  gkson  Merge pull request #7 from gkson-lab/claude/happy-mendel-7xev5b
