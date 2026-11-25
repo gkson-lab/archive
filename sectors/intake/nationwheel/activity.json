@@ -1,0 +1,42 @@
+{
+ "commits": [
+  {
+   "sha": "7371cd22844537c448b50fa91b848b519835cc16",
+   "date": "2026-11-25T14:38:04Z",
+   "author": "Claude",
+   "message": "Move event triggers panel onto the wheel screen",
+   "tips": [
+    "main"
+   ]
+  },
+  {
+   "sha": "bf3da15119646e263011b21276b688e60036e406",
+   "date": "2026-11-25T14:37:32Z",
+   "author": "Claude",
+   "message": "Show event triggers panel open by default",
+   "tips": []
+  },
+  {
+   "sha": "9670bbd41d5b6232fd4ad3ad2cdd993dfe6cf663",
+   "date": "2026-11-25T14:32:49Z",
+   "author": "Claude",
+   "message": "Add event triggers panel: Blessed/Cursed wheels and instant effects",
+   "tips": []
+  },
+  {
+   "sha": "7bc5bda284f2416ead004696713abe3d3d539264",
+   "date": "2026-11-25T14:23:30Z",
+   "author": "Claude",
+   "message": "Fix bonus effects, scale land bonuses on the map, add rare 10% troops slice",
+   "tips": []
+  },
+  {
+   "sha": "f712b2134e731ceb9e7f85b67846f6a19f52cf10",
+   "date": "2026-11-25T13:28:34Z",
+   "author": "Claude",
+   "message": "Add Nation Roller as a static GitHub Pages site",
+   "tips": []
+  }
+ ],
+ "pulls": []
+}

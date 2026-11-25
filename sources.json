@@ -83,6 +83,22 @@
    "title": "archival",
    "summary": "",
    "auto": true
+  },
+  {
+   "repo": "https://github.com/gkson-lab/agentdeck",
+   "sector": "intake",
+   "name": "agentdeck",
+   "title": "agentdeck",
+   "summary": "",
+   "auto": true
+  },
+  {
+   "repo": "https://github.com/gkson-lab/nationwheel",
+   "sector": "intake",
+   "name": "nationwheel",
+   "title": "nationwheel",
+   "summary": "",
+   "auto": true
   }
  ]
 }

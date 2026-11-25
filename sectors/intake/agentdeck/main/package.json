@@ -1,0 +1,122 @@
+{
+  "name": "agentdeck",
+  "version": "0.1.0",
+  "description": "Local dashboard to run Claude agents on your computer or in the cloud and watch every subagent in its own chamber.",
+  "scripts": {
+    "start": "tsx src/main.ts",
+    "dev": "tsx watch src/main.ts",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "app": "tsc && electron .",
+    "dist": "tsc && electron-builder --publish never",
+    "dist:mac": "tsc && electron-builder --mac --publish never",
+    "dist:win": "tsc && electron-builder --win --publish never",
+    "dist:linux": "tsc && electron-builder --linux --publish never"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.14.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.10",
+    "electron": "^45.2.3",
+    "electron-builder": "^26.18.0",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  },
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "electron/main.js",
+  "author": {
+    "name": "gkson-lab",
+    "email": "gkson-lab@users.noreply.github.com"
+  },
+  "homepage": "https://github.com/gkson-lab/agentdeck",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gkson-lab/agentdeck.git"
+  },
+  "build": {
+    "appId": "com.gksonlab.agentdeck",
+    "productName": "agentdeck",
+    "artifactName": "agentdeck-${version}-${os}-${arch}.${ext}",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "public/**/*",
+      "electron/**/*",
+      "build/icon.png",
+      "package.json"
+    ],
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
+      "category": "public.app-category.developer-tools",
+      "icon": "build/icon.png",
+      "identity": "-",
+      "hardenedRuntime": false
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "category": "Development",
+      "icon": "build/icon.png",
+      "maintainer": "gkson-lab <gkson-lab@users.noreply.github.com>",
+      "synopsis": "Run Claude agents and watch every subagent in its own chamber",
+      "syncDesktopName": true
+    },
+    "publish": null
+  },
+  "desktopName": "agentdeck.desktop"
+}

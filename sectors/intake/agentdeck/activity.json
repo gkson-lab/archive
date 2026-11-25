@@ -1,0 +1,35 @@
+{
+ "commits": [
+  {
+   "sha": "e0e0f96021c92db439588d48b92f62e7e5537e6d",
+   "date": "2026-11-25T13:35:17Z",
+   "author": "Claude",
+   "message": "Publish a GitHub release from every push to main",
+   "tips": [
+    "main"
+   ]
+  },
+  {
+   "sha": "73681ce972f9d341387a0ccdb5befd4c21e8c2c2",
+   "date": "2026-11-25T13:31:59Z",
+   "author": "Claude",
+   "message": "Build installers on every push to main and attach them to published releases",
+   "tips": []
+  },
+  {
+   "sha": "f558a333b76986a79b6decab90302f274bfc8716",
+   "date": "2026-11-25T13:30:52Z",
+   "author": "Claude",
+   "message": "Make agentdeck a desktop app for macOS, Windows and Linux",
+   "tips": []
+  },
+  {
+   "sha": "5f9e26450bd9811e68b95362553a7db517bb1a07",
+   "date": "2026-11-25T13:22:43Z",
+   "author": "Claude",
+   "message": "agentdeck: local dashboard for Claude agents with a chamber per subagent",
+   "tips": []
+  }
+ ],
+ "pulls": []
+}

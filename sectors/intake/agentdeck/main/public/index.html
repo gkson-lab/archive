@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>agentdeck</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <!-- Sign-in gate -->
+  <section id="gate" class="gate" hidden>
+    <div class="gate-card">
+      <div id="gate-mascot" class="gate-mascot"></div>
+      <h1 class="serif">Sign in to agentdeck</h1>
+      <p class="muted">agentdeck runs agents with your Claude account. It uses Claude Code's own sign-in, so your password and token never pass through this app.</p>
+      <div id="gate-missing" class="notice" hidden>
+        The <code>claude</code> command isn't installed. Install Claude Code from a terminal, then click "I've signed in":
+        <pre id="install-cmd">curl -fsSL https://claude.ai/install.sh | bash</pre>
+      </div>
+      <button id="login-claude" class="btn primary big">Sign in with Claude</button>
+      <button id="login-console" class="btn ghost">Use an Anthropic Console account instead</button>
+      <div id="login-output" class="login-output" hidden>
+        <pre id="login-log"></pre>
+        <form id="login-code-form" class="row">
+          <input id="login-code" placeholder="If it asks for a code, paste it here" autocomplete="off" />
+          <button class="btn">Send</button>
+        </form>
+      </div>
+      <div class="row center">
+        <button id="login-check" class="btn ghost small">I've signed in</button>
+        <button id="gate-skip" class="btn ghost small" hidden>Continue with cloud agents only</button>
+      </div>
+    </div>
+  </section>
+
+  <div id="app" class="app" hidden>
+    <aside class="sidebar">
+      <div class="brand">
+        <span id="brand-mascot"></span>
+        <span class="brand-name serif">agentdeck</span>
+      </div>
+      <button id="nav-new" class="nav-item new"><span class="plus">+</span> New agent</button>
+      <nav class="nav">
+        <button class="nav-item" data-view="home">Home</button>
+        <button class="nav-item" data-view="roster">Subagent roster</button>
+        <button class="nav-item" data-view="machine">This computer</button>
+      </nav>
+      <div class="side-label">Agents</div>
+      <div id="run-list" class="run-list"></div>
+      <div class="account" id="account"></div>
+    </aside>
+
+    <main class="main">
+      <!-- Home / new agent -->
+      <section id="view-home" class="view">
+        <div class="home">
+          <div class="stage" id="home-stage"><div class="walker" id="home-walker"></div></div>
+          <h1 class="serif hello" id="hello">What should your agents work on?</h1>
+          <form id="composer" class="composer">
+            <textarea id="c-prompt" rows="4" placeholder="Describe a task. Your agent can spin up subagents, and each one gets its own chamber."></textarea>
+            <div class="composer-bar">
+              <label class="pick"><span>Where</span>
+                <select id="c-where">
+                  <option value="local">This computer</option>
+                  <option value="managed">Cloud · Managed Agents</option>
+                  <option value="claude-cloud">Cloud · claude.ai/code</option>
+                </select>
+              </label>
+              <label class="pick" data-for="local claude-cloud"><span>Folder</span>
+                <input id="c-cwd" placeholder="~/code/my-project" />
+              </label>
+              <label class="pick" data-for="local managed"><span>Model</span>
+                <select id="c-model"></select>
+              </label>
+              <label class="pick" data-for="local managed"><span>Effort</span>
+                <select id="c-effort"></select>
+              </label>
+              <label class="pick" data-for="local"><span>Main agent</span>
+                <select id="c-agent"><option value="">Claude Code (default)</option></select>
+              </label>
+              <label class="pick" data-for="local"><span>Permissions</span>
+                <select id="c-perm">
+                  <option value="acceptEdits">Accept edits</option>
+                  <option value="default">Ask (blocks tools in the background)</option>
+                  <option value="plan">Plan only</option>
+                  <option value="auto">Auto</option>
+                  <option value="bypassPermissions">Bypass all checks</option>
+                </select>
+              </label>
+              <button class="btn primary send" title="Start agent">Start ↵</button>
+            </div>
+            <p class="hint" id="c-hint"></p>
+          </form>
+        </div>
+      </section>
+
+      <!-- One run: a chamber per agent -->
+      <section id="view-run" class="view" hidden>
+        <header class="run-head">
+          <div class="run-title">
+            <span id="run-mascot"></span>
+            <div>
+              <h2 id="run-title" class="serif"></h2>
+              <div id="run-meta" class="meta"></div>
+            </div>
+          </div>
+          <div class="run-actions">
+            <a id="run-link" class="btn ghost small" target="_blank" rel="noopener" hidden>Open session ↗</a>
+            <button id="run-done" class="btn ghost small">Mark done</button>
+            <button id="run-stop" class="btn ghost small">Stop</button>
+            <button id="run-remove" class="btn ghost small danger">Remove</button>
+          </div>
+        </header>
+        <div id="run-error" class="notice error" hidden></div>
+        <div id="chambers" class="chambers"></div>
+      </section>
+
+      <section id="view-roster" class="view" hidden>
+        <header class="page-head">
+          <h2 class="serif">Subagent roster</h2>
+          <p class="muted">Subagents your agents can call: built-ins, yours in <code>~/.claude/agents</code>, and the project's in <code>.claude/agents</code>.</p>
+          <label class="pick inline"><span>Project folder</span><input id="roster-cwd" placeholder="~/code/my-project" /></label>
+        </header>
+        <div id="roster" class="cards"></div>
+      </section>
+
+      <section id="view-machine" class="view" hidden>
+        <header class="page-head">
+          <h2 class="serif">This computer</h2>
+          <p class="muted">Every Claude Code session running here, from <code>claude agents</code>. It refreshes every few seconds.</p>
+        </header>
+        <div id="machine" class="cards"></div>
+      </section>
+
+      <footer class="ground"><div class="walker" id="ground-walker"></div></footer>
+    </main>
+  </div>
+
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+e0e0f96  2026-11-25  Claude  Publish a GitHub release from every push to main (HEAD -> main, tag: v0.1.0, origin/main, origin/HEAD)
+73681ce  2026-11-25  Claude  Build installers on every push to main and attach them to published releases
+f558a33  2026-11-25  Claude  Make agentdeck a desktop app for macOS, Windows and Linux
+5f9e264  2026-11-25  Claude  agentdeck: local dashboard for Claude agents with a chamber per subagent

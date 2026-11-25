@@ -1,0 +1,118 @@
+{
+ "name": "agentdeck",
+ "title": "agentdeck",
+ "sector": "intake",
+ "summary": "",
+ "source": "https://github.com/gkson-lab/agentdeck",
+ "repo": "gkson-lab/agentdeck",
+ "kind": "source",
+ "first": "2026-11-25",
+ "last": "2026-11-25",
+ "commits": 4,
+ "pulls": {
+  "open": 0,
+  "total": 0
+ },
+ "signature": "fe5e1900f1fdfa22029cceb90011c6465eafb1c0",
+ "versions": [
+  {
+   "id": "main",
+   "branch": "main",
+   "head": "e0e0f96",
+   "sha": "e0e0f96021c92db439588d48b92f62e7e5537e6d",
+   "date": "2026-11-25",
+   "message": "Publish a GitHub release from every push to main",
+   "commits": 4,
+   "files": [
+    [
+     ".gitignore",
+     50
+    ],
+    [
+     "LICENSE",
+     1079
+    ],
+    [
+     "README.md",
+     6160
+    ],
+    [
+     "package-lock.json",
+     158680
+    ],
+    [
+     "package.json",
+     2931
+    ],
+    [
+     "tsconfig.json",
+     270
+    ],
+    [
+     ".github/workflows/desktop.yml",
+     3558
+    ],
+    [
+     "build/icon.png",
+     7780
+    ],
+    [
+     "electron/main.js",
+     2507
+    ],
+    [
+     "public/app.js",
+     25624
+    ],
+    [
+     "public/index.html",
+     6616
+    ],
+    [
+     "public/mascot.js",
+     5764
+    ],
+    [
+     "public/styles.css",
+     18515
+    ],
+    [
+     "src/claude.ts",
+     5824
+    ],
+    [
+     "src/cli.ts",
+     4241
+    ],
+    [
+     "src/local.ts",
+     13334
+    ],
+    [
+     "src/main.ts",
+     251
+    ],
+    [
+     "src/managed.ts",
+     12039
+    ],
+    [
+     "src/roster.ts",
+     2315
+    ],
+    [
+     "src/server.ts",
+     11101
+    ],
+    [
+     "src/store.ts",
+     3570
+    ],
+    [
+     "src/types.ts",
+     2362
+    ]
+   ]
+  }
+ ]
+}

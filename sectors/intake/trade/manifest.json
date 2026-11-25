@@ -7,22 +7,22 @@
  "repo": "gkson-lab/trade",
  "kind": "source",
  "first": "2026-11-22",
- "last": "2026-11-24",
- "commits": 17,
+ "last": "2026-11-25",
+ "commits": 22,
  "pulls": {
   "open": 0,
   "total": 1
  },
- "signature": "70ae0ef3372a9518b9f1064bf49721b45c181c39",
+ "signature": "c4f64e7f8f128f91770c597e039bc12b91a312a0",
  "versions": [
   {
    "id": "main",
    "branch": "main",
-   "head": "edbca8b",
-   "sha": "edbca8b37aecfb6e1c3417574c6083d8ffb227a1",
-   "date": "2026-11-24",
-   "message": "Stop iPhones zooming in when typing: 16px form fields on phones",
-   "commits": 17,
+   "head": "9090824",
+   "sha": "90908242f13da3422639910be998415101eaaf34",
+   "date": "2026-11-25",
+   "message": "README: speed, Mac use, the docs repo's merge bot, owner-only workflows",
+   "commits": 22,
    "files": [
     [
      ".gitignore",
@@ -30,11 +30,23 @@
     ],
     [
      "README.md",
-     26747
+     30340
     ],
     [
      "cli.js",
-     10171
+     10395
+    ],
+    [
+     "icon-180.png",
+     2266
+    ],
+    [
+     "icon-192.png",
+     2175
+    ],
+    [
+     "icon-512.png",
+     8522
     ],
     [
      "icon.svg",
@@ -42,11 +54,11 @@
     ],
     [
      "index.html",
-     34464
+     39433
     ],
     [
      "manifest.webmanifest",
-     336
+     691
     ],
     [
      "package.json",
@@ -54,11 +66,11 @@
     ],
     [
      "sw.js",
-     1231
+     1279
     ],
     [
      ".github/workflows/simulate.yml",
-     4301
+     4484
     ],
     [
      ".github/workflows/test.yml",
@@ -66,11 +78,11 @@
     ],
     [
      ".github/workflows/train.yml",
-     2699
+     2777
     ],
     [
      "css/app.css",
-     25691
+     34798
     ],
     [
      "data/source/amex.json",
@@ -90,7 +102,7 @@
     ],
     [
      "dist/trade-box.html",
-     1758997
+     1820612
     ],
     [
      "docs/DATASET.md",
@@ -98,11 +110,11 @@
     ],
     [
      "js/app.js",
-     47746
+     71198
     ],
     [
      "js/bots.js",
-     31689
+     34516
     ],
     [
      "js/breeding.js",
@@ -110,15 +122,15 @@
     ],
     [
      "js/charts.js",
-     11535
+     25183
     ],
     [
      "js/docs-push.js",
-     18885
+     19325
     ],
     [
      "js/docs-ui.js",
-     8037
+     8070
     ],
     [
      "js/final-ui.js",
@@ -130,7 +142,7 @@
     ],
     [
      "js/market.js",
-     39783
+     42199
     ],
     [
      "js/news.js",
@@ -142,11 +154,11 @@
     ],
     [
      "js/rng.js",
-     2192
+     3855
     ],
     [
      "js/sim.js",
-     41949
+     41975
     ],
     [
      "js/symbols.js",
@@ -158,7 +170,7 @@
     ],
     [
      "tests/docs.js",
-     7700
+     8336
     ],
     [
      "tests/final.js",
@@ -166,15 +178,19 @@
     ],
     [
      "tests/market_stats.js",
-     2816
+     2865
     ],
     [
      "tests/run.js",
      17121
     ],
     [
+     "tools/bench.js",
+     1779
+    ],
+    [
      "tools/build_single.js",
-     2369
+     2621
     ],
     [
      "tools/build_symbols.py",
@@ -190,11 +206,15 @@
     ],
     [
      "tools/docs_node.js",
-     4977
+     5313
     ],
     [
      "tools/final_train.js",
      7513
+    ],
+    [
+     "tools/parallel.js",
+     2265
     ],
     [
      "tools/train_model.py",

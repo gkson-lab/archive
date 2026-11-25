@@ -1,0 +1,5 @@
+7371cd2  2026-11-25  Claude  Move event triggers panel onto the wheel screen (HEAD -> main, origin/main, origin/HEAD)
+bf3da15  2026-11-25  Claude  Show event triggers panel open by default
+9670bbd  2026-11-25  Claude  Add event triggers panel: Blessed/Cursed wheels and instant effects
+7bc5bda  2026-11-25  Claude  Fix bonus effects, scale land bonuses on the map, add rare 10% troops slice
+f712b21  2026-11-25  Claude  Add Nation Roller as a static GitHub Pages site

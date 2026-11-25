@@ -1,4 +1,9 @@
-edbca8b  2026-11-24  gkson  Stop iPhones zooming in when typing: 16px form fields on phones (HEAD -> main, origin/main, origin/HEAD)
+9090824  2026-11-25  gkson  README: speed, Mac use, the docs repo's merge bot, owner-only workflows (HEAD -> main, origin/main, origin/HEAD)
+04649a9  2026-11-25  gkson  Auto-send on by default and with DOCS_TOKEN, new pull request after the docs bot merges, owner-only workflows, multi-core runner, phone chart toolbar, README
+bfbe7dc  2026-11-25  gkson  Interactive chart (zoom, pan, pinch, indicators, bot trade markers), command palette and shortcuts, Mac polish, generation card, animated bot ranks, family tree, market size and background running
+a034383  2026-11-25  gkson  Faster market: table normals for wicks/volume, cached 20-day stats, one-pass movers, allocation-free pool
+249b515  2026-11-25  gkson  Faster bots: shared feature matrix, cached weights, fast tanh, position list, no per-stock allocations
+edbca8b  2026-11-24  gkson  Stop iPhones zooming in when typing: 16px form fields on phones
 b46c03f  2026-11-24  gkson  Trading data bot: say when a network proxy blocks the upload
 40a31f8  2026-11-24  gkson  Trading data bot: send through a local clone with git and gh (--docs-git)
 bbc20cf  2026-11-24  gkson  Add the Trading data bot: send all bot data to the internal documents repo as pull requests

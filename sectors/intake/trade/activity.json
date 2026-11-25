@@ -1,13 +1,48 @@
 {
  "commits": [
   {
+   "sha": "90908242f13da3422639910be998415101eaaf34",
+   "date": "2026-11-25T13:32:50Z",
+   "author": "gkson",
+   "message": "README: speed, Mac use, the docs repo's merge bot, owner-only workflows",
+   "tips": [
+    "main"
+   ]
+  },
+  {
+   "sha": "04649a9dcf1ebc00ada70fc56fe5d6af7c35e7ed",
+   "date": "2026-11-25T13:32:25Z",
+   "author": "gkson",
+   "message": "Auto-send on by default and with DOCS_TOKEN, new pull request after the docs bot merges, owner-only workflows, multi-core runner, phone chart toolbar, README",
+   "tips": []
+  },
+  {
+   "sha": "bfbe7dc7de7d65410484ad27cf3f17333b60cae4",
+   "date": "2026-11-25T13:28:27Z",
+   "author": "gkson",
+   "message": "Interactive chart (zoom, pan, pinch, indicators, bot trade markers), command palette and shortcuts, Mac polish, generation card, animated bot ranks, family tree, market size and background running",
+   "tips": []
+  },
+  {
+   "sha": "a03438303b48f70326e82ba817d97c7b1a0aea83",
+   "date": "2026-11-25T13:17:23Z",
+   "author": "gkson",
+   "message": "Faster market: table normals for wicks/volume, cached 20-day stats, one-pass movers, allocation-free pool",
+   "tips": []
+  },
+  {
+   "sha": "249b515b07be18d010aeea0d27bf3b584fa17012",
+   "date": "2026-11-25T13:09:07Z",
+   "author": "gkson",
+   "message": "Faster bots: shared feature matrix, cached weights, fast tanh, position list, no per-stock allocations",
+   "tips": []
+  },
+  {
    "sha": "edbca8b37aecfb6e1c3417574c6083d8ffb227a1",
    "date": "2026-11-24T22:53:17Z",
    "author": "gkson",
    "message": "Stop iPhones zooming in when typing: 16px form fields on phones",
-   "tips": [
-    "main"
-   ]
+   "tips": []
   },
   {
    "sha": "b46c03f046477b524cfacc428bfc8978887f872c",

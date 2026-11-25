@@ -1,0 +1,42 @@
+{
+ "name": "nationwheel",
+ "title": "nationwheel",
+ "sector": "intake",
+ "summary": "",
+ "source": "https://github.com/gkson-lab/nationwheel",
+ "repo": "gkson-lab/nationwheel",
+ "kind": "source",
+ "first": "2026-11-25",
+ "last": "2026-11-25",
+ "commits": 5,
+ "pulls": {
+  "open": 0,
+  "total": 0
+ },
+ "signature": "4dad077745e529f98d1d69064175626bbac59770",
+ "versions": [
+  {
+   "id": "main",
+   "branch": "main",
+   "head": "7371cd2",
+   "sha": "7371cd22844537c448b50fa91b848b519835cc16",
+   "date": "2026-11-25",
+   "message": "Move event triggers panel onto the wheel screen",
+   "commits": 5,
+   "files": [
+    [
+     ".nojekyll",
+     0
+    ],
+    [
+     "README.md",
+     172
+    ],
+    [
+     "index.html",
+     181492
+    ]
+   ]
+  }
+ ]
+}
