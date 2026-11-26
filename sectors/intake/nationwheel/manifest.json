@@ -8,21 +8,21 @@
  "kind": "source",
  "first": "2026-11-25",
  "last": "2026-11-25",
- "commits": 5,
+ "commits": 6,
  "pulls": {
   "open": 0,
   "total": 0
  },
- "signature": "4dad077745e529f98d1d69064175626bbac59770",
+ "signature": "84ab604969e5611705f8164c3b45f41352beadfb",
  "versions": [
   {
    "id": "main",
    "branch": "main",
-   "head": "7371cd2",
-   "sha": "7371cd22844537c448b50fa91b848b519835cc16",
+   "head": "6a77d0d",
+   "sha": "6a77d0d0eaab26baafa2168aea190e6a60d7e5d5",
    "date": "2026-11-25",
-   "message": "Move event triggers panel onto the wheel screen",
-   "commits": 5,
+   "message": "Add detailed wheel results, larger territories, stat doubler and world reset",
+   "commits": 6,
    "files": [
     [
      ".nojekyll",
@@ -34,7 +34,7 @@
     ],
     [
      "index.html",
-     181492
+     189099
     ]
    ]
   }

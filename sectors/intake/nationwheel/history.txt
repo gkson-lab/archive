@@ -1,4 +1,5 @@
-7371cd2  2026-11-25  Claude  Move event triggers panel onto the wheel screen (HEAD -> main, origin/main, origin/HEAD)
+6a77d0d  2026-11-25  Claude  Add detailed wheel results, larger territories, stat doubler and world reset (HEAD -> main, origin/main, origin/HEAD)
+7371cd2  2026-11-25  Claude  Move event triggers panel onto the wheel screen
 bf3da15  2026-11-25  Claude  Show event triggers panel open by default
 9670bbd  2026-11-25  Claude  Add event triggers panel: Blessed/Cursed wheels and instant effects
 7bc5bda  2026-11-25  Claude  Fix bonus effects, scale land bonuses on the map, add rare 10% troops slice

@@ -1,13 +1,20 @@
 {
  "commits": [
   {
+   "sha": "6a77d0d0eaab26baafa2168aea190e6a60d7e5d5",
+   "date": "2026-11-25T23:04:26Z",
+   "author": "Claude",
+   "message": "Add detailed wheel results, larger territories, stat doubler and world reset",
+   "tips": [
+    "main"
+   ]
+  },
+  {
    "sha": "7371cd22844537c448b50fa91b848b519835cc16",
    "date": "2026-11-25T14:38:04Z",
    "author": "Claude",
    "message": "Move event triggers panel onto the wheel screen",
-   "tips": [
-    "main"
-   ]
+   "tips": []
   },
   {
    "sha": "bf3da15119646e263011b21276b688e60036e406",
