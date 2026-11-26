@@ -1,3 +1,6 @@
+80a722d  2026-11-26  Claude  stackdrop: real logos via devicon, detailed card frame, 64-card pool (origin/claude/practical-turing-k9kzba)
+7eb2c88  2026-11-26  Claude  stackdrop: generated card art and variants (holo, full art, gold, misprint, signed)
+328e387  2026-11-26  Claude  add stackdrop: pack-opening game for languages and companies with timed limited drops
 4b9e31e  2026-11-24  gkson  Merge pull request #9 from gkson-lab/claude/charming-heisenberg-xtjmf4 (HEAD -> main, origin/main, origin/HEAD)
 119905e  2026-11-24  Claude  Add reanimate skill to project skills
 f616967  2026-11-23  gkson  remove CLAUDE.md from the repo (origin/claude/happy-mendel-7xev5b)

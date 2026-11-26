@@ -1,6 +1,29 @@
 {
  "commits": [
   {
+   "sha": "80a722d4b9db48cf4bf2b807911746f3f0578d66",
+   "date": "2026-11-26T18:58:35Z",
+   "author": "Claude",
+   "message": "stackdrop: real logos via devicon, detailed card frame, 64-card pool",
+   "tips": [
+    "claude/practical-turing-k9kzba"
+   ]
+  },
+  {
+   "sha": "7eb2c88aae13e5f72c4bb6527682291114aca3b9",
+   "date": "2026-11-26T18:54:38Z",
+   "author": "Claude",
+   "message": "stackdrop: generated card art and variants (holo, full art, gold, misprint, signed)",
+   "tips": []
+  },
+  {
+   "sha": "328e3874b5886a315942a52008360a1349dc4d30",
+   "date": "2026-11-26T18:52:18Z",
+   "author": "Claude",
+   "message": "add stackdrop: pack-opening game for languages and companies with timed limited drops",
+   "tips": []
+  },
+  {
    "sha": "4b9e31ef0115da75632110e96f34f27e93c954b1",
    "date": "2026-11-24T17:47:41-05:00",
    "author": "gkson",
@@ -223,6 +246,21 @@
   }
  ],
  "pulls": [
+  {
+   "number": 10,
+   "title": "add stackdrop: pack-opening game for languages and companies with timed limited drops",
+   "state": "closed",
+   "draft": false,
+   "author": "gkson-lab",
+   "head": "claude/practical-turing-k9kzba",
+   "base": "main",
+   "sha": "80a722d4b9db48cf4bf2b807911746f3f0578d66",
+   "created": "2026-11-26T19:33:27Z",
+   "updated": "2026-11-26T19:33:33Z",
+   "closed": "2026-11-26T19:33:33Z",
+   "merged": null,
+   "url": "https://github.com/gkson-lab/gkson-lab/pull/10"
+  },
   {
    "number": 9,
    "title": "Add reanimate skill to project skills",
