@@ -1,0 +1,9 @@
+c60a744  2026-11-28  Claude  Don't overwrite the index status with '+0 new cards' (origin/claude/pokemon-tcg-bulk-scanner-9kyx7f)
+4cd5cd2  2026-11-28  Claude  Never show a silent black screen; load card data from Pages on app-only deploys
+71bcccb  2026-11-27  gkson  Update README.md (HEAD -> main, origin/main, origin/HEAD)
+6b07276  2026-11-27  gkson  Merge pull request #1 from gkson-lab/claude/pokemon-tcg-bulk-scanner-9kyx7f
+83fa847  2026-11-28  Claude  Support Safari < 16.4 (no regex lookbehind); add flow and offline e2e scripts
+3bbd88d  2026-11-28  Claude  Offline model cache, deploy workflows, README, UI fixes
+5af52c2  2026-11-28  Claude  Harden detection on textured tables; fill TCGdex card-level prices; add tests
+3b453c2  2026-11-28  Claude  Add scanning pipeline: card detector, on-device model, catalog and index builders
+6980117  2026-11-27  gkson  Initial commit

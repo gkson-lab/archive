@@ -1,0 +1,18 @@
+{
+  "id": "cardnet-v1-mnv3l-gem3",
+  "inputW": 224,
+  "inputH": 320,
+  "featDim": 2880,
+  "regions": {
+    "art": [
+      1,
+      5
+    ],
+    "footer": [
+      8,
+      10
+    ]
+  },
+  "input": "RGB float32 0..255, card upright, resized to 224x320",
+  "quantization": "float16"
+}

@@ -1,0 +1,14 @@
+# Netlify: static build. Card data is loaded from your GitHub Pages deployment (built by the
+# GitHub Action) unless you build it here too with `npm run build:data` (slow, ~15 min first time).
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+  # VITE_DATA_BASE = "https://<you>.github.io/bulkbot/data/"
+
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"

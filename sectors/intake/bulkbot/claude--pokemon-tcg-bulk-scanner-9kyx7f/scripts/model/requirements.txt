@@ -1,0 +1,13 @@
+# Only needed to re-export the embedding model (the exported model is committed).
+# python3 -m venv .venv && . .venv/bin/activate && pip install -r scripts/model/requirements.txt
+# pip install --no-deps tensorflowjs==4.22.0
+tensorflow==2.20.0
+tf-keras
+tensorflow-hub
+numpy
+pillow
+h5py
+setuptools<80
+packaging
+six
+importlib_resources

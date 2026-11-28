@@ -99,6 +99,14 @@
    "title": "nationwheel",
    "summary": "",
    "auto": true
+  },
+  {
+   "repo": "https://github.com/gkson-lab/bulkbot",
+   "sector": "intake",
+   "name": "bulkbot",
+   "title": "bulkbot",
+   "summary": "open source pokemon card scanner",
+   "auto": true
   }
  ]
 }

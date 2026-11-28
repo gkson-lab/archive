@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.cache/
+public/data/
+public/tesseract/
+*.log
+.DS_Store
+.vite/
+coverage/
+test-results/
+playwright-report/
+scripts/model/.venv/
+__pycache__/
+*.traineddata

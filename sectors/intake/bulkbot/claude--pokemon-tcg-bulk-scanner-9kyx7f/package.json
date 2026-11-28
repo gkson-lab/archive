@@ -1,0 +1,55 @@
+{
+  "name": "bulkbot",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Free, on-device Pokémon TCG bulk scanner PWA",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "catalog": "tsx scripts/build-catalog.ts",
+    "index": "tsx scripts/build-index.ts",
+    "build:data": "tsx scripts/build-catalog.ts && tsx scripts/build-index.ts",
+    "model:export": "python3 scripts/model/export_model.py"
+  },
+  "dependencies": {
+    "@preact/signals": "^2.11.4",
+    "@tensorflow/tfjs-backend-cpu": "4.22.0",
+    "@tensorflow/tfjs-backend-webgl": "4.22.0",
+    "@tensorflow/tfjs-converter": "4.22.0",
+    "@tensorflow/tfjs-core": "4.22.0",
+    "idb": "8.0.4",
+    "preact": "10.29.8",
+    "tesseract.js": "7.0.0"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "2.10.6",
+    "@tesseract.js-data/eng": "1.0.0",
+    "@types/node": "22.20.7",
+    "fake-indexeddb": "6.2.8",
+    "sharp": "0.35.5",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3",
+    "undici": "^7.30.2",
+    "vite": "7.3.8",
+    "vite-plugin-pwa": "2.0.0",
+    "vitest": "3.2.7",
+    "workbox-cacheable-response": "^7.4.1",
+    "workbox-core": "^7.4.1",
+    "workbox-expiration": "^7.4.1",
+    "workbox-precaching": "^7.4.1",
+    "workbox-routing": "^7.4.1",
+    "workbox-strategies": "^7.4.1",
+    "workbox-window": "7.4.1"
+  },
+  "optionalDependencies": {
+    "@tensorflow/tfjs-node": "4.22.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

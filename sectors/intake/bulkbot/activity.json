@@ -1,0 +1,88 @@
+{
+ "commits": [
+  {
+   "sha": "c60a7446c095ff520551c8cd73c1dec4ac506cef",
+   "date": "2026-11-28T02:43:46Z",
+   "author": "Claude",
+   "message": "Don't overwrite the index status with '+0 new cards'",
+   "tips": [
+    "claude/pokemon-tcg-bulk-scanner-9kyx7f"
+   ]
+  },
+  {
+   "sha": "4cd5cd2d22123bbcf7b164fc36f1222d04750d53",
+   "date": "2026-11-28T02:25:12Z",
+   "author": "Claude",
+   "message": "Never show a silent black screen; load card data from Pages on app-only deploys",
+   "tips": []
+  },
+  {
+   "sha": "71bcccb6c08197f862fffdfabc7a1ce23bacd1cd",
+   "date": "2026-11-27T21:18:38-05:00",
+   "author": "gkson",
+   "message": "Update README.md",
+   "tips": [
+    "main"
+   ]
+  },
+  {
+   "sha": "6b07276eb330e443c2a4a674df244eee7ed77bdc",
+   "date": "2026-11-27T21:16:08-05:00",
+   "author": "gkson",
+   "message": "Merge pull request #1 from gkson-lab/claude/pokemon-tcg-bulk-scanner-9kyx7f",
+   "tips": []
+  },
+  {
+   "sha": "83fa847c8f39f5ef6f9f2bb9bd1945ed96c26d5b",
+   "date": "2026-11-28T00:47:52Z",
+   "author": "Claude",
+   "message": "Support Safari < 16.4 (no regex lookbehind); add flow and offline e2e scripts",
+   "tips": []
+  },
+  {
+   "sha": "3bbd88d913a406ff5bad40405d09adc97ca7277a",
+   "date": "2026-11-28T00:46:33Z",
+   "author": "Claude",
+   "message": "Offline model cache, deploy workflows, README, UI fixes",
+   "tips": []
+  },
+  {
+   "sha": "5af52c2c52b193871e511e71224cadcf9d4bcad5",
+   "date": "2026-11-28T00:40:30Z",
+   "author": "Claude",
+   "message": "Harden detection on textured tables; fill TCGdex card-level prices; add tests",
+   "tips": []
+  },
+  {
+   "sha": "3b453c244c860b043770281a200d45756d84da74",
+   "date": "2026-11-28T00:34:48Z",
+   "author": "Claude",
+   "message": "Add scanning pipeline: card detector, on-device model, catalog and index builders",
+   "tips": []
+  },
+  {
+   "sha": "698011777895fe607a997cb1cd32a093a1f32688",
+   "date": "2026-11-27T18:19:42-05:00",
+   "author": "gkson",
+   "message": "Initial commit",
+   "tips": []
+  }
+ ],
+ "pulls": [
+  {
+   "number": 1,
+   "title": "Claude/pokemon tcg bulk scanner 9kyx7f",
+   "state": "merged",
+   "draft": false,
+   "author": "gkson-lab",
+   "head": "claude/pokemon-tcg-bulk-scanner-9kyx7f",
+   "base": "main",
+   "sha": "83fa847c8f39f5ef6f9f2bb9bd1945ed96c26d5b",
+   "created": "2026-11-28T02:15:57Z",
+   "updated": "2026-11-28T02:16:13Z",
+   "closed": "2026-11-28T02:16:09Z",
+   "merged": "2026-11-28T02:16:08Z",
+   "url": "https://github.com/gkson-lab/bulkbot/pull/1"
+  }
+ ]
+}

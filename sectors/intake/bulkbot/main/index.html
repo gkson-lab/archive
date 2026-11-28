@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+    <meta name="theme-color" content="#0a0b0e" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="description" content="Free on-device Pokémon TCG bulk scanner. Point your camera at cards, get prices, keep a running total." />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="BulkBot" />
+    <link rel="icon" href="icons/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+    <link rel="preconnect" href="https://images.pokemontcg.io" crossorigin />
+    <link rel="preconnect" href="https://assets.tcgdex.net" crossorigin />
+    <title>BulkBot</title>
+    <style>
+      html,
+      body {
+        background: #0a0b0e;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <noscript>BulkBot needs JavaScript to scan cards.</noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

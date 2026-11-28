@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+    <meta name="theme-color" content="#0a0b0e" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="description" content="Free on-device Pokémon TCG bulk scanner. Point your camera at cards, get prices, keep a running total." />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="BulkBot" />
+    <link rel="icon" href="icons/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+    <link rel="preconnect" href="https://images.pokemontcg.io" crossorigin />
+    <link rel="preconnect" href="https://assets.tcgdex.net" crossorigin />
+    <title>BulkBot</title>
+    <style>
+      html,
+      body {
+        background: #0a0b0e;
+      }
+      #boot {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        padding: 32px;
+        text-align: center;
+        color: #f2f4f7;
+        font: 15px/1.45 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      }
+      #boot .spin {
+        width: 34px;
+        height: 34px;
+        margin: 0 auto 14px;
+        border-radius: 50%;
+        border: 3px solid #252932;
+        border-top-color: #ffcb05;
+        animation: bootspin 0.8s linear infinite;
+      }
+      #boot small {
+        display: block;
+        margin-top: 10px;
+        color: #98a1ad;
+        word-break: break-word;
+      }
+      @keyframes bootspin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <div id="boot">
+      <div>
+        <div class="spin"></div>
+        <div id="boot-msg">Starting BulkBot…</div>
+      </div>
+    </div>
+    <noscript>BulkBot needs JavaScript to scan cards.</noscript>
+    <script>
+      // If the app never mounts, say why instead of leaving a black screen.
+      (function () {
+        var errors = [];
+        window.addEventListener('error', function (e) {
+          errors.push(e.message || 'script error');
+        });
+        window.addEventListener('unhandledrejection', function (e) {
+          errors.push(String((e.reason && e.reason.message) || e.reason));
+        });
+        function explain(text) {
+          if (window.__bulkbotMounted) return true;
+          var msg = document.getElementById('boot-msg');
+          if (!msg) return true;
+          var spin = msg.parentNode.querySelector('.spin');
+          if (spin) spin.parentNode.removeChild(spin);
+          msg.textContent = text;
+          if (errors.length) {
+            var small = document.createElement('small');
+            small.textContent = errors.slice(0, 3).join(' · ');
+            msg.appendChild(small);
+          }
+          return true;
+        }
+        setTimeout(function () {
+          if (window.__bulkbotMounted) return;
+          // the page was served without being built (e.g. GitHub Pages "Deploy from a branch")
+          if (document.querySelector('script[src*="/src/main"]')) {
+            explain('This is the unbuilt source code, so the app cannot run. GitHub: Settings → Pages → Source → "GitHub Actions", then let the "Build card data and deploy" workflow finish.');
+            return;
+          }
+          setTimeout(function () {
+            explain('BulkBot did not start. Reload the page; if it keeps happening, update your browser.');
+          }, 9500);
+        }, 2500);
+      })();
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

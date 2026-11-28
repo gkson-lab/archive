@@ -1,0 +1,76 @@
+name: Build card data and deploy
+
+# Runs on every push to main, every Monday (fresh prices + any new sets), or by hand.
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 9 * * 1'
+  workflow_dispatch:
+    inputs:
+      refit_projection:
+        description: 'Refit the PCA projection (only after changing the model)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Embeddings and API responses from earlier runs: only new/changed cards get re-embedded.
+      - name: Restore data cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .cache/features
+            .cache/json
+          key: bulkbot-data-${{ github.run_id }}
+          restore-keys: bulkbot-data-
+
+      - name: Build card catalog (pokemontcg.io + TCGdex)
+        run: npm run catalog -- --ptcg-budget-min 40
+        env:
+          # optional: a free key from https://dev.pokemontcg.io raises the rate limit
+          POKEMONTCG_API_KEY: ${{ secrets.POKEMONTCG_API_KEY }}
+
+      - name: Build visual index
+        run: npm run index -- ${{ inputs.refit_projection && '--refit-projection' || '' }}
+
+      - name: Test
+        run: npm test
+
+      - name: Build app
+        run: npm run build
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
